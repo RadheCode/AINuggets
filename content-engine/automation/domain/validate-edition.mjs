@@ -1,4 +1,5 @@
 const SUPPORTED_LAYOUTS = new Set([undefined, null, "lead", "wide"]);
+const SUPPORTED_ARTWORK = new Set(["models", "agents", "research", "product", "business"]);
 
 function requireText(value, field) {
   if (typeof value !== "string" || !value.trim()) {
@@ -31,6 +32,7 @@ export function validateEdition(edition, targetDate) {
 
   const ids = new Set();
   let leadCount = 0;
+  let wideCount = 0;
   edition.stories.forEach((story, index) => {
     requireText(story.id, `stories[${index}].id`);
     requireText(story.category, `stories[${index}].category`);
@@ -38,15 +40,20 @@ export function validateEdition(edition, targetDate) {
     requireText(story.summary, `stories[${index}].summary`);
     requireHttpsUrl(story.href, `stories[${index}].href`);
     requireText(story.art, `stories[${index}].art`);
+    if (!SUPPORTED_ARTWORK.has(story.art)) {
+      throw new Error(`Unsupported story artwork: ${story.art}.`);
+    }
     if (story.sourceUrl !== undefined && story.sourceUrl !== null) {
       requireHttpsUrl(story.sourceUrl, `stories[${index}].sourceUrl`);
     }
     if (ids.has(story.id)) throw new Error(`Duplicate story ID: ${story.id}.`);
     if (!SUPPORTED_LAYOUTS.has(story.type)) throw new Error(`Unsupported story layout: ${story.type}.`);
     if (story.type === "lead") leadCount += 1;
+    if (story.type === "wide") wideCount += 1;
     ids.add(story.id);
   });
 
   if (leadCount !== 1) throw new Error("An edition must contain exactly one lead story.");
+  if (wideCount > 1) throw new Error("An edition may contain at most one wide story.");
   return edition;
 }

@@ -110,6 +110,30 @@ test("records a failed run when validation rejects an edition", async () => {
   assert.equal(repository.editions.size, 0);
 });
 
+test("rejects editions with unsupported artwork or multiple wide stories", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.stories[1].art = "infrastructure";
+      invalid.stories[2].type = "wide";
+      invalid.stories[3].type = "wide";
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /unsupported story artwork/i
+  );
+});
+
 test("runs through a scheduler-neutral dependency factory", async () => {
   const repository = createMemoryEditionRepository();
   let receivedTargetDate;
