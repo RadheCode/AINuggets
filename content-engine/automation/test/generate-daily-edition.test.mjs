@@ -37,7 +37,19 @@ test("skips safely when providers are absent", async () => {
   const repository = createMemoryEditionRepository();
   const result = await generateDailyEdition({ targetDate, editionRepository: repository });
   assert.equal(result.status, "skipped");
-  assert.match(result.reason, /provider is configured/i);
+  assert.match(result.reason, /no content source is configured/i);
+  assert.equal(repository.editions.size, 0);
+});
+
+test("reports a missing summary provider when sources are configured", async () => {
+  const repository = createMemoryEditionRepository();
+  const result = await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [{ async fetchCandidates() { return []; } }]
+  });
+
+  assert.match(result.reason, /no summary provider is configured/i);
   assert.equal(repository.editions.size, 0);
 });
 

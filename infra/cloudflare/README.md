@@ -87,7 +87,8 @@ Configure the portable configuration contract in one human-readable local file, 
 
 ```powershell
 Copy-Item content-engine\automation\config\providers.example.env content-engine\automation\config\providers.local.env
-# Edit providers.local.env, then sync it to Cloudflare:
+# Edit providers.local.env, then verify it before syncing it to Cloudflare:
+.\content-engine\automation\test-provider-config.ps1
 .\infra\cloudflare\content-worker\sync-provider-config.ps1
 ```
 

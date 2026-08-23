@@ -5,10 +5,10 @@ import {
   createGenerationProviderDependencies
 } from "../config/create-generation-provider-dependencies.mjs";
 
-test("returns no providers when no runtime values are supplied", () => {
+test("uses the built-in blog collector when no source URL is supplied", () => {
   const dependencies = createGenerationProviderDependencies({});
 
-  assert.deepEqual(dependencies.contentSources, []);
+  assert.equal(dependencies.contentSources.length, 1);
   assert.equal(dependencies.summaryProvider, null);
 });
 

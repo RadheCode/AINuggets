@@ -45,6 +45,7 @@ content-worker/
 |---|---|---|
 | Scheduler-neutral runner | Complete | Calculates the editorial date from the supplied scheduled instant and timezone, then calls the shared job. |
 | Cloudflare Cron adapter | Complete | Invokes the portable runner daily at `0 1 * * *`; it only supplies runtime dependencies. |
+| Built-in blog collector | Complete | Fetches up to three recent RSS/Atom posts from each editable source, then deduplicates, ranks, and category-diversifies five candidates. |
 | Generic JSON content source | Complete | Requests an HTTPS endpoint with `?date=YYYY-MM-DD`; accepts an array or `{ "candidates": [...] }`. |
 | OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON from Chat Completions and returns an edition for domain validation. |
 | D1 repository | Complete | Checks idempotency, records runs, and saves a draft edition plus stories in one D1 batch. |
@@ -80,15 +81,15 @@ The frontend endpoint is committed in `content-engine/config.js`. The public Wor
 1. A scheduler invokes the portable runner at the configured cron time. Cloudflare's current adapter uses `0 1 * * *` (01:00 UTC / 06:30 IST).
 2. The runner calculates the target date using its supplied editorial timezone, currently `Asia/Kolkata` for the Cloudflare deployment.
 3. It checks D1 for an existing edition on that date and exits idempotently if one exists.
-4. Once providers are configured, it fetches candidate stories from the configured source endpoint.
-5. It removes duplicate candidates using `canonicalUrl` or `url`.
-6. The summary provider selects four or five stories from the candidates, each supported by source metadata.
+4. It reads the editable 15-source list and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
+5. It removes duplicate candidates using normalized `canonicalUrl` or `url`, ranks remaining posts by source priority and freshness, and selects five candidates. It first takes one per category, then fills any remaining positions by rank.
+6. The summary provider selects four or five stories from those candidates, each supported by source metadata.
 7. It generates concise original summaries and validates all required fields, HTTPS source URLs, unique IDs, supported artwork keys, and exactly one lead story.
 8. It writes the edition and all stories in one D1 transaction as `draft`.
 9. A human review process changes the edition to `published`. Automatic publication should only be enabled after source and model quality are proven.
 10. Every attempt writes a `generation_runs` audit record. A failed run must leave the last published edition untouched.
 
-The current runtime adapters implement the safe foundation: they check for an existing edition and record a `skipped` run when no content provider is configured. Once both HTTP adapter configurations are supplied, the job fetches candidates, generates a validated draft, and writes it to the database. They do not fabricate content. Source ingestion and model generation require separate provider decisions and secrets.
+The built-in collector is the default candidate source and does not need a source API key. Individual unavailable feeds do not cancel a run; the collector proceeds with available feeds and fails only when every configured feed fails. The job still records a `skipped` run until a complete summary-provider configuration is supplied. It does not fabricate content.
 
 ## Scheduler-neutral cron integration
 
@@ -115,21 +116,31 @@ node content-engine\automation\cli\run-scheduled-edition.mjs `
 
 Use `--scheduled-at=2026-08-24T01:00:00Z` for deterministic backfills and tests. Keep adapter credentials in the scheduler's secret store. Cloudflare Cron remains a thin adapter; GitHub Actions, a container scheduler, or an operating-system cron can use the same runner and adapter contract.
 
-### Included HTTP adapters and candidate contract
+### Candidate sources and provider configuration
 
-The portable configuration contract is `content-engine/automation/config/create-generation-provider-dependencies.mjs`. It accepts a plain runtime-values object, so it is independent of any secret store. The runtime injects values while this module owns the setting names, completeness validation, and adapter construction. For a human-editable setup, copy `content-engine/automation/config/providers.example.env` to `content-engine/automation/config/providers.local.env` and fill in the values. The local file is Git-ignored. The generic adapters support a JSON content endpoint and any OpenAI-compatible Chat Completions endpoint:
+The portable configuration contract is `content-engine/automation/config/create-generation-provider-dependencies.mjs`. It accepts a plain runtime-values object, so it is independent of any secret store. The runtime injects values while this module owns the setting names, completeness validation, and adapter construction. For a human-editable setup, copy `content-engine/automation/config/providers.example.env` to `content-engine/automation/config/providers.local.env` and fill in the values. The local file is Git-ignored.
+
+By default, `content-engine/automation/config/ai-blog-sources.mjs` is the editable list of 15 public RSS/Atom feeds. Each entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
 
 | Variable | Purpose |
 |---|---|
-| `CONTENT_SOURCE_URL` | HTTPS endpoint that accepts `?date=YYYY-MM-DD` and returns a candidate array or `{ "candidates": [...] }` |
+| `CONTENT_SOURCE_URL` | Optional override: HTTPS endpoint that accepts `?date=YYYY-MM-DD` and returns a candidate array or `{ "candidates": [...] }` |
 | `CONTENT_SOURCE_API_KEY` | Optional bearer token for that endpoint |
 | `SUMMARY_PROVIDER_URL` | OpenAI-compatible API base URL, excluding `/chat/completions` |
 | `SUMMARY_PROVIDER_API_KEY` | API key for the model endpoint |
 | `SUMMARY_PROVIDER_MODEL` | Model identifier |
 
-Each candidate should provide a stable `url` or `canonicalUrl`; any additional fields, such as title, source name, publication time, or excerpt, are treated as untrusted metadata and are passed to the summary provider. The source adapter adds the requested editorial date as a query parameter and applies a 15-second request timeout. The summary adapter applies a 45-second request timeout.
+Each candidate should provide a stable `url` or `canonicalUrl`; any additional fields, such as title, source name, publication time, or excerpt, are treated as untrusted metadata and are passed to the summary provider. The RSS/Atom collector and custom JSON source adapter each apply a 15-second request timeout. The summary adapter applies a 45-second request timeout.
 
-No provider values means the job safely records a skipped run. A partial summary-provider configuration is rejected with the missing setting names instead of silently running with incomplete settings. `CONTENT_SOURCE_API_KEY` remains optional.
+No summary-provider values means the job safely records a skipped run. A partial summary-provider configuration is rejected with the missing setting names instead of silently running with incomplete settings. `CONTENT_SOURCE_API_KEY` remains optional and is only used with the custom JSON source override.
+
+Before syncing values to an infrastructure provider, test the local summary-provider configuration without exposing its API key:
+
+```powershell
+.\content-engine\automation\test-provider-config.ps1
+```
+
+The command loads `providers.local.env`, sends one small schema-constrained request using test metadata, and validates the returned four- or five-story edition. It prints only a pass/fail result and never prints configured secret values. Use `-ConfigPath path\to\providers.local.env` to test a different local configuration file.
 
 The summary adapter asks for schema-constrained JSON. Before persistence, the domain layer validates the requested date, a four- or five-story count, one lead story, unique IDs, supported layouts, non-empty required fields, and HTTPS story/source URLs. Source and model services can be replaced without changing the scheduled job or D1 repository.
 

@@ -2,7 +2,8 @@ import { isValidEditorialDate } from "../domain/editorial-date.mjs";
 import { validateEdition } from "../domain/validate-edition.mjs";
 
 const SKIP_EXISTING = "Edition already exists.";
-const SKIP_UNCONFIGURED = "No content or summary provider is configured; no edition was generated.";
+const SKIP_NO_CONTENT_SOURCE = "No content source is configured; no edition was generated.";
+const SKIP_NO_SUMMARY_PROVIDER = "No summary provider is configured; no edition was generated.";
 
 function uniqueCandidates(candidates) {
   const seen = new Set();
@@ -29,9 +30,14 @@ export async function generateDailyEdition({
     return { targetDate, status: "skipped", reason: SKIP_EXISTING };
   }
 
-  if (!contentSources.length || !summaryProvider) {
-    await editionRepository.recordRun({ targetDate, status: "skipped", details: SKIP_UNCONFIGURED });
-    return { targetDate, status: "skipped", reason: SKIP_UNCONFIGURED };
+  if (!contentSources.length) {
+    await editionRepository.recordRun({ targetDate, status: "skipped", details: SKIP_NO_CONTENT_SOURCE });
+    return { targetDate, status: "skipped", reason: SKIP_NO_CONTENT_SOURCE };
+  }
+
+  if (!summaryProvider) {
+    await editionRepository.recordRun({ targetDate, status: "skipped", details: SKIP_NO_SUMMARY_PROVIDER });
+    return { targetDate, status: "skipped", reason: SKIP_NO_SUMMARY_PROVIDER };
   }
 
   await editionRepository.recordRun({ targetDate, status: "started" });
