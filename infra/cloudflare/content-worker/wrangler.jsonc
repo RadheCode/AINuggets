@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-nuggets-content",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-23",
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": ["0 1 * * *"]
+  },
+  "vars": {
+    "EDITORIAL_TIMEZONE": "Asia/Kolkata",
+    "ALLOWED_ORIGINS": "https://ai-nuggets.pages.dev,http://localhost:8080,http://127.0.0.1:8080"
+  },
+  "d1_databases": [
+    {
+      "binding": "CONTENT_DB",
+      "database_name": "ai-nuggets-content",
+      "database_id": "7b4e45e1-00f6-4113-aa77-1e51b887a2ca",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -4,6 +4,10 @@
   "accountEmail": "ainuggets123@gmail.com",
   "accountId": "b0253ba555b02a254367db91ab9c0b0b",
   "projectName": "ai-nuggets",
+  "contentWorkerName": "ai-nuggets-content",
+  "contentDatabaseName": "ai-nuggets-content",
+  "contentDatabaseId": "7b4e45e1-00f6-4113-aa77-1e51b887a2ca",
+  "contentApiUrl": "https://ai-nuggets-content.ainuggets123.workers.dev",
   "productionBranch": "main",
   "buildCommand": null,
   "outputDirectory": "."

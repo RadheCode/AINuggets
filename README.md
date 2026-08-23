@@ -4,7 +4,9 @@ A responsive, single-screen daily AI news and newsletter homepage.
 
 ## Content engine
 
-Daily briefing content and theme-independent rendering live in `content-engine/`. Editions are dated JSON files selected by the current date or a `?date=YYYY-MM-DD` preview parameter. See `content-engine/README.md` for the content contract.
+Daily briefing content is stored in Cloudflare D1 and delivered through the content Worker API. Theme-independent loading and rendering live in `content-engine/`; `?date=YYYY-MM-DD` previews an edition. See `content-engine/README.md` for the API contract.
+
+The Cloudflare Cron and D1 workflow for generating daily editions is documented in `docs/DAILY_CONTENT_AUTOMATION.md`. See `docs/VIEW_D1_DATABASE.md` for dashboard and Wrangler commands to inspect current database contents.
 
 ## Themes
 

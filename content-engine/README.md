@@ -1,12 +1,15 @@
 # Content Engine
 
-This folder owns what AI Nuggets publishes and how shared content markup is produced.
+This folder owns how AI Nuggets loads and renders content from the Cloudflare D1-backed API.
 
-- `content/YYYY/MM/YYYY-MM-DD.json` defines each immutable daily briefing and its four or five stories.
-- `content/index.json` lists every available edition and publication status.
-- `loader.js` selects today's edition, or the latest published edition on or before that date.
+- `config.js` defines the public content API endpoint.
+- `loader.js` requests the latest edition or the edition selected by `?date=YYYY-MM-DD`.
 - `render.js` converts that content into the stable semantic selectors used by every theme.
 
-Keep visual styling in `themes/` and shared interactions in the root `script.js`. Story records must include a unique `id`, `category`, `title`, `summary`, `href`, and `art`. The optional `type` value may be `lead` or `wide`.
+The source of truth is the `ai-nuggets-content` Cloudflare D1 database. Its schema, seed data, API Worker, and scheduled trigger live under `infra/cloudflare/content-worker/`.
 
-To preview an edition, use `?date=YYYY-MM-DD`, for example `http://localhost:8080/?date=2026-08-23`. Add each new published file to `content/index.json`; the manifest is the authoritative list of editions.
+Keep visual styling in `themes/` and shared interactions in the root `script.js`. API story records must include a unique `id`, `category`, `title`, `summary`, `href`, and `art`. The optional `type` value may be `lead` or `wide`.
+
+To preview an edition, use `?date=YYYY-MM-DD`, for example `http://localhost:8080/?date=2026-08-23`. The API returns the latest published edition on or before the requested date.
+
+See `../docs/DAILY_CONTENT_AUTOMATION.md` for the D1 publishing and Cloudflare Cron algorithm.

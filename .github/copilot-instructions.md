@@ -12,8 +12,10 @@ These instructions are mandatory for AI-assisted changes in this repository.
 ## Content architecture
 
 - Keep all briefing data and shared content-rendering implementations under `content-engine/`.
-- Define daily stories in dated JSON files under `content-engine/content/YYYY/MM/`; do not hard-code story cards in `index.html` or theme files.
-- Register every edition in `content-engine/content/index.json` and keep unpublished editions out of the public selection flow.
+- Store editions, stories, source attribution, and generation runs in the Cloudflare D1 database defined under `infra/cloudflare/content-worker/`.
+- Access public content only through the content Worker API configured in `content-engine/config.js`; do not hard-code stories in `index.html` or theme files.
+- Change the D1 schema only through ordered SQL migrations. Never edit an already-applied migration.
+- Keep draft editions out of public API responses; only `published` editions may be rendered publicly.
 - Keep `content-engine/render.js` theme-agnostic and preserve the stable shared selectors it emits.
 - Publish exactly four or five stories. Each story must have a unique ID, category, concise title, summary, destination, and supported artwork key.
 - Keep content trustworthy and concise. Verify news against primary sources before publishing and avoid unsupported hype.

@@ -1,8 +1,13 @@
-# Cloudflare Pages
+# Cloudflare infrastructure
 
-AI Nuggets is a static site, so Cloudflare Pages can publish the repository without a build step.
+AI Nuggets uses two independently deployed Cloudflare services:
 
-## Recommended Git deployment
+| Service | Resource | Purpose |
+|---|---|---|
+| Pages | `ai-nuggets` | Hosts the dependency-free frontend at `https://ai-nuggets.pages.dev` |
+| Worker + D1 | `ai-nuggets-content` | Serves published editions and runs daily content automation |
+
+## Pages: recommended Git deployment
 
 Create a Cloudflare Pages project connected to the GitHub repository and use:
 
@@ -17,7 +22,7 @@ Create a Cloudflare Pages project connected to the GitHub repository and use:
 
 Cloudflare will deploy every push to `main` and create preview deployments for other branches and pull requests.
 
-## OAuth deployment
+## Pages: OAuth deployment
 
 Wrangler supports interactive browser OAuth for deployments from a trusted developer machine. Authenticate once from the repository root:
 
@@ -46,3 +51,46 @@ If the Cloudflare user belongs to multiple accounts, Wrangler may ask which acco
 Non-interactive CI cannot complete a browser OAuth prompt. CI deployments should use Cloudflare's GitHub integration, or a scoped `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` stored as CI secrets.
 
 Git integration remains preferred for automatic deployments because its GitHub authorization is also OAuth-based and Cloudflare manages the deployment credentials.
+
+## Content API, D1, and Cron
+
+The content backend is defined in `content-worker/`. D1 is the source of truth for daily editions; daily content is not stored in repository JSON files.
+
+| Setting | Value |
+|---|---|
+| Worker | `ai-nuggets-content` |
+| Worker URL | `https://ai-nuggets-content.ainuggets123.workers.dev` |
+| D1 database | `ai-nuggets-content` |
+| D1 binding | `CONTENT_DB` |
+| Cron Trigger | `0 1 * * *` (01:00 UTC / 06:30 IST) |
+| Editorial timezone | `Asia/Kolkata` |
+
+Deploy the backend separately from Pages:
+
+```powershell
+.\infra\cloudflare\content-worker\deploy.ps1
+```
+
+The script verifies the configured account, applies pending remote D1 migrations, and deploys the Worker and Cron Trigger. The initial migration seeds the existing edition. After a migration has been applied, do not edit it; add the next ordered migration such as `0002_description.sql`.
+
+The public API provides:
+
+- `GET /health`
+- `GET /api/editions/latest`
+- `GET /api/editions/YYYY-MM-DD`
+
+The dated route falls back to the newest published edition on or before the requested date. The frontend reads the Worker URL from `content-engine/config.js`.
+
+The scheduled handler currently records a safe skipped run when no content provider is configured. It does not invent stories. Provider credentials must be added as Wrangler secrets after news and model providers are selected; they must not be added to `config.json`, `wrangler.jsonc`, or frontend code. See `docs/DAILY_CONTENT_AUTOMATION.md` for the generation lifecycle and safety rules.
+
+For read-only dashboard and Wrangler queries, see `docs/VIEW_D1_DATABASE.md`.
+
+## Deployment order
+
+When backend and frontend contracts both change:
+
+1. Deploy the Worker and apply its D1 migrations.
+2. Verify the API response.
+3. Deploy Pages with `deploy.ps1`.
+
+This order keeps the currently published frontend compatible while the backend is changing.
