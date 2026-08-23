@@ -1,0 +1,55 @@
+{
+  "date": "2026-08-23",
+  "status": "published",
+  "briefing": {
+    "eyebrow": "Fresh briefing",
+    "title": "AI news.",
+    "emphasis": "Less noise.",
+    "summary": "The five AI updates that matter today, distilled into quick reads with context, impact, and links to go deeper.",
+    "meta": ["5 stories", "4 min read", "No hype"]
+  },
+  "stories": [
+    {
+      "id": "models",
+      "type": "lead",
+      "category": "Models",
+      "title": "Open models close the reasoning gap",
+      "summary": "A compact release brings stronger planning to local devices.",
+      "href": "#story-models",
+      "art": "models"
+    },
+    {
+      "id": "agents",
+      "category": "Agents",
+      "title": "Browsers become the new agent workspace",
+      "summary": "Tool use shifts toward dependable workflows.",
+      "href": "#story-agents",
+      "art": "agents"
+    },
+    {
+      "id": "research",
+      "category": "Research",
+      "title": "Smaller datasets, sharper fine-tuning",
+      "summary": "Training needs fewer examples.",
+      "href": "#story-research",
+      "art": "research"
+    },
+    {
+      "id": "product",
+      "type": "wide",
+      "category": "Product",
+      "title": "Voice interfaces learn when to stay quiet",
+      "summary": "Better turn-taking makes assistants less intrusive.",
+      "href": "#story-product",
+      "art": "product"
+    },
+    {
+      "id": "business",
+      "category": "Business",
+      "title": "Enterprise AI spending moves to inference",
+      "summary": "Budgets follow real production usage.",
+      "href": "#story-business",
+      "art": "business"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI Nuggets distills the five AI updates worth knowing into a quick daily briefing.">
+  <meta name="theme-color" content="#e9ebf9">
+  <title>AI Nuggets - AI news, less noise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="theme.config.js"></script>
+  <script src="theme-loader.js"></script>
+</head>
+<body>
+  <div class="site-frame">
+    <header class="site-header">
+      <a class="brand" href="#today" aria-label="AI Nuggets home">
+        <span class="brand-mark" aria-hidden="true">AI</span>
+        <span class="brand-copy">
+          <strong>AI Nuggets</strong>
+          <small>Five things worth knowing</small>
+        </span>
+      </a>
+
+      <nav class="nav-tabs" aria-label="Main navigation">
+        <a class="active" href="#today" aria-current="page">Today</a>
+        <a href="#archive">Archive</a>
+        <a href="#about">About</a>
+      </nav>
+
+      <div class="header-actions">
+        <time class="current-date" id="currentDate" datetime="2026-08-23">Sunday / Aug 23</time>
+        <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+          <span class="mode-icon mode-icon--sun" aria-hidden="true">&#9728;</span>
+          <span class="mode-icon mode-icon--moon" aria-hidden="true">&#9790;</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="today">
+      <section class="briefing-intro" id="briefingIntro" aria-labelledby="pageTitle"></section>
+
+      <section class="story-grid" id="storyGrid" aria-label="Today's AI stories"></section>
+    </main>
+
+    <footer class="site-footer">
+      <span>One useful briefing, every weekday.</span>
+      <button class="subscribe-button" id="subscribeButton" type="button">Get the newsletter <span aria-hidden="true">&nearr;</span></button>
+    </footer>
+  </div>
+
+  <dialog class="subscribe-dialog" id="subscribeDialog" aria-labelledby="subscribeTitle">
+    <button class="dialog-close" id="dialogClose" type="button" aria-label="Close subscription form">&times;</button>
+    <span class="dialog-mark" aria-hidden="true">AI</span>
+    <h2 id="subscribeTitle">A clearer AI briefing.</h2>
+    <p>Five useful updates, delivered in one quick read.</p>
+    <form id="subscribeForm">
+      <label for="email">Email address</label>
+      <div class="email-row">
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <button type="submit">Join</button>
+      </div>
+      <output id="formMessage" aria-live="polite"></output>
+    </form>
+  </dialog>
+
+  <script src="content-engine/loader.js"></script>
+  <script src="content-engine/render.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

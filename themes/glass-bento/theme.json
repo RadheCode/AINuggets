@@ -1,0 +1,7 @@
+{
+  "id": "glass-bento",
+  "name": "Glass Bento",
+  "description": "A glassmorphic, single-screen editorial grid with layered pastel depth and gentle motion.",
+  "version": "1.0.0",
+  "stylesheet": "theme.css"
+}
