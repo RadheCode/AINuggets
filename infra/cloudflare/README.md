@@ -81,7 +81,19 @@ The public API provides:
 
 The dated route falls back to the newest published edition on or before the requested date. The frontend reads the Worker URL from `content-engine/config.js`.
 
-The scheduled handler currently records a safe skipped run when no content provider is configured. It does not invent stories. Provider credentials must be added as Wrangler secrets after news and model providers are selected; they must not be added to `config.json`, `wrangler.jsonc`, or frontend code. See `docs/DAILY_CONTENT_AUTOMATION.md` for the generation lifecycle and safety rules.
+The scheduled handler is a thin adapter around the runtime-neutral job in `content-engine/automation/`. It calculates the editorial date, injects the D1 repository, and passes Worker runtime values to `content-engine/automation/config/create-generation-provider-dependencies.mjs`. That portable module defines the setting names, validation, and generic content/summary adapters; Cloudflare only stores and injects secure values. With no provider configuration, it writes a safe `skipped` audit record and never invents stories. With complete provider configuration, it creates a validated **draft** edition; the Worker never automatically publishes it.
+
+Configure the portable configuration contract in one human-readable local file, never in `vars`, frontend code, or committed files:
+
+```powershell
+Copy-Item content-engine\automation\config\providers.example.env content-engine\automation\config\providers.local.env
+# Edit providers.local.env, then sync it to Cloudflare:
+.\infra\cloudflare\content-worker\sync-provider-config.ps1
+```
+
+`providers.local.env` is the portable, Git-ignored source of provider settings. The sync script is the Cloudflare-specific adapter that uploads those values as Worker secrets. `CONTENT_SOURCE_API_KEY` is optional. The source endpoint must accept `?date=YYYY-MM-DD` and return a JSON array or `{ "candidates": [...] }`; the summary endpoint must implement OpenAI-compatible Chat Completions. See `docs/DAILY_CONTENT_AUTOMATION.md` for the candidate contract, secret meanings, and safety rules.
+
+The authenticated `POST /internal/generate` endpoint is available only after `AUTOMATION_TRIGGER_TOKEN` is configured as a Worker secret. It allows an external scheduler to request a run using this Worker's configured adapters and optional `{ "targetDate": "YYYY-MM-DD" }` request body; it does not expose secrets or permit clients to supply providers.
 
 For read-only dashboard and Wrangler queries, see `docs/VIEW_D1_DATABASE.md`.
 

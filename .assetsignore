@@ -3,6 +3,7 @@
 .wrangler/
 docs/
 infra/
+content-engine/automation/
 node_modules/
 .gitignore
 .assetsignore
