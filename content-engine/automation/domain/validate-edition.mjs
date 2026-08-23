@@ -1,9 +1,17 @@
 const SUPPORTED_LAYOUTS = new Set([undefined, null, "lead", "wide"]);
 const SUPPORTED_ARTWORK = new Set(["models", "agents", "research", "product", "business"]);
+const MAX_BRIEFING_TITLE_LENGTH = 44;
+const MAX_BRIEFING_EMPHASIS_LENGTH = 50;
 
 function requireText(value, field) {
   if (typeof value !== "string" || !value.trim()) {
     throw new Error(`Edition field "${field}" must be a non-empty string.`);
+  }
+}
+
+function requireMaximumLength(value, maximum, field) {
+  if (value.length > maximum) {
+    throw new Error(`Edition field "${field}" must be ${maximum} characters or fewer.`);
   }
 }
 
@@ -24,6 +32,8 @@ export function validateEdition(edition, targetDate) {
   requireText(edition.briefing?.title, "briefing.title");
   requireText(edition.briefing?.emphasis, "briefing.emphasis");
   requireText(edition.briefing?.summary, "briefing.summary");
+  requireMaximumLength(edition.briefing.title, MAX_BRIEFING_TITLE_LENGTH, "briefing.title");
+  requireMaximumLength(edition.briefing.emphasis, MAX_BRIEFING_EMPHASIS_LENGTH, "briefing.emphasis");
 
   if (!Array.isArray(edition.briefing.meta)) throw new Error("Edition briefing.meta must be an array.");
   if (!Array.isArray(edition.stories) || ![4, 5].includes(edition.stories.length)) {

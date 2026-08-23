@@ -168,7 +168,7 @@ main::before { position: absolute; top: -30%; right: -15%; width: 62%; aspect-ra
 .briefing-intro { display: grid; grid-template-columns: 1fr minmax(310px, 470px); gap: 50px; align-items: end; margin-bottom: clamp(16px, 2.5vh, 28px); animation: copy-in 0.65s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .eyebrow { display: inline-flex; width: max-content; margin: 0; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--glass-border); border-radius: 9px; color: var(--blue-deep); background: rgba(255, 255, 255, 0.5); box-shadow: 0 7px 0 rgba(91, 74, 176, 0.06), 0 14px 26px rgba(73, 69, 139, 0.12), inset 0 1px #fff; backdrop-filter: blur(12px); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .eyebrow span { width: 7px; aspect-ratio: 1; border-radius: 50%; background: #42bc85; box-shadow: 0 0 0 4px rgba(66, 188, 133, 0.13); animation: pulse 2.2s infinite; }
-h1 { margin: 15px 0 0; font-size: clamp(2.9rem, 5.5vw, 5.6rem); font-weight: 600; line-height: 0.9; letter-spacing: -0.075em; text-shadow: 0 8px 24px rgba(49, 55, 115, 0.09); }
+h1 { margin: 15px 0 0; font-size: clamp(2.3rem, 3.7vw, 3.5rem); font-weight: 600; line-height: 0.94; letter-spacing: -0.065em; text-wrap: balance; text-shadow: 0 8px 24px rgba(49, 55, 115, 0.09); }
 h1 em { color: #5570df; font-style: normal; }
 .briefing-copy > p { margin: 0; color: var(--muted); font-size: 0.94rem; line-height: 1.65; }
 .briefing-meta { display: flex; gap: 9px; margin-top: 16px; flex-wrap: wrap; }

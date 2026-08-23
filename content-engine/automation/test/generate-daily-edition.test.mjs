@@ -134,6 +134,28 @@ test("rejects editions with unsupported artwork or multiple wide stories", async
   );
 });
 
+test("rejects briefing copy that cannot fit the bento layout", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.briefing.emphasis = "This generated briefing emphasis is intentionally far too long for the compact bento layout.";
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /briefing\.emphasis.*50 characters/i
+  );
+});
+
 test("runs through a scheduler-neutral dependency factory", async () => {
   const repository = createMemoryEditionRepository();
   let receivedTargetDate;
