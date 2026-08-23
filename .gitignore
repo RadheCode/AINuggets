@@ -1,6 +1,7 @@
 .dev.vars
 .env
 .env.*
+content-engine/automation/config/providers.local.env
 !.env.example
 .wrangler/
 node_modules/

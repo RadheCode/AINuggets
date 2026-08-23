@@ -13,6 +13,7 @@ These instructions are mandatory for AI-assisted changes in this repository.
 
 - Keep all briefing data and shared content-rendering implementations under `content-engine/`.
 - Store editions, stories, source attribution, and generation runs in the Cloudflare D1 database defined under `infra/cloudflare/content-worker/`.
+- Keep daily-edition orchestration runtime-neutral under `content-engine/automation/`. Cloud provider triggers and persistence implementations must be adapters that inject dependencies into the portable job.
 - Access public content only through the content Worker API configured in `content-engine/config.js`; do not hard-code stories in `index.html` or theme files.
 - Change the D1 schema only through ordered SQL migrations. Never edit an already-applied migration.
 - Keep draft editions out of public API responses; only `published` editions may be rendered publicly.
@@ -76,6 +77,8 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 
 - Prefer dependency-free HTML, CSS, and JavaScript unless a new dependency has a clear product need.
 - Keep content and rendering in `content-engine/`, shared interactions in `script.js`, configuration in root config files, and presentation in `themes/`.
+- Keep every feature and implementation infrastructure-agnostic by default. Domain logic, UI behavior, application contracts, and workflows must not import, name, or depend on a cloud provider, database, scheduler, deployment platform, or provider SDK.
+- Isolate infrastructure-specific code under `infra/<provider>/` behind explicit adapters. Providers may supply configuration and implementations of application contracts, but provider details must not leak into portable code or public interfaces.
 - Keep deployment implementations under `infra/<provider>/` and select the active provider through `infra/config.json`.
 - Never commit infrastructure credentials, API tokens, account secrets, or local environment files.
 - Do not silently fall back when theme configuration is invalid; surface a clear error.

@@ -1,4 +1,8 @@
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+import { editorialDate, isValidEditorialDate } from "../../../../content-engine/automation/domain/editorial-date.mjs";
+import { generateDailyEdition } from "../../../../content-engine/automation/jobs/generate-daily-edition.mjs";
+import { runScheduledEdition } from "../../../../content-engine/automation/jobs/run-scheduled-edition.mjs";
+import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
+import { createD1EditionRepository } from "./d1-edition-repository.js";
 
 function json(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -10,29 +14,46 @@ function json(body, status = 200, headers = {}) {
   });
 }
 
-function isValidDate(value) {
-  if (!DATE_PATTERN.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).toISOString().slice(0, 10) === value;
-}
-
-function dateInTimezone(timezone, instant = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(instant);
-  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function corsHeaders(request, env) {
   const origin = request.headers.get("origin");
   const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((item) => item.trim());
   return origin && allowed.includes(origin)
     ? { "access-control-allow-origin": origin, vary: "Origin" }
     : {};
+}
+
+function createAutomationDependencies(env) {
+  return {
+    editionRepository: createD1EditionRepository(env.CONTENT_DB),
+    ...createGenerationProviderDependencies(env),
+    logger: console
+  };
+}
+
+async function handleAutomationRequest(request, env) {
+  if (!env.AUTOMATION_TRIGGER_TOKEN) {
+    return json({ error: "Automation trigger is not configured." }, 503);
+  }
+
+  if (request.headers.get("authorization") !== `Bearer ${env.AUTOMATION_TRIGGER_TOKEN}`) {
+    return json({ error: "Unauthorized." }, 401);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400);
+  }
+
+  const targetDate = body.targetDate || editorialDate(env.EDITORIAL_TIMEZONE || "UTC");
+  if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid target date." }, 400);
+
+  const result = await generateDailyEdition({
+    targetDate,
+    ...createAutomationDependencies(env)
+  });
+  return json(result, 200);
 }
 
 async function getEdition(db, requestedDate) {
@@ -84,6 +105,10 @@ async function handleRequest(request, env) {
   const url = new URL(request.url);
   const cors = corsHeaders(request, env);
 
+  if (request.method === "POST" && url.pathname === "/internal/generate") {
+    return handleAutomationRequest(request, env);
+  }
+
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -98,9 +123,9 @@ async function handleRequest(request, env) {
   if (!match) return json({ error: "Not found." }, 404, cors);
 
   const targetDate = match[1] === "latest"
-    ? dateInTimezone(env.EDITORIAL_TIMEZONE || "UTC")
+    ? editorialDate(env.EDITORIAL_TIMEZONE || "UTC")
     : match[1];
-  if (!isValidDate(targetDate)) return json({ error: "Invalid edition date." }, 400, cors);
+  if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid edition date." }, 400, cors);
 
   const edition = await getEdition(env.CONTENT_DB, targetDate);
   if (!edition) return json({ error: `No published edition is available on or before ${targetDate}.` }, 404, cors);
@@ -112,23 +137,11 @@ async function handleRequest(request, env) {
 }
 
 async function handleScheduled(controller, env) {
-  const targetDate = dateInTimezone(env.EDITORIAL_TIMEZONE || "UTC", new Date(controller.scheduledTime));
-  const existing = await env.CONTENT_DB.prepare(
-    "SELECT id FROM editions WHERE edition_date = ? LIMIT 1"
-  ).bind(targetDate).first();
-
-  if (existing) {
-    await env.CONTENT_DB.prepare(`
-      INSERT INTO generation_runs (target_date, status, details, finished_at)
-      VALUES (?, 'skipped', 'Edition already exists.', CURRENT_TIMESTAMP)
-    `).bind(targetDate).run();
-    return;
-  }
-
-  await env.CONTENT_DB.prepare(`
-    INSERT INTO generation_runs (target_date, status, details, finished_at)
-    VALUES (?, 'skipped', 'No content provider is configured; no edition was generated.', CURRENT_TIMESTAMP)
-  `).bind(targetDate).run();
+  return runScheduledEdition({
+    scheduledAt: new Date(controller.scheduledTime),
+    timezone: env.EDITORIAL_TIMEZONE || "UTC",
+    createDependencies: () => createAutomationDependencies(env)
+  });
 }
 
 export default {
