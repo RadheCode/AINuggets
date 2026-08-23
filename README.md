@@ -12,6 +12,10 @@ The active design is selected in `theme.config.js`. Change `activeTheme` to the 
 
 The current baseline is `glass-bento`, stored in `themes/glass-bento/`. See `docs/THEME_RULEBOOK.md` before adding or changing a theme.
 
+## Infrastructure
+
+Deployment providers live under `infra/<provider>/`, with the active provider selected in `infra/config.json`. Cloudflare Pages is currently active and supports browser OAuth deployment; see `infra/cloudflare/README.md` for setup and credential requirements.
+
 ## Run locally
 
 Open `index.html` directly in a browser, or serve the directory with any static file server.

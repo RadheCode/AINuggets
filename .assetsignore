@@ -1,0 +1,9 @@
+.git/
+.github/
+.wrangler/
+docs/
+infra/
+node_modules/
+.gitignore
+.assetsignore
+README.md

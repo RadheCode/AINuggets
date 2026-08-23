@@ -1,0 +1,10 @@
+{
+  "service": "pages",
+  "authentication": "oauth",
+  "accountEmail": "ainuggets123@gmail.com",
+  "accountId": "b0253ba555b02a254367db91ab9c0b0b",
+  "projectName": "ai-nuggets",
+  "productionBranch": "main",
+  "buildCommand": null,
+  "outputDirectory": "."
+}

@@ -1,0 +1,8 @@
+{
+  "activeProvider": "cloudflare",
+  "providers": {
+    "cloudflare": {
+      "config": "infra/cloudflare/config.json"
+    }
+  }
+}
