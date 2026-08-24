@@ -16,6 +16,10 @@ The active design is selected in `theme.config.js`. Change `activeTheme` to the 
 
 The current baseline is `glass-bento`, stored in `themes/glass-bento/`. See `docs/THEME_RULEBOOK.md` before adding or changing a theme.
 
+### UI change checklist
+
+Every UI change must be visually checked in both light and dark modes before release. Confirm text remains readable on every surface, including glass panels, artwork, gradients, and highlighted areas; controls and keyboard focus indicators remain visible; and content does not clip or overlap at desktop and applicable mobile breakpoints.
+
 ## Infrastructure
 
 Deployment providers live under `infra/<provider>/`, with the active provider selected in `infra/config.json`. Cloudflare Pages is currently active and supports browser OAuth deployment; see `infra/cloudflare/README.md` for setup and credential requirements.
