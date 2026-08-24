@@ -5,22 +5,65 @@ const subscribeForm = document.querySelector("#subscribeForm");
 const formMessage = document.querySelector("#formMessage");
 const colorModeToggle = document.querySelector("#colorModeToggle");
 const googleSignInButton = document.querySelector("#googleSignInButton");
+const accountMenuToggle = document.querySelector("#accountMenuToggle");
+const accountMenu = document.querySelector("#accountMenu");
+const accountAvatar = document.querySelector("#accountAvatar");
+const accountMenuAvatar = document.querySelector("#accountMenuAvatar");
+const accountName = document.querySelector("#accountName");
+const accountMenuName = document.querySelector("#accountMenuName");
+const accountEmail = document.querySelector("#accountEmail");
 const signOutButton = document.querySelector("#signOutButton");
 const signInStatus = document.querySelector("#signInStatus");
 const authConfig = window.AINuggetsAuthConfig;
 const contentConfig = window.AINuggetsContentConfig;
 const sessionTokenKey = "ai-nuggets-session-token";
 let googleIdentityInitialized = false;
+let authState = "initializing";
+
+function displayName(user) {
+  return user.name || user.email;
+}
+
+function avatarInitial(user) {
+  return displayName(user).trim().charAt(0).toUpperCase();
+}
+
+function closeAccountMenu() {
+  accountMenu.hidden = true;
+  accountMenuToggle.setAttribute("aria-expanded", "false");
+}
+
+function renderAuthWidget(state, user = null, message = "") {
+  authState = state;
+  const signedIn = state === "signed-in" || state === "signing-out";
+  const signingIn = state === "signing-in";
+  const signingOut = state === "signing-out";
+
+  googleSignInButton.hidden = Boolean(signedIn);
+  googleSignInButton.disabled = state === "initializing" || signingIn || state === "unavailable";
+  googleSignInButton.classList.toggle("is-loading", signingIn);
+  googleSignInButton.querySelector("span:last-child").textContent = signingIn ? "Signing you in..." : "Continue with Google";
+  accountMenuToggle.hidden = !signedIn;
+  accountMenuToggle.disabled = signingOut;
+  signOutButton.disabled = signingOut;
+  closeAccountMenu();
+
+  if (signedIn && user) {
+    const name = displayName(user);
+    const initial = avatarInitial(user);
+    accountName.textContent = name;
+    accountMenuName.textContent = name;
+    accountEmail.textContent = user.email;
+    accountAvatar.textContent = initial;
+    accountMenuAvatar.textContent = initial;
+  }
+
+  signInStatus.textContent = message;
+}
 
 function authApiUrl(path) {
   if (!contentConfig?.apiBaseUrl) throw new Error("Authentication is currently unavailable.");
   return `${contentConfig.apiBaseUrl.replace(/\/$/, "")}${path}`;
-}
-
-function setSignedInUser(user) {
-  googleSignInButton.hidden = Boolean(user);
-  signOutButton.hidden = !user;
-  signInStatus.textContent = user ? `Signed in as ${user.name || user.email}.` : "";
 }
 
 async function authRequest(path, options = {}) {
@@ -38,12 +81,11 @@ async function responseData(response) {
 
 async function handleGoogleCredential(response) {
   if (!response.credential) {
-    signInStatus.textContent = "Google sign-in could not be completed. Please try again.";
+    renderAuthWidget("signed-out", null, "Google sign-in could not be completed. Please try again.");
     return;
   }
 
-  googleSignInButton.disabled = true;
-  signInStatus.textContent = "Signing you in...";
+  renderAuthWidget("signing-in", null, "Signing you in...");
   try {
     const data = await responseData(await authRequest("/auth/google", {
       method: "POST",
@@ -51,23 +93,27 @@ async function handleGoogleCredential(response) {
       body: JSON.stringify({ credential: response.credential })
     }));
     localStorage.setItem(sessionTokenKey, data.sessionToken);
-    setSignedInUser(data.user);
+    renderAuthWidget("signed-in", data.user, `Signed in as ${displayName(data.user)}.`);
   } catch (error) {
-    signInStatus.textContent = error.message;
-    googleSignInButton.disabled = false;
+    renderAuthWidget("signed-out", null, error.message);
   }
 }
 
 function promptGoogleSignIn() {
-  if (!googleIdentityInitialized) return;
+  if (!googleIdentityInitialized || authState !== "signed-out") return;
   signInStatus.textContent = "Choose a Google account to continue.";
   window.google.accounts.id.prompt();
+}
+
+function finishGoogleInitialization() {
+  googleIdentityInitialized = true;
+  if (authState === "initializing") renderAuthWidget("signed-out");
 }
 
 function initializeGoogleSignIn() {
   if (!authConfig || typeof authConfig.googleClientId !== "string" || !authConfig.googleClientId.trim()) {
     googleSignInButton.title = "Google sign-in requires a configured Google client ID.";
-    signInStatus.textContent = "Google sign-in requires configuration.";
+    renderAuthWidget("unavailable", null, "Google sign-in requires configuration.");
     return;
   }
 
@@ -77,9 +123,9 @@ function initializeGoogleSignIn() {
         client_id: authConfig.googleClientId,
         callback: handleGoogleCredential
       });
-      googleIdentityInitialized = true;
+      finishGoogleInitialization();
     }
-    googleSignInButton.disabled = false;
+    if (authState === "initializing") renderAuthWidget("signed-out");
     return;
   }
 
@@ -91,12 +137,11 @@ function initializeGoogleSignIn() {
       client_id: authConfig.googleClientId,
       callback: handleGoogleCredential
     });
-    googleIdentityInitialized = true;
-    googleSignInButton.disabled = false;
+    finishGoogleInitialization();
   };
   googleScript.onerror = () => {
     googleSignInButton.title = "Google sign-in is currently unavailable.";
-    signInStatus.textContent = "Google sign-in is currently unavailable.";
+    renderAuthWidget("unavailable", null, "Google sign-in is currently unavailable.");
   };
   document.head.appendChild(googleScript);
 }
@@ -118,8 +163,31 @@ updateColorModeToggle();
 
 googleSignInButton.addEventListener("click", promptGoogleSignIn);
 
+accountMenuToggle.addEventListener("click", () => {
+  if (authState !== "signed-in") return;
+  const opening = accountMenu.hidden;
+  accountMenu.hidden = !opening;
+  accountMenuToggle.setAttribute("aria-expanded", String(opening));
+  if (opening) signOutButton.focus();
+});
+
+document.addEventListener("click", (event) => {
+  if (!accountMenu.hidden && !event.target.closest(".sign-in-control")) closeAccountMenu();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !accountMenu.hidden) {
+    closeAccountMenu();
+    accountMenuToggle.focus();
+  }
+});
+
 signOutButton.addEventListener("click", async () => {
-  signOutButton.disabled = true;
+  const user = {
+    name: accountMenuName.textContent,
+    email: accountEmail.textContent
+  };
+  renderAuthWidget("signing-out", user, "Signing you out...");
   try {
     await authRequest("/auth/sign-out", { method: "POST" });
   } catch {
@@ -127,21 +195,24 @@ signOutButton.addEventListener("click", async () => {
   }
   localStorage.removeItem(sessionTokenKey);
   window.google?.accounts.id.disableAutoSelect();
-  setSignedInUser(null);
-  signOutButton.disabled = false;
-  googleSignInButton.disabled = !googleIdentityInitialized;
+  renderAuthWidget("signed-out");
 });
 
 async function restoreSession() {
-  if (!localStorage.getItem(sessionTokenKey)) return;
+  if (!localStorage.getItem(sessionTokenKey)) {
+    if (googleIdentityInitialized) renderAuthWidget("signed-out");
+    return;
+  }
   try {
     const data = await responseData(await authRequest("/auth/session"));
-    setSignedInUser(data.user);
+    renderAuthWidget("signed-in", data.user, `Signed in as ${displayName(data.user)}.`);
   } catch {
     localStorage.removeItem(sessionTokenKey);
+    if (googleIdentityInitialized) renderAuthWidget("signed-out");
   }
 }
 
+renderAuthWidget("initializing");
 initializeGoogleSignIn();
 restoreSession();
 

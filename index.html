@@ -37,7 +37,18 @@
             <span class="google-sign-in-button__mark" aria-hidden="true">G</span>
             <span>Continue with Google</span>
           </button>
-          <button class="sign-out-button" id="signOutButton" type="button" hidden>Sign out</button>
+          <button class="account-menu-toggle" id="accountMenuToggle" type="button" aria-expanded="false" aria-controls="accountMenu" hidden>
+            <span class="account-avatar" id="accountAvatar" aria-hidden="true"></span>
+            <span class="account-name" id="accountName"></span>
+            <span class="account-menu-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="account-menu" id="accountMenu" hidden>
+            <div class="account-menu__profile">
+              <span class="account-avatar" id="accountMenuAvatar" aria-hidden="true"></span>
+              <span><strong id="accountMenuName"></strong><small id="accountEmail"></small></span>
+            </div>
+            <button class="sign-out-button" id="signOutButton" type="button">Sign out</button>
+          </div>
           <output class="sign-in-status" id="signInStatus" aria-live="polite"></output>
         </div>
         <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
