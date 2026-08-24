@@ -42,7 +42,7 @@ Preserve these selectors across themes unless a deliberate shared-shell migratio
 - `.nav-tabs`, `.header-actions`, `.current-date`, `.color-mode-toggle`, `.mode-icon`
 - `.briefing-intro`, `.briefing-copy`, `.briefing-meta`, `.eyebrow`
 - `.story-grid`, `.story-card`, `.story-card--lead`, `.story-card--wide`
-- `.story-art`, `.story-shade`, `.story-content`, `.story-tag`, `.story-number`, `.story-link`
+- `.story-art`, `.story-shade`, `.story-content`, `.story-tag`, `.story-number`
 - `.subscribe-button`, `.subscribe-dialog`
 
 Do not rename IDs referenced by `script.js` without updating and validating the corresponding behavior.
@@ -54,6 +54,7 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Test down to 320px viewport width and 600px viewport height.
 - Use fluid dimensions, CSS Grid or Flexbox, `minmax(0, 1fr)`, and `100dvh` where appropriate.
 - Never solve overflow by clipping essential text or controls. Condense secondary copy at constrained breakpoints while retaining every story title and action.
+- Treat responsive placement as a strict requirement: every visible element must remain deliberately anchored and fluid across resizing. Never permit implicit grid tracks, overlap, overflow, clipped essential controls, or detached/floating controls; validate representative desktop, laptop, tablet, mobile portrait, and mobile landscape resolutions.
 
 ## Color modes
 
@@ -62,6 +63,7 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Respect `defaultColorMode` from `theme.config.js`, use system preference when configured, and persist explicit user choice.
 - Validate contrast, glass fallbacks, controls, dialogs, artwork overlays, and no-scroll fit in both modes.
 - Keep the page geometry identical when switching color modes. The mode switch may change styling only; it must not move, resize, add spacing around, or realign tiles or other page elements.
+- Keep elevation semantics identical between color modes: raised, inset, selected, and disabled surfaces must mean the same thing in light and dark mode. Retain the established accent color for selected controls and use a raised treatment unless representing an explicitly pressed state.
 - Do not create separate theme folders solely for light and dark variants of one visual design.
 
 ## Accessibility and interaction

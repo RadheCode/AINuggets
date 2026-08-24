@@ -52,10 +52,7 @@
       createElement("h2", "", story.title)
     );
 
-    const detailIndicator = createElement("span", "story-link", "\u2192");
-    detailIndicator.setAttribute("aria-hidden", "true");
-
-    article.append(art, shade, createElement("span", "story-number", numberLabel), contentElement, detailIndicator);
+    article.append(art, shade, createElement("span", "story-number", numberLabel), contentElement);
     article.addEventListener("click", () => showStoryDialog(index));
     return article;
   }
