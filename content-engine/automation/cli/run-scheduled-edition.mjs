@@ -8,7 +8,6 @@ function readArgument(name) {
 }
 
 const adapterPath = readArgument("adapter");
-const timezone = readArgument("timezone") || process.env.AI_NUGGETS_EDITORIAL_TIMEZONE || "UTC";
 const scheduledAtValue = readArgument("scheduled-at");
 
 if (!adapterPath) {
@@ -21,7 +20,6 @@ const createDependencies = adapter.createAutomationDependencies || adapter.defau
 
 const result = await runScheduledEdition({
   scheduledAt,
-  timezone,
   createDependencies
 });
 

@@ -43,7 +43,7 @@ content-worker/
 
 | Capability | Status | Behavior |
 |---|---|---|
-| Scheduler-neutral runner | Complete | Calculates the editorial date from the supplied scheduled instant and timezone, then calls the shared job. |
+| Scheduler-neutral runner | Complete | Calculates the UTC editorial date from the supplied scheduled instant, then calls the shared job. |
 | Cloudflare Cron adapter | Complete | Deploys the Cron expression from the central configuration and invokes the portable runner with its runtime dependencies. |
 | Built-in blog collector | Complete | Fetches up to three recent RSS/Atom posts from each editable source, then deduplicates, ranks, and category-diversifies five candidates. |
 | Generic JSON content source | Complete | Requests an HTTPS endpoint with `?date=YYYY-MM-DD`; accepts an array or `{ "candidates": [...] }`. |
@@ -52,7 +52,7 @@ content-worker/
 | Auditing and safe failure | Complete | Records `started`, `skipped`, `succeeded`, or `failed`; failures do not alter existing editions. |
 | Public content delivery | Complete | The Worker exposes published editions only; drafts are excluded. |
 | Provider configuration | Complete | `content-engine` defines the setting names, validates complete model settings, and creates portable source/model dependencies from runtime values. |
-| Publication workflow | Configurable | Defaults to draft-and-review; the explicit central `automaticallyPublish` switch can publish validated future editions directly. |
+| Publication workflow | Configurable | Defaults to direct publication; set the central `automaticallyPublish` switch to `false` to require review of future editions. |
 
 ## Data model
 
@@ -78,15 +78,15 @@ The frontend endpoint is committed in `content-engine/config.js`. The public Wor
 
 ## Daily scheduled algorithm
 
-1. A scheduler invokes the portable runner at the Cron time in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `0 1 * * *` (01:00 UTC / 06:30 IST).
-2. The runner calculates the target date using the IANA editorial timezone in that same central configuration, currently `Asia/Kolkata`.
+1. A scheduler invokes the portable runner at the UTC Cron time in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `0 12 * * *` (12:00 UTC).
+2. The runner calculates the target date in UTC. There is no separate editorial timezone setting.
 3. It checks D1 for an existing edition on that date and exits idempotently if one exists.
 4. It reads the editable feed list in `content-engine/content-engine.config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
 5. It removes duplicate candidates using normalized `canonicalUrl` or `url`, ranks remaining posts by source priority and freshness, and selects five candidates. It first takes one per category, then fills any remaining positions by rank.
 6. The summary provider selects four or five stories from those candidates, each supported by source metadata.
 7. It generates concise original summaries and validates all required fields, HTTPS source URLs, unique IDs, supported artwork keys, and exactly one lead story.
-8. It writes the edition and all stories in one D1 transaction as `draft`, unless `publication.automaticallyPublish` is explicitly set to `true` in the central configuration.
-9. With automatic publication disabled, a human review process changes the edition to `published`. Enable automatic publication only after source and model quality are proven.
+8. It writes the edition and all stories in one D1 transaction as `published` by default. Set `publication.automaticallyPublish` to `false` in the central configuration to save it as `draft` instead.
+9. With automatic publication disabled, a human review process changes the edition to `published`.
 10. Every attempt writes a `generation_runs` audit record. A failed run must leave the last published edition untouched.
 
 The built-in collector is the default candidate source and does not need a source API key. Individual unavailable feeds do not cancel a run; the collector proceeds with available feeds and fails only when every configured feed fails. The job still records a `skipped` run until a complete summary-provider configuration is supplied. It does not fabricate content.
@@ -101,7 +101,7 @@ export async function createAutomationDependencies() {
     editionRepository,
     contentSources: [primarySource],
     summaryProvider,
-    automaticallyPublish: false,
+    automaticallyPublish: true,
     logger: console
   };
 }
@@ -111,8 +111,7 @@ Any cron service that can run Node can invoke it without a Cloudflare dependency
 
 ```powershell
 node content-engine\automation\cli\run-scheduled-edition.mjs `
-  --adapter=path\to\automation-adapter.mjs `
-  --timezone=Asia/Kolkata
+  --adapter=path\to\automation-adapter.mjs
 ```
 
 Use `--scheduled-at=2026-08-24T01:00:00Z` for deterministic backfills and tests. Keep adapter credentials in the scheduler's secret store. Cloudflare Cron remains a thin adapter; GitHub Actions, a container scheduler, or an operating-system cron can use the same runner and adapter contract.
@@ -121,7 +120,7 @@ Use `--scheduled-at=2026-08-24T01:00:00Z` for deterministic backfills and tests.
 
 The portable configuration contract is `content-engine/automation/config/create-generation-provider-dependencies.mjs`. It accepts a plain runtime-values object, so it is independent of any secret store. The runtime injects values while this module owns the setting names, completeness validation, and adapter construction. For a human-editable setup, copy `content-engine/automation/config/providers.example.env` to `content-engine/automation/config/providers.local.env` and fill in the values. The local file is Git-ignored.
 
-By default, `content-engine/content-engine.config.mjs` is the editable list of public RSS/Atom feeds and the source of truth for the Cron schedule, editorial timezone, and publication mode. Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
+By default, `content-engine/content-engine.config.mjs` is the editable list of public RSS/Atom feeds and the source of truth for the UTC Cron schedule and publication mode. Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
 
 | Variable | Purpose |
 |---|---|
@@ -168,7 +167,7 @@ To invoke the scheduled handler locally:
 npx wrangler dev --test-scheduled --config infra\cloudflare\content-worker\wrangler.jsonc
 ```
 
-Then request `/__scheduled?cron=0+1+*+*+*` from the local Wrangler server.
+Then request `/__scheduled?cron=0+12+*+*+*` from the local Wrangler server.
 
 ## Cloudflare secret setup
 

@@ -39,5 +39,7 @@ test("rejects partial summary provider configuration", () => {
 
 test("uses the centralized content-engine feed configuration", () => {
   assert.strictEqual(AI_BLOG_SOURCES, CONTENT_ENGINE_CONFIG.feeds);
+  assert.equal(CONTENT_ENGINE_CONFIG.schedule.cron, "0 12 * * *");
+  assert.equal("timezone" in CONTENT_ENGINE_CONFIG.schedule, false);
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
 });

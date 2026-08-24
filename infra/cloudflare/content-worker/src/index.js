@@ -48,7 +48,7 @@ async function handleAutomationRequest(request, env) {
     return json({ error: "Request body must be valid JSON." }, 400);
   }
 
-  const targetDate = body.targetDate || editorialDate(CONTENT_ENGINE_CONFIG.schedule.timezone);
+  const targetDate = body.targetDate || editorialDate();
   if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid target date." }, 400);
 
   const result = await generateDailyEdition({
@@ -125,7 +125,7 @@ async function handleRequest(request, env) {
   if (!match) return json({ error: "Not found." }, 404, cors);
 
   const targetDate = match[1] === "latest"
-    ? editorialDate(CONTENT_ENGINE_CONFIG.schedule.timezone)
+    ? editorialDate()
     : match[1];
   if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid edition date." }, 400, cors);
 
@@ -141,7 +141,6 @@ async function handleRequest(request, env) {
 async function handleScheduled(controller, env) {
   return runScheduledEdition({
     scheduledAt: new Date(controller.scheduledTime),
-    timezone: CONTENT_ENGINE_CONFIG.schedule.timezone,
     createDependencies: () => createAutomationDependencies(env)
   });
 }

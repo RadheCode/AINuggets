@@ -62,8 +62,7 @@ The content backend is defined in `content-worker/`. D1 is the source of truth f
 | Worker URL | `https://ai-nuggets-content.ainuggets123.workers.dev` |
 | D1 database | `ai-nuggets-content` |
 | D1 binding | `CONTENT_DB` |
-| Cron Trigger | `0 1 * * *` (01:00 UTC / 06:30 IST) |
-| Editorial timezone | `Asia/Kolkata` |
+| Cron Trigger | `0 12 * * *` (12:00 UTC) |
 
 Deploy the backend separately from Pages:
 
@@ -81,7 +80,7 @@ The public API provides:
 
 The dated route falls back to the newest published edition on or before the requested date. The frontend reads the Worker URL from `content-engine/config.js`.
 
-The scheduled handler is a thin adapter around the runtime-neutral job in `content-engine/automation/`. It calculates the editorial date, injects the D1 repository, and passes Worker runtime values to `content-engine/automation/config/create-generation-provider-dependencies.mjs`. That portable module defines the setting names, validation, and generic content/summary adapters; Cloudflare only stores and injects secure values. With no provider configuration, it writes a safe `skipped` audit record and never invents stories. With complete provider configuration, it creates a validated **draft** edition; the Worker never automatically publishes it.
+The scheduled handler is a thin adapter around the runtime-neutral job in `content-engine/automation/`. It calculates the edition date in UTC, injects the D1 repository, and passes Worker runtime values to `content-engine/automation/config/create-generation-provider-dependencies.mjs`. That portable module defines the setting names, validation, and generic content/summary adapters; Cloudflare only stores and injects secure values. With no provider configuration, it writes a safe `skipped` audit record and never invents stories. With complete provider configuration, it creates a validated edition and applies the configured publication mode.
 
 Configure the portable configuration contract in one human-readable local file, never in `vars`, frontend code, or committed files:
 

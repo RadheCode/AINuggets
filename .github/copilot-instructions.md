@@ -82,6 +82,8 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Isolate infrastructure-specific code under `infra/<provider>/` behind explicit adapters. Providers may supply configuration and implementations of application contracts, but provider details must not leak into portable code or public interfaces.
 - Keep deployment implementations under `infra/<provider>/` and select the active provider through `infra/config.json`.
 - Never commit infrastructure credentials, API tokens, account secrets, or local environment files.
+- Do not create commits or push changes unless the user explicitly asks to commit or push.
+- Make a change only when it is necessary to satisfy the product need or prevent a concrete defect. Challenge requests that would add needless complexity, duplicate an existing responsibility, or weaken maintainability; explain the concern and preserve the simpler working design when the requested change is not justified.
 - Do not silently fall back when theme configuration is invalid; surface a clear error.
 - Make focused changes and avoid unrelated formatting or restructuring.
 - Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Create the relevant documentation when none exists, and keep root documentation links current.

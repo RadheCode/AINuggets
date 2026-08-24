@@ -30,6 +30,13 @@
       throw new Error("The content API returned an invalid edition.");
     }
 
+    for (const story of content.stories) {
+      const summaries = story?.summaries;
+      if (!summaries || ["compact", "standard", "detailed"].some((key) => typeof summaries[key] !== "string" || !summaries[key].trim())) {
+        throw new Error("The content API returned a story without all summary contexts.");
+      }
+    }
+
     return Object.freeze(content);
   }
 

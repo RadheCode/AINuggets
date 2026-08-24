@@ -2,6 +2,7 @@ const SUPPORTED_LAYOUTS = new Set([undefined, null, "lead", "wide"]);
 const SUPPORTED_ARTWORK = new Set(["models", "agents", "research", "product", "business"]);
 const MAX_BRIEFING_TITLE_LENGTH = 44;
 const MAX_BRIEFING_EMPHASIS_LENGTH = 50;
+const SUMMARY_CONTEXT_KEYS = ["compact", "standard", "detailed"];
 
 function requireText(value, field) {
   if (typeof value !== "string" || !value.trim()) {
@@ -47,7 +48,12 @@ export function validateEdition(edition, targetDate) {
     requireText(story.id, `stories[${index}].id`);
     requireText(story.category, `stories[${index}].category`);
     requireText(story.title, `stories[${index}].title`);
-    requireText(story.summary, `stories[${index}].summary`);
+    if (!story.summaries || typeof story.summaries !== "object") {
+      throw new Error(`Edition field "stories[${index}].summaries" must be an object.`);
+    }
+    for (const key of SUMMARY_CONTEXT_KEYS) {
+      requireText(story.summaries[key], `stories[${index}].summaries.${key}`);
+    }
     requireHttpsUrl(story.href, `stories[${index}].href`);
     requireText(story.art, `stories[${index}].art`);
     if (!SUPPORTED_ARTWORK.has(story.art)) {

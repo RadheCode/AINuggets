@@ -17,7 +17,7 @@ Themes only control presentation. They do not fetch or transform editorial data.
 
 ```mermaid
 flowchart TD
-    A["⏰ Scheduler\nCloudflare Cron, GitHub Actions, or OS cron"] --> B["📅 Portable scheduled runner\nCalculates the editorial date"]
+    A["⏰ Scheduler\nCloudflare Cron, GitHub Actions, or OS cron"] --> B["📅 Portable scheduled runner\nCalculates the UTC edition date"]
     B --> C{"Edition already exists\nfor that date?"}
 
     C -- "Yes" --> D["⏭️ Record skipped run\nNo duplicate is created"]
@@ -28,9 +28,10 @@ flowchart TD
     H --> I["✅ Domain validation\nRequired fields, safe URLs, IDs, layouts, artwork"]
 
     I -- "Invalid" --> J["❌ Record failed run\nPreviously published edition remains live"]
-    I -- "Valid" --> K["💾 D1 transaction\nSave edition and stories as DRAFT"]
-    K --> L["👤 Editorial review"]
-    L --> M["📢 Publish reviewed edition"]
+    I -- "Valid" --> K["💾 D1 transaction\nSave edition and stories with configured status"]
+    K --> L{"Automatic publication?"}
+    L -- "Yes" --> M["📢 Publish validated edition"]
+    L -- "No" --> Q["👤 Editorial review"] --> M
 
     M --> N["🌐 Content Worker API\nServes published editions only"]
     N --> O["🖥️ Browser loader\nFetches latest or ?date=YYYY-MM-DD"]
@@ -44,7 +45,7 @@ flowchart TD
 | Public API configuration | `content-engine/config.js` | Defines the browser-visible Worker base URL. |
 | Browser loader | `content-engine/loader.js` | Validates an optional preview date, requests an edition, and rejects malformed API payloads. |
 | Browser renderer | `content-engine/render.js` | Creates semantic tile buttons, stable slot classes, and the summary dialog behavior. |
-| Central configuration | `content-engine/content-engine.config.mjs` | Human-editable schedule, editorial timezone, publication mode, and approved feeds. |
+| Central configuration | `content-engine/content-engine.config.mjs` | Human-editable UTC schedule, publication mode, and approved feeds. |
 | Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, idempotency, and audit orchestration. |
 | Worker adapter | `infra/cloudflare/content-worker/src/` | Connects the portable automation to Cron, D1, secrets, and public HTTP routes. |
 | Content database | Cloudflare D1 `ai-nuggets-content` | Source of truth for editions, stories, and generation audit records. |
@@ -54,7 +55,7 @@ flowchart TD
 
 ### 1. Schedule and editorial date
 
-The scheduler calls the portable runner. The central configuration supplies the Cron expression and IANA editorial timezone; the deployment script derives the Cloudflare Cron trigger from those values. The runner computes the editorial `YYYY-MM-DD` date rather than relying on the server's local clock.
+The scheduler calls the portable runner. The central configuration supplies the UTC Cron expression, and the deployment script derives the Cloudflare Cron trigger from it. The runner computes the edition `YYYY-MM-DD` date in UTC rather than relying on a server's local clock.
 
 ### 2. Idempotency and auditing
 
@@ -91,9 +92,9 @@ The domain layer rejects an edition unless it has:
 
 Validation happens before persistence. A malformed provider response cannot replace the currently published edition.
 
-### 6. Draft persistence and review
+### 6. Persistence and publication
 
-A valid edition and all of its stories are written together in one D1 transaction. By default, `publication.automaticallyPublish` is `false`, so the edition is saved as `draft` and an editor changes it to `published` when it is ready. Set it to `true` only when you intentionally want validated editions to bypass editorial review and be published immediately.
+A valid edition and all of its stories are written together in one D1 transaction. By default, `publication.automaticallyPublish` is `true`, so validated editions are published immediately. Set it to `false` when an editor must review and publish each edition.
 
 If any step fails, the run is marked `failed`; the last valid published edition remains available to readers.
 
@@ -137,7 +138,7 @@ The rendering layer is intentionally theme-independent, so a theme switch can re
 - Raw copyrighted article text is not stored; the product stores original summaries and source attribution.
 - Missing model configuration produces a safe skipped run rather than fabricated content.
 - Partial provider configuration is rejected with the missing setting names.
-- Publishing is separate from generation unless the explicit central configuration switch enables automatic publication.
+- Publication is configured centrally: automatic publication is enabled by default, while review mode saves drafts for editorial approval.
 - Failure leaves the last published edition available.
 
 ## Central configuration
@@ -146,9 +147,8 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 
 | Setting | Purpose | Change effect |
 |---|---|---|
-| `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. | Worker deployment applies the new trigger. |
-| `schedule.timezone` | IANA timezone used to calculate the editorial date, such as `Asia/Kolkata`. | Worker deployment applies it to generation and API date selection. |
-| `publication.automaticallyPublish` | `false` saves validated editions as drafts; `true` saves them as published immediately. | Worker deployment changes future generation only. |
+| `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 12 * * *` runs at 12:00 UTC. | Worker deployment applies the new trigger. |
+| `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 
 After editing this file, deploy the content Worker so its Cron trigger and runtime adapter receive the updated configuration:
@@ -157,7 +157,7 @@ After editing this file, deploy the content Worker so its Cron trigger and runti
 .\infra\cloudflare\content-worker\deploy.ps1
 ```
 
-Keep `automaticallyPublish` set to `false` unless you intentionally accept direct publication without editorial review. Feed changes apply only when `CONTENT_SOURCE_URL` is not configured; that optional runtime setting replaces the built-in feed collector with a custom JSON source.
+`automaticallyPublish` is `true` by default. Set it to `false` when editorial review is required. Feed changes apply only when `CONTENT_SOURCE_URL` is not configured; that optional runtime setting replaces the built-in feed collector with a custom JSON source.
 
 ## Related documentation
 

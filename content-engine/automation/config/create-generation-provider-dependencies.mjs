@@ -2,6 +2,7 @@ import { createHttpJsonContentSource } from "../adapters/http-json-content-sourc
 import { createOpenAiCompatibleSummaryProvider } from "../adapters/openai-compatible-summary-provider.mjs";
 import { createRssBlogContentSource } from "../adapters/rss-blog-content-source.mjs";
 import { AI_BLOG_SOURCES } from "./ai-blog-sources.mjs";
+import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
 
 export const GENERATION_PROVIDER_CONFIGURATION = Object.freeze({
   contentSourceUrl: "CONTENT_SOURCE_URL",
@@ -53,6 +54,7 @@ export function createGenerationProviderDependencies(values, { fetchImpl } = {})
         baseUrl: summaryProviderUrl,
         apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey),
         model: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
+        summaryContexts: CONTENT_ENGINE_CONFIG.summaries.contexts,
         ...options
       })
       : null

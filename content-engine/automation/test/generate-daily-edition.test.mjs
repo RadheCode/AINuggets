@@ -1,12 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createMemoryEditionRepository } from "../adapters/memory-edition-repository.mjs";
+import { editorialDate } from "../domain/editorial-date.mjs";
 import { generateDailyEdition } from "../jobs/generate-daily-edition.mjs";
 import { runScheduledEdition } from "../jobs/run-scheduled-edition.mjs";
 
 const targetDate = "2026-08-24";
 
+test("derives editorial dates at UTC calendar boundaries", () => {
+  assert.equal(editorialDate(new Date("2026-08-23T23:59:59Z")), "2026-08-23");
+  assert.equal(editorialDate(new Date("2026-08-24T00:00:00Z")), "2026-08-24");
+});
+
 function edition() {
+  const summaries = (text) => ({
+    compact: `${text} quick take`,
+    standard: `${text} full context`,
+    detailed: `${text} deep dive`
+  });
   return {
     date: targetDate,
     briefing: {
@@ -17,10 +28,10 @@ function edition() {
       meta: ["4 stories"]
     },
     stories: [
-      { id: "one", type: "lead", category: "Models", title: "One", summary: "One summary", href: "https://example.com/1", art: "models" },
-      { id: "two", category: "Agents", title: "Two", summary: "Two summary", href: "https://example.com/2", art: "agents" },
-      { id: "three", category: "Research", title: "Three", summary: "Three summary", href: "https://example.com/3", art: "research" },
-      { id: "four", type: "wide", category: "Business", title: "Four", summary: "Four summary", href: "https://example.com/4", art: "business" }
+      { id: "one", type: "lead", category: "Models", title: "One", summaries: summaries("One"), href: "https://example.com/1", art: "models" },
+      { id: "two", category: "Agents", title: "Two", summaries: summaries("Two"), href: "https://example.com/2", art: "agents" },
+      { id: "three", category: "Research", title: "Three", summaries: summaries("Three"), href: "https://example.com/3", art: "research" },
+      { id: "four", type: "wide", category: "Business", title: "Four", summaries: summaries("Four"), href: "https://example.com/4", art: "business" }
     ]
   };
 }
@@ -151,6 +162,28 @@ test("rejects editions with unsupported artwork or multiple wide stories", async
   );
 });
 
+test("rejects editions missing a configured summary layer", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      delete invalid.stories[0].summaries.detailed;
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /summaries\.detailed/
+  );
+});
+
 test("rejects briefing copy that cannot fit the bento layout", async () => {
   const repository = createMemoryEditionRepository();
   const summaryProvider = {
@@ -178,7 +211,6 @@ test("runs through a scheduler-neutral dependency factory", async () => {
   let receivedTargetDate;
   const result = await runScheduledEdition({
     scheduledAt: new Date("2026-08-23T19:00:00Z"),
-    timezone: "Asia/Kolkata",
     async createDependencies({ targetDate, scheduledAt }) {
       receivedTargetDate = targetDate;
       assert.equal(scheduledAt.toISOString(), "2026-08-23T19:00:00.000Z");
@@ -186,7 +218,7 @@ test("runs through a scheduler-neutral dependency factory", async () => {
     }
   });
 
-  assert.equal(receivedTargetDate, targetDate);
+  assert.equal(receivedTargetDate, "2026-08-23");
   assert.equal(result.status, "skipped");
-  assert.equal(repository.runs[0].targetDate, targetDate);
+  assert.equal(repository.runs[0].targetDate, "2026-08-23");
 });

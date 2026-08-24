@@ -1,14 +1,22 @@
 // Central content-engine controls. Edit this file to change the daily schedule,
-// editorial timezone, publication mode, or approved RSS/Atom feeds.
+// publication mode, or approved RSS/Atom feeds.
 export const CONTENT_ENGINE_CONFIG = Object.freeze({
   schedule: Object.freeze({
-    // Cloudflare Cron uses UTC. 01:00 UTC is 06:30 in Asia/Kolkata.
-    cron: "0 1 * * *",
-    timezone: "Asia/Kolkata"
+    // Cloudflare Cron and editorial dates use UTC. 12:00 UTC serves all regions consistently.
+    cron: "0 12 * * *"
   }),
   publication: Object.freeze({
-    // Set to true to publish a validated edition immediately and bypass editorial review.
-    automaticallyPublish: false
+    // Validated editions publish immediately; set false to require editorial review.
+    automaticallyPublish: true
+  }),
+  summaries: Object.freeze({
+    // Each generated story includes all three layers. The popup opens on the default layer.
+    defaultContext: "standard",
+    contexts: Object.freeze({
+      compact: Object.freeze({ label: "Quick take", maxCharacters: 180 }),
+      standard: Object.freeze({ label: "Full context", maxCharacters: 420 }),
+      detailed: Object.freeze({ label: "Deep dive", maxCharacters: 900 })
+    })
   }),
   feeds: Object.freeze([
     { name: "OpenAI", feedUrl: "https://openai.com/news/rss.xml", category: "Models", priority: 100 },
