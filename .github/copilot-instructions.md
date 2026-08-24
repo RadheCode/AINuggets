@@ -84,5 +84,6 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Never commit infrastructure credentials, API tokens, account secrets, or local environment files.
 - Do not silently fall back when theme configuration is invalid; surface a clear error.
 - Make focused changes and avoid unrelated formatting or restructuring.
+- Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Create the relevant documentation when none exists, and keep root documentation links current.
 - Update `docs/THEME_RULEBOOK.md` and this instruction file when the theme contract changes.
 - Before completing changes, verify JavaScript syntax, theme asset paths, keyboard interactions, reduced-motion behavior, and no-scroll viewport fit at representative breakpoints.

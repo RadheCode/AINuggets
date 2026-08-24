@@ -4,7 +4,7 @@ A responsive, single-screen daily AI news and newsletter homepage.
 
 ## Content engine and automation
 
-Daily briefing content is stored in Cloudflare D1 and delivered through the content Worker API. Theme-independent loading and rendering live in `content-engine/`; `?date=YYYY-MM-DD` previews an edition. See `content-engine/README.md` for the API contract.
+Daily briefing content is stored in Cloudflare D1 and delivered through the content Worker API. Theme-independent loading and rendering live in `content-engine/`; `?date=YYYY-MM-DD` previews an edition. See [Content Engine](docs/CONTENT_ENGINE.md) for the complete process and architecture, or `content-engine/README.md` for the API contract.
 
 Daily generation is implemented as a portable Node workflow: schedulers provide a runtime adapter, while the shared job handles editorial dates, idempotency, source deduplication, edition validation, audit records, and draft persistence. Cloudflare Cron is one thin trigger adapter; the same workflow can run from GitHub Actions, a container scheduler, or operating-system cron.
 
