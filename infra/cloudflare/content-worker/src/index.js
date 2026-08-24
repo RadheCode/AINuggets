@@ -70,7 +70,7 @@ async function getEdition(db, requestedDate) {
   if (!edition) return null;
 
   const { results: stories } = await db.prepare(`
-    SELECT story_key, position, layout, category, title, summary,
+    SELECT story_key, position, layout, category, title, summary_compact, summary, summary_detailed,
            destination_url, artwork_key, source_url, source_name, source_published_at
     FROM stories
     WHERE edition_id = ?
@@ -93,7 +93,11 @@ async function getEdition(db, requestedDate) {
       ...(story.layout ? { type: story.layout } : {}),
       category: story.category,
       title: story.title,
-      summary: story.summary,
+      summaries: {
+        compact: story.summary_compact || story.summary,
+        standard: story.summary,
+        detailed: story.summary_detailed || story.summary
+      },
       href: story.destination_url,
       art: story.artwork_key,
       sourceUrl: story.source_url,

@@ -32,10 +32,10 @@ export function createD1EditionRepository(db) {
         ),
         ...edition.stories.map((story, index) => db.prepare(`
           INSERT INTO stories (
-            edition_id, story_key, position, layout, category, title, summary,
+            edition_id, story_key, position, layout, category, title, summary_compact, summary, summary_detailed,
             destination_url, artwork_key, source_url, source_name, source_published_at
           ) VALUES (
-            (SELECT id FROM editions WHERE edition_date = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            (SELECT id FROM editions WHERE edition_date = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
           )
         `).bind(
           edition.date,
@@ -44,7 +44,9 @@ export function createD1EditionRepository(db) {
           story.type || null,
           story.category,
           story.title,
-          story.summary,
+          story.summaries.compact,
+          story.summaries.standard,
+          story.summaries.detailed,
           story.href,
           story.art,
           story.sourceUrl || null,

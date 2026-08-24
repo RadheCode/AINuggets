@@ -184,6 +184,28 @@ test("rejects editions missing a configured summary layer", async () => {
   );
 });
 
+test("rejects editions with duplicated summary layers", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.stories[0].summaries.detailed = invalid.stories[0].summaries.standard;
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /distinct summary contexts/
+  );
+});
+
 test("rejects briefing copy that cannot fit the bento layout", async () => {
   const repository = createMemoryEditionRepository();
   const summaryProvider = {

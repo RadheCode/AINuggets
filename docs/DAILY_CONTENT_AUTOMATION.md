@@ -47,7 +47,7 @@ content-worker/
 | Cloudflare Cron adapter | Complete | Deploys the Cron expression from the central configuration and invokes the portable runner with its runtime dependencies. |
 | Built-in blog collector | Complete | Fetches up to three recent RSS/Atom posts from each editable source, then deduplicates, ranks, and category-diversifies five candidates. |
 | Generic JSON content source | Complete | Requests an HTTPS endpoint with `?date=YYYY-MM-DD`; accepts an array or `{ "candidates": [...] }`. |
-| OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON from Chat Completions and returns an edition for domain validation. |
+| OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON containing Quick take, Full context, and Deep dive story layers from Chat Completions. |
 | D1 repository | Complete | Checks idempotency, records runs, and saves a draft or directly published edition plus stories in one D1 batch. |
 | Auditing and safe failure | Complete | Records `started`, `skipped`, `succeeded`, or `failed`; failures do not alter existing editions. |
 | Public content delivery | Complete | The Worker exposes published editions only; drafts are excluded. |
@@ -84,7 +84,7 @@ The frontend endpoint is committed in `content-engine/config.js`. The public Wor
 4. It reads the editable feed list in `content-engine/content-engine.config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
 5. It removes duplicate candidates using normalized `canonicalUrl` or `url`, ranks remaining posts by source priority and freshness, and selects five candidates. It first takes one per category, then fills any remaining positions by rank.
 6. The summary provider selects four or five stories from those candidates, each supported by source metadata.
-7. It generates concise original summaries and validates all required fields, HTTPS source URLs, unique IDs, supported artwork keys, and exactly one lead story.
+7. It generates compact, standard, and detailed original summary layers and validates all required fields, HTTPS source URLs, unique IDs, supported artwork keys, and exactly one lead story.
 8. It writes the edition and all stories in one D1 transaction as `published` by default. Set `publication.automaticallyPublish` to `false` in the central configuration to save it as `draft` instead.
 9. With automatic publication disabled, a human review process changes the edition to `published`.
 10. Every attempt writes a `generation_runs` audit record. A failed run must leave the last published edition untouched.
@@ -120,7 +120,7 @@ Use `--scheduled-at=2026-08-24T01:00:00Z` for deterministic backfills and tests.
 
 The portable configuration contract is `content-engine/automation/config/create-generation-provider-dependencies.mjs`. It accepts a plain runtime-values object, so it is independent of any secret store. The runtime injects values while this module owns the setting names, completeness validation, and adapter construction. For a human-editable setup, copy `content-engine/automation/config/providers.example.env` to `content-engine/automation/config/providers.local.env` and fill in the values. The local file is Git-ignored.
 
-By default, `content-engine/content-engine.config.mjs` is the editable list of public RSS/Atom feeds and the source of truth for the UTC Cron schedule and publication mode. Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
+By default, `content-engine/content-engine.config.mjs` is the editable list of public RSS/Atom feeds and the source of truth for the UTC Cron schedule, publication mode, and story-summary contexts. `summaries.contexts` sets the labels and maximum length for Quick take, Full context, and Deep dive; `summaries.defaultContext` is `standard` (Full context). Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
 
 | Variable | Purpose |
 |---|---|

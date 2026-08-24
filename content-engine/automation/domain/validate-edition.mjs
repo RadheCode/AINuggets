@@ -54,6 +54,9 @@ export function validateEdition(edition, targetDate) {
     for (const key of SUMMARY_CONTEXT_KEYS) {
       requireText(story.summaries[key], `stories[${index}].summaries.${key}`);
     }
+    if (new Set(SUMMARY_CONTEXT_KEYS.map((key) => story.summaries[key].trim())).size !== SUMMARY_CONTEXT_KEYS.length) {
+      throw new Error(`Edition field "stories[${index}].summaries" must contain distinct summary contexts.`);
+    }
     requireHttpsUrl(story.href, `stories[${index}].href`);
     requireText(story.art, `stories[${index}].art`);
     if (!SUPPORTED_ARTWORK.has(story.art)) {

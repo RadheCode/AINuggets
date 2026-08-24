@@ -6,6 +6,8 @@
   const storyDialogTitle = document.querySelector("#storyDialogTitle");
   const storyDialogSummary = document.querySelector("#storyDialogSummary");
   const storyDialogSource = document.querySelector("#storyDialogSource");
+  const summaryContextButtons = [...document.querySelectorAll("[data-summary-context]")];
+  let activeStory;
 
   if (!window.AINuggetsContentReady || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !storyDialogSummary || !storyDialogSource) {
     throw new Error("AI Nuggets content engine could not find its loader or rendering targets.");
@@ -52,12 +54,26 @@
     return article;
   }
 
+  function selectSummaryContext(context) {
+    storyDialogSummary.textContent = activeStory.summaries[context];
+    for (const button of summaryContextButtons) {
+      const isSelected = button.dataset.summaryContext === context;
+      button.classList.toggle("is-selected", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+    }
+  }
+
   function showStoryDialog(story) {
+    activeStory = story;
     storyDialogCategory.textContent = story.category;
     storyDialogTitle.textContent = story.title;
-    storyDialogSummary.textContent = story.summary;
+    selectSummaryContext("standard");
     storyDialogSource.href = story.href;
     storyDialog.showModal();
+  }
+
+  for (const button of summaryContextButtons) {
+    button.addEventListener("click", () => selectSummaryContext(button.dataset.summaryContext));
   }
 
   storyDialogClose.addEventListener("click", () => storyDialog.close());

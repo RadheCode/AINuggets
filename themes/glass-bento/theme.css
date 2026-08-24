@@ -225,6 +225,11 @@ h1 em { color: #5570df; font-style: normal; }
 .subscribe-dialog h2 { margin: 22px 0 8px; font-size: 1.7rem; letter-spacing: -0.04em; }
 .story-dialog-category { margin: 0 0 10px; color: var(--blue-deep); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .story-dialog h2 { max-width: 90%; margin: 0 0 14px; font-size: clamp(1.45rem, 4vw, 2rem); line-height: 1.05; letter-spacing: -0.045em; }
+.story-summary-contexts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.story-summary-contexts button { border: 1px solid #9ea9d7; border-radius: 999px; padding: 7px 10px; color: #28366f; background: #eef1ff; font-size: 0.68rem; font-weight: 800; cursor: pointer; }
+.story-summary-contexts button:hover { border-color: #5365bb; background: #dfe5ff; }
+.story-summary-contexts button.is-selected { border-color: #3e50ae; color: #fff; background: #4355bd; }
+.story-summary-contexts button:focus-visible { outline: 3px solid #101326; outline-offset: 2px; }
 .story-dialog > p:not(.story-dialog-category) { margin: 0; color: var(--muted); line-height: 1.6; }
 .story-dialog-source { display: inline-flex; margin-top: 22px; padding: 10px 13px; border-radius: 9px; color: #fff; background: linear-gradient(145deg, #6d87eb, #4355bd); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .subscribe-dialog p { margin: 0 0 22px; color: var(--muted); }
@@ -346,3 +351,8 @@ h1 em { color: #5570df; font-style: normal; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+:root[data-color-mode="dark"] .story-summary-contexts button { border-color: #8797d8; color: #f4f6ff; background: #2e396e; }
+:root[data-color-mode="dark"] .story-summary-contexts button:hover { border-color: #c5d0ff; background: #3b4a8d; }
+:root[data-color-mode="dark"] .story-summary-contexts button.is-selected { border-color: #d9e0ff; color: #101326; background: #c8d2ff; }
+:root[data-color-mode="dark"] .story-summary-contexts button:focus-visible { outline-color: #fff; }

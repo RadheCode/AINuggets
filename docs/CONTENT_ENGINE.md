@@ -75,7 +75,7 @@ An optional HTTPS JSON candidate endpoint can replace the built-in collector. Fe
 
 ### 4. Summarization and selection
 
-An OpenAI-compatible summary provider receives the ranked candidates and returns a structured edition containing four or five stories. It generates original, concise summaries rather than storing raw source article text. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
+An OpenAI-compatible summary provider receives the ranked candidates and returns a structured edition containing four or five stories. Each story has a Quick take, Full context, and Deep dive summary rather than stored raw source article text. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
 
 ### 5. Validation
 
@@ -84,7 +84,7 @@ The domain layer rejects an edition unless it has:
 - the requested editorial date;
 - exactly four or five stories;
 - unique story IDs and ordered positions;
-- required category, title, summary, destination, and artwork fields;
+- required category, title, all three summary contexts, destination, and artwork fields;
 - HTTPS story and source URLs where URLs are present;
 - supported artwork keys: `models`, `agents`, `research`, `product`, or `business`;
 - exactly one `lead` story and no more than one `wide` story;
@@ -103,7 +103,7 @@ If any step fails, the run is marked `failed`; the last valid published edition 
 | Table | Key fields | Purpose |
 |---|---|---|
 | `editions` | `edition_date`, `status`, briefing fields, `published_at` | One daily briefing. Status is `draft`, `published`, or `archived`. |
-| `stories` | `edition_id`, `position`, `layout`, title, summary, source metadata | Four or five ordered stories for an edition. |
+| `stories` | `edition_id`, `position`, `layout`, title, three summary layers, source metadata | Four or five ordered stories for an edition. |
 | `generation_runs` | `target_date`, `status`, timestamps, details | Immutable operational history for each automation attempt. |
 
 The `stories` table enforces unique positions and story keys per edition. The database schema and migrations are under `infra/cloudflare/content-worker/migrations/`.
@@ -127,7 +127,7 @@ The API returns a single edition object with briefing metadata and ordered stori
 2. It requests `/api/editions/latest` or the date-specific route from the Worker URL in `content-engine/config.js`.
 3. It verifies the returned briefing and four-to-five-story payload before exposing it as `window.AINuggetsContentReady`.
 4. `content-engine/render.js` creates one accessible button per story and assigns deterministic slot classes such as `story-card--slot-1` through `story-card--slot-5`.
-5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog containing the summary and source link.
+5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the Full context summary. Readers can switch to Quick take or Deep dive using the accessible in-dialog controls; all three persisted layers are already in the API response, so switching does not make another request.
 
 The rendering layer is intentionally theme-independent, so a theme switch can restyle the same content without changing its data contract or interaction behavior.
 
@@ -149,6 +149,8 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 |---|---|---|
 | `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 12 * * *` runs at 12:00 UTC. | Worker deployment applies the new trigger. |
 | `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
+| `summaries.defaultContext` | Default popup summary layer. The default is `standard` (Full context). | Browser and Worker deployments use the configured contract. |
+| `summaries.contexts` | Labels and character limits for `compact`, `standard`, and `detailed` summaries. | Worker deployment applies the generated-summary limits. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 
 After editing this file, deploy the content Worker so its Cron trigger and runtime adapter receive the updated configuration:
