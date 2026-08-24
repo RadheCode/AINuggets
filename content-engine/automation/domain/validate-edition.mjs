@@ -24,6 +24,20 @@ function requireLength(value, minimum, maximum, field) {
   }
 }
 
+function requireBulletPoints(value, field) {
+  const lines = value.trim().split("\n");
+  if (lines.length < 3 || lines.length > 4 || lines.some((line) => !line.startsWith("- ") || !line.slice(2).trim())) {
+    throw new Error(`Edition field "${field}" must contain three or four bullet points, each beginning with "- ".`);
+  }
+}
+
+function requireParagraphs(value, field) {
+  const paragraphs = value.trim().split(/\n\s*\n/);
+  if (paragraphs.length < 2 || paragraphs.length > 4 || paragraphs.some((paragraph) => !paragraph.trim())) {
+    throw new Error(`Edition field "${field}" must contain two to four paragraphs separated by blank lines.`);
+  }
+}
+
 function requireHttpsUrl(value, field) {
   requireText(value, field);
   try {
@@ -74,6 +88,8 @@ export function validateEdition(edition, targetDate) {
         `stories[${index}].summaries.${key}`
       );
     }
+    requireBulletPoints(story.summaries.standard, `stories[${index}].summaries.standard`);
+    requireParagraphs(story.summaries.detailed, `stories[${index}].summaries.detailed`);
     requireHttpsUrl(story.href, `stories[${index}].href`);
     requireText(story.art, `stories[${index}].art`);
     if (!SUPPORTED_ARTWORK.has(story.art)) {

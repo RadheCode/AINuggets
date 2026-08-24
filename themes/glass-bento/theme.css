@@ -230,6 +230,11 @@ dialog:not([open]) { display: none; }
 .story-dialog-category { margin: 0 0 10px; color: var(--blue-deep); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .story-dialog h2 { max-width: 90%; margin: 0 0 14px; font-size: clamp(1.45rem, 4vw, 2rem); line-height: 1.05; letter-spacing: -0.045em; }
 .story-summary-contexts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.story-dialog-summary-paragraph { margin: 0 0 12px; }
+.story-dialog-summary-paragraph:last-child { margin-bottom: 0; }
+.story-dialog-summary-list { margin: 0; padding-left: 1.25rem; }
+.story-dialog-summary-list li + li { margin-top: 8px; }
+.story-dialog > #storyDialogSummary { min-height: 0; padding-right: 6px; overflow-y: auto; color: var(--muted); line-height: 1.6; }
 .story-summary-contexts button { border: 1px solid #9ea9d7; border-radius: 999px; padding: 7px 10px; color: #28366f; background: #eef1ff; font-size: 0.68rem; font-weight: 800; cursor: pointer; }
 .story-summary-contexts button:hover { border-color: #5365bb; background: #dfe5ff; }
 .story-summary-contexts button.is-selected { border-color: #3e50ae; color: #fff; background: #4355bd; }

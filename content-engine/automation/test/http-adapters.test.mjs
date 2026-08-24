@@ -51,5 +51,9 @@ test("requests a structured edition from an OpenAI-compatible endpoint", async (
   assert.equal(summaries.properties.standard.maxLength, 420);
   assert.equal(summaries.properties.detailed.minLength, 500);
   assert.equal(summaries.properties.detailed.maxLength, 900);
+  const systemPrompt = payload.messages.find((message) => message.role === "system").content;
+  assert.match(systemPrompt, /Count every character/i);
+  assert.match(systemPrompt, /three or four Markdown-style bullet points/i);
+  assert.match(systemPrompt, /two to four short paragraphs/i);
   assert.deepEqual(edition, { date: "2026-08-24" });
 });

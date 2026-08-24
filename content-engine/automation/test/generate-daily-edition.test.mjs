@@ -13,11 +13,16 @@ test("derives editorial dates at UTC calendar boundaries", () => {
 });
 
 function edition() {
-  const summaries = (text) => ({
-    compact: `${text} quick take. `.repeat(10),
-    standard: `${text} full context. `.repeat(20),
-    detailed: `${text} deep dive. `.repeat(40)
-  });
+  const summaries = (text) => {
+    const compact = `${text} quick take. `.repeat(10);
+    const standard = [
+      `- ${text} provides the key news update and identifies the specific development readers need to understand today.`,
+      `- The change matters because it affects how teams evaluate products, research, or practical deployment choices.`,
+      `- Readers should watch the next release, adoption signal, or evidence that shows whether the impact will persist.`
+    ].join("\n");
+    const detailedParagraph = `${text} deep dive explains the development with useful context for readers who need more than the headline. It connects the announcement to practical decisions, likely effects on teams, and the evidence worth checking before drawing a conclusion. `;
+    return { compact, standard, detailed: `${detailedParagraph}\n\n${detailedParagraph.repeat(2)}` };
+  };
   return {
     date: targetDate,
     briefing: {
@@ -225,6 +230,72 @@ test("rejects summaries outside their configured character bounds", async () => 
       logger: {}
     }),
     /summaries\.compact.*between 100 and 180 characters/i
+  );
+});
+
+test("rejects summaries that exceed their configured character bounds", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.stories[0].summaries.detailed = `${invalid.stories[0].summaries.detailed}\n\n${"Additional detail. ".repeat(30)}`;
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /summaries\.detailed.*between 500 and 900 characters/i
+  );
+});
+
+test("rejects Full context summaries that are not bullet points", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.stories[0].summaries.standard = "This Full context summary has sufficient length but is intentionally written as a paragraph instead of the required bullet list. It describes why the development matters and what readers should monitor next so that it remains inside the configured character range.";
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /summaries\.standard.*three or four bullet points/i
+  );
+});
+
+test("rejects Deep dive summaries that are not broken into paragraphs", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.stories[0].summaries.detailed = "One uninterrupted Deep dive sentence is repeated to satisfy the configured length while deliberately omitting the required blank-line paragraph breaks. ".repeat(5);
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /summaries\.detailed.*two to four paragraphs/i
   );
 });
 

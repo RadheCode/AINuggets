@@ -69,13 +69,31 @@
 
   function selectSummaryContext(context) {
     activeSummaryContext = context;
-    storyDialogSummary.textContent = activeStory.summaries[context];
+    storyDialogSummary.replaceChildren(...createSummaryContent(activeStory.summaries[context], context));
     storyDialogSummary.scrollTop = 0;
     for (const button of summaryContextButtons) {
       const isSelected = button.dataset.summaryContext === context;
       button.classList.toggle("is-selected", isSelected);
       button.setAttribute("aria-pressed", String(isSelected));
     }
+
+  }
+
+  function createSummaryContent(summary, context) {
+    if (context === "standard") {
+      const bulletPoints = summary.trim().split("\n");
+      if (bulletPoints.length >= 1 && bulletPoints.every((line) => line.startsWith("- "))) {
+        const list = createElement("ul", "story-dialog-summary-list");
+        list.append(...bulletPoints.map((point) => createElement("li", "", point.slice(2))));
+        return [list];
+      }
+    }
+
+    if (context === "detailed") {
+      return summary.trim().split(/\n\s*\n/).map((paragraph) => createElement("p", "story-dialog-summary-paragraph", paragraph));
+    }
+
+    return [createElement("p", "story-dialog-summary-paragraph", summary)];
   }
 
   function updateStoryDialog(index) {
