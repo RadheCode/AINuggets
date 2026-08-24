@@ -6,10 +6,15 @@
   const storyDialogTitle = document.querySelector("#storyDialogTitle");
   const storyDialogSummary = document.querySelector("#storyDialogSummary");
   const storyDialogSource = document.querySelector("#storyDialogSource");
+  const storyDialogPrevious = document.querySelector("#storyDialogPrevious");
+  const storyDialogNext = document.querySelector("#storyDialogNext");
   const summaryContextButtons = [...document.querySelectorAll("[data-summary-context]")];
   let activeStory;
+  let activeStoryIndex;
+  let stories = [];
+  let activeSummaryContext = "standard";
 
-  if (!window.AINuggetsContentReady || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !storyDialogSummary || !storyDialogSource) {
+  if (!window.AINuggetsContentReady || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !storyDialogSummary || !storyDialogSource || !storyDialogPrevious || !storyDialogNext) {
     throw new Error("AI Nuggets content engine could not find its loader or rendering targets.");
   }
 
@@ -50,11 +55,12 @@
     detailIndicator.setAttribute("aria-hidden", "true");
 
     article.append(art, shade, createElement("span", "story-number", numberLabel), contentElement, detailIndicator);
-    article.addEventListener("click", () => showStoryDialog(story));
+    article.addEventListener("click", () => showStoryDialog(index));
     return article;
   }
 
   function selectSummaryContext(context) {
+    activeSummaryContext = context;
     storyDialogSummary.textContent = activeStory.summaries[context];
     for (const button of summaryContextButtons) {
       const isSelected = button.dataset.summaryContext === context;
@@ -63,12 +69,20 @@
     }
   }
 
-  function showStoryDialog(story) {
-    activeStory = story;
-    storyDialogCategory.textContent = story.category;
-    storyDialogTitle.textContent = story.title;
-    selectSummaryContext("standard");
-    storyDialogSource.href = story.href;
+  function updateStoryDialog(index) {
+    activeStoryIndex = index;
+    activeStory = stories[index];
+    storyDialogCategory.textContent = activeStory.category;
+    storyDialogTitle.textContent = activeStory.title;
+    storyDialogSource.href = activeStory.href;
+    storyDialogPrevious.hidden = index === 0;
+    storyDialogNext.hidden = index === stories.length - 1;
+    selectSummaryContext(activeSummaryContext);
+  }
+
+  function showStoryDialog(index) {
+    activeSummaryContext = "standard";
+    updateStoryDialog(index);
     storyDialog.showModal();
   }
 
@@ -76,6 +90,8 @@
     button.addEventListener("click", () => selectSummaryContext(button.dataset.summaryContext));
   }
 
+  storyDialogPrevious.addEventListener("click", () => updateStoryDialog(activeStoryIndex - 1));
+  storyDialogNext.addEventListener("click", () => updateStoryDialog(activeStoryIndex + 1));
   storyDialogClose.addEventListener("click", () => storyDialog.close());
   storyDialog.addEventListener("click", (event) => {
     if (event.target === storyDialog) storyDialog.close();
@@ -83,6 +99,7 @@
 
   try {
     const content = await window.AINuggetsContentReady;
+    stories = content.stories;
     storyGrid.dataset.storyCount = String(content.stories.length);
     storyGrid.replaceChildren(...content.stories.map(renderStory));
   } catch (error) {

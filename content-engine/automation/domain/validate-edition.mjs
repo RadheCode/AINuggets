@@ -1,3 +1,5 @@
+import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
+
 const SUPPORTED_LAYOUTS = new Set([undefined, null, "lead", "wide"]);
 const SUPPORTED_ARTWORK = new Set(["models", "agents", "research", "product", "business"]);
 const MAX_BRIEFING_TITLE_LENGTH = 44;
@@ -13,6 +15,12 @@ function requireText(value, field) {
 function requireMaximumLength(value, maximum, field) {
   if (value.length > maximum) {
     throw new Error(`Edition field "${field}" must be ${maximum} characters or fewer.`);
+  }
+}
+
+function requireLength(value, minimum, maximum, field) {
+  if (value.length < minimum || value.length > maximum) {
+    throw new Error(`Edition field "${field}" must be between ${minimum} and ${maximum} characters.`);
   }
 }
 
@@ -56,6 +64,15 @@ export function validateEdition(edition, targetDate) {
     }
     if (new Set(SUMMARY_CONTEXT_KEYS.map((key) => story.summaries[key].trim())).size !== SUMMARY_CONTEXT_KEYS.length) {
       throw new Error(`Edition field "stories[${index}].summaries" must contain distinct summary contexts.`);
+    }
+    for (const key of SUMMARY_CONTEXT_KEYS) {
+      const context = CONTENT_ENGINE_CONFIG.summaries.contexts[key];
+      requireLength(
+        story.summaries[key],
+        context.minCharacters,
+        context.maxCharacters,
+        `stories[${index}].summaries.${key}`
+      );
     }
     requireHttpsUrl(story.href, `stories[${index}].href`);
     requireText(story.art, `stories[${index}].art`);

@@ -27,9 +27,9 @@ test("requests a structured edition from an OpenAI-compatible endpoint", async (
     apiKey: "model-secret",
     model: "editorial-model",
     summaryContexts: {
-      compact: { label: "Quick take", maxCharacters: 180 },
-      standard: { label: "Full context", maxCharacters: 420 },
-      detailed: { label: "Deep dive", maxCharacters: 900 }
+      compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 },
+      standard: { label: "Full context", minCharacters: 240, maxCharacters: 420 },
+      detailed: { label: "Deep dive", minCharacters: 500, maxCharacters: 900 }
     },
     async fetchImpl(url, options) {
       request = { url, options };
@@ -45,8 +45,11 @@ test("requests a structured edition from an OpenAI-compatible endpoint", async (
   assert.equal(payload.response_format.type, "json_schema");
   const summaries = payload.response_format.json_schema.schema.properties.stories.items.properties.summaries;
   assert.deepEqual(summaries.required, ["compact", "standard", "detailed"]);
+  assert.equal(summaries.properties.compact.minLength, 100);
   assert.equal(summaries.properties.compact.maxLength, 180);
+  assert.equal(summaries.properties.standard.minLength, 240);
   assert.equal(summaries.properties.standard.maxLength, 420);
+  assert.equal(summaries.properties.detailed.minLength, 500);
   assert.equal(summaries.properties.detailed.maxLength, 900);
   assert.deepEqual(edition, { date: "2026-08-24" });
 });

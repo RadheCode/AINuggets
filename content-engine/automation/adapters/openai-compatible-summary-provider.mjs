@@ -3,7 +3,11 @@ const SUMMARY_CONTEXT_KEYS = ["compact", "standard", "detailed"];
 function createEditionSchema(summaryContexts) {
   const summaryProperties = Object.fromEntries(SUMMARY_CONTEXT_KEYS.map((key) => [
     key,
-    { type: "string", maxLength: summaryContexts[key].maxCharacters }
+    {
+      type: "string",
+      minLength: summaryContexts[key].minCharacters,
+      maxLength: summaryContexts[key].maxCharacters
+    }
   ]));
 
   return {
@@ -69,7 +73,7 @@ function requireUrl(value, name) {
 
 function systemPrompt(summaryContexts) {
   const summaryInstructions = SUMMARY_CONTEXT_KEYS.map((key) => (
-    `${summaryContexts[key].label} (summaries.${key}): ${summaryContexts[key].maxCharacters} characters or fewer.`
+    `${summaryContexts[key].label} (summaries.${key}): between ${summaryContexts[key].minCharacters} and ${summaryContexts[key].maxCharacters} characters.`
   ));
   return [
     "Create a factual daily AI-news edition only from the supplied candidate metadata.",
@@ -89,8 +93,11 @@ function validateSummaryContexts(summaryContexts) {
   }
   for (const key of SUMMARY_CONTEXT_KEYS) {
     const context = summaryContexts[key];
-    if (!context || !Number.isInteger(context.maxCharacters) || context.maxCharacters < 1) {
-      throw new Error(`Summary context "${key}" must define a positive maxCharacters value.`);
+    if (!context || !Number.isInteger(context.minCharacters) || context.minCharacters < 1) {
+      throw new Error(`Summary context "${key}" must define a positive minCharacters value.`);
+    }
+    if (!Number.isInteger(context.maxCharacters) || context.maxCharacters < context.minCharacters) {
+      throw new Error(`Summary context "${key}" must define a maxCharacters value at least as large as minCharacters.`);
     }
     if (typeof context.label !== "string" || !context.label.trim()) {
       throw new Error(`Summary context "${key}" must define a label.`);

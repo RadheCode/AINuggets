@@ -39,8 +39,14 @@ export function validateContentEngineConfig(config) {
     const context = summaries.contexts[key];
     if (!context || typeof context !== "object") throw new Error(`summaries.contexts.${key} must be an object.`);
     requireString(context.label, `summaries.contexts.${key}.label`);
+    if (!Number.isInteger(context.minCharacters) || context.minCharacters < 1) {
+      throw new Error(`summaries.contexts.${key}.minCharacters must be a positive integer.`);
+    }
     if (!Number.isInteger(context.maxCharacters) || context.maxCharacters < 1) {
       throw new Error(`summaries.contexts.${key}.maxCharacters must be a positive integer.`);
+    }
+    if (context.minCharacters > context.maxCharacters) {
+      throw new Error(`summaries.contexts.${key}.minCharacters must not exceed maxCharacters.`);
     }
   }
   if (!Array.isArray(feeds) || !feeds.length) throw new Error("feeds must contain at least one source.");

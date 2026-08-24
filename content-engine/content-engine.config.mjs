@@ -13,9 +13,9 @@ export const CONTENT_ENGINE_CONFIG = Object.freeze({
     // Each generated story includes all three layers. The popup opens on the default layer.
     defaultContext: "standard",
     contexts: Object.freeze({
-      compact: Object.freeze({ label: "Quick take", maxCharacters: 180 }),
-      standard: Object.freeze({ label: "Full context", maxCharacters: 420 }),
-      detailed: Object.freeze({ label: "Deep dive", maxCharacters: 900 })
+      compact: Object.freeze({ label: "Quick take", minCharacters: 100, maxCharacters: 180 }),
+      standard: Object.freeze({ label: "Full context", minCharacters: 240, maxCharacters: 420 }),
+      detailed: Object.freeze({ label: "Deep dive", minCharacters: 500, maxCharacters: 900 })
     })
   }),
   feeds: Object.freeze([

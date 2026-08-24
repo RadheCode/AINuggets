@@ -14,9 +14,9 @@ test("derives editorial dates at UTC calendar boundaries", () => {
 
 function edition() {
   const summaries = (text) => ({
-    compact: `${text} quick take`,
-    standard: `${text} full context`,
-    detailed: `${text} deep dive`
+    compact: `${text} quick take. `.repeat(10),
+    standard: `${text} full context. `.repeat(20),
+    detailed: `${text} deep dive. `.repeat(40)
   });
   return {
     date: targetDate,
@@ -203,6 +203,28 @@ test("rejects editions with duplicated summary layers", async () => {
       logger: {}
     }),
     /distinct summary contexts/
+  );
+});
+
+test("rejects summaries outside their configured character bounds", async () => {
+  const repository = createMemoryEditionRepository();
+  const summaryProvider = {
+    async generateEdition() {
+      const invalid = edition();
+      invalid.stories[0].summaries.compact = "Too short.";
+      return invalid;
+    }
+  };
+
+  await assert.rejects(
+    generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider,
+      logger: {}
+    }),
+    /summaries\.compact.*between 100 and 180 characters/i
   );
 });
 

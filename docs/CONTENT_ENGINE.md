@@ -84,7 +84,7 @@ The domain layer rejects an edition unless it has:
 - the requested editorial date;
 - exactly four or five stories;
 - unique story IDs and ordered positions;
-- required category, title, all three summary contexts, destination, and artwork fields;
+- required category, title, all three summary contexts within their configured minimum and maximum lengths, destination, and artwork fields;
 - HTTPS story and source URLs where URLs are present;
 - supported artwork keys: `models`, `agents`, `research`, `product`, or `business`;
 - exactly one `lead` story and no more than one `wide` story;
@@ -150,7 +150,7 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 | `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 12 * * *` runs at 12:00 UTC. | Worker deployment applies the new trigger. |
 | `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
 | `summaries.defaultContext` | Default popup summary layer. The default is `standard` (Full context). | Browser and Worker deployments use the configured contract. |
-| `summaries.contexts` | Labels and character limits for `compact`, `standard`, and `detailed` summaries. | Worker deployment applies the generated-summary limits. |
+| `summaries.contexts` | Labels plus minimum and maximum character limits for `compact`, `standard`, and `detailed` summaries. The defaults are 100-180, 240-420, and 500-900 respectively. | Worker deployment applies the generated-summary limits. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 
 After editing this file, deploy the content Worker so its Cron trigger and runtime adapter receive the updated configuration:
