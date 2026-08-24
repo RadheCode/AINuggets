@@ -4,7 +4,7 @@ window.AINuggetsThemeConfig = Object.freeze({
   themes: Object.freeze({
     "glass-bento": Object.freeze({
       name: "Glass Bento",
-      stylesheet: "themes/glass-bento/theme.css?v=reserved-future-space"
+      stylesheet: "themes/glass-bento/theme.css?v=fixed-color-mode-layout"
     })
   })
 });

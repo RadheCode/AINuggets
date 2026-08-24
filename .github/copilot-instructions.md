@@ -61,6 +61,7 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Keep the shared mode switcher functional, keyboard accessible, and visible at every supported viewport.
 - Respect `defaultColorMode` from `theme.config.js`, use system preference when configured, and persist explicit user choice.
 - Validate contrast, glass fallbacks, controls, dialogs, artwork overlays, and no-scroll fit in both modes.
+- Keep the page geometry identical when switching color modes. The mode switch may change styling only; it must not move, resize, add spacing around, or realign tiles or other page elements.
 - Do not create separate theme folders solely for light and dark variants of one visual design.
 
 ## Accessibility and interaction

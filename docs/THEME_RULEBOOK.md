@@ -62,6 +62,7 @@ Theme styles must scope reusable variables under `:root` and may use the `data-t
 - The shared switcher persists an explicit choice under the `ai-nuggets-color-mode` local-storage key.
 - Define mode colors through CSS custom properties where practical so component states remain consistent.
 - Both modes must meet the same accessibility, responsive, and no-scroll requirements.
+- Switching modes must preserve the exact geometry and alignment of every page element. Color modes may change styling only; they must not move, resize, or reflow tiles or other content.
 - Do not implement a separate dark-theme directory when the layout and visual identity are otherwise the same theme.
 
 ## Layout rules
@@ -106,5 +107,5 @@ Before accepting a theme:
 1. Select it through `theme.config.js` and confirm its stylesheet loads without console errors.
 2. Confirm all five cards, header, intro, and footer fit without page scrolling.
 3. Check desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights.
-4. Verify the light/dark switcher, persistence, keyboard focus, newsletter dialog behavior, readable contrast in both modes, and reduced motion.
+4. Verify the light/dark switcher, persistence, keyboard focus, newsletter dialog behavior, readable contrast in both modes, reduced motion, and identical element geometry before and after a mode change.
 5. Confirm missing or invalid theme configuration fails visibly instead of silently loading a fallback.

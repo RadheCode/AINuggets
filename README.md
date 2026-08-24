@@ -18,7 +18,7 @@ The current baseline is `glass-bento`, stored in `themes/glass-bento/`. See `doc
 
 ### UI change checklist
 
-Every UI change must be visually checked in both light and dark modes before release. Confirm text remains readable on every surface, including glass panels, artwork, gradients, and highlighted areas; controls and keyboard focus indicators remain visible; and content does not clip or overlap at desktop and applicable mobile breakpoints.
+Every UI change must be visually checked in both light and dark modes before release. Confirm text remains readable on every surface, including glass panels, artwork, gradients, and highlighted areas; controls and keyboard focus indicators remain visible; and content does not clip or overlap at desktop and applicable mobile breakpoints. Switching color modes must preserve the exact geometry and alignment of all page elements, including tiles; color modes may change styling only.
 
 ## Infrastructure
 
