@@ -177,11 +177,14 @@ h1 em { color: #5570df; font-style: normal; }
 .briefing-meta span:hover { color: var(--blue-deep); transform: translateY(-3px); }
 
 .story-grid { display: grid; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 16px; perspective: 1000px; }
-.story-grid[data-story-count="5"] .story-card--wide { grid-column: span 1; }
 .story-card { position: relative; display: flex; min-height: 0; padding: 20px; flex-direction: column; justify-content: flex-end; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.64); border-radius: 18px; color: inherit; background: rgba(255, 255, 255, 0.28); box-shadow: 0 9px 0 rgba(64, 61, 143, 0.1), 0 20px 38px rgba(47, 57, 139, 0.2), inset 0 1px rgba(255, 255, 255, 0.82), inset 0 -1px rgba(51, 62, 150, 0.14); backdrop-filter: blur(16px) saturate(1.18); transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.32s ease, border-color 0.32s ease; animation: tile-in 0.65s cubic-bezier(0.2, 0.85, 0.25, 1.15) both; animation-delay: calc(0.2s + var(--order) * 0.07s); transform-origin: center; cursor: pointer; text-align: left; }
 .story-card::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(125deg, rgba(255, 255, 255, 0.5), transparent 26%, transparent 72%, rgba(255, 255, 255, 0.12)); content: ""; }
 .story-card--lead { grid-column: span 2; grid-row: span 2; padding: 26px; }
 .story-card--wide { grid-column: span 2; }
+@media (min-width: 861px) {
+  .story-grid[data-story-count="5"] .story-card--slot-4 { grid-column: 3; grid-row: 2; }
+  .story-grid[data-story-count="5"] .story-card--slot-5 { grid-column: 4; grid-row: 2; }
+}
 .story-card:hover, .story-card:focus-within { z-index: 5; border-color: rgba(255, 255, 255, 0.9); transform: translateY(-8px) scale(1.012); box-shadow: 0 12px 0 rgba(64, 61, 143, 0.12), 0 30px 52px rgba(39, 48, 128, 0.31), 0 0 0 1px rgba(255, 255, 255, 0.25), inset 0 1px #fff; }
 .story-art { position: absolute; inset: 0; transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s ease; }
 .story-card:hover .story-art, .story-card:focus-within .story-art { filter: saturate(1.12); transform: scale(1.06); }

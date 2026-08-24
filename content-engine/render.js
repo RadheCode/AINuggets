@@ -20,6 +20,7 @@
 
   function renderStory(story, index) {
     const articleClasses = ["story-card"];
+    articleClasses.push(`story-card--slot-${index + 1}`);
     if (story.type === "lead") articleClasses.push("story-card--lead");
     if (story.type === "wide") articleClasses.push("story-card--wide");
 
