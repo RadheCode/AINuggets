@@ -201,6 +201,11 @@ h1 em { color: #5570df; font-style: normal; }
 .story-card:hover, .story-card:focus-within { z-index: 5; transform: translateY(-4px); box-shadow: 14px 14px 28px var(--tile-shadow), -10px -10px 22px var(--tile-highlight), inset 1px 1px 0 rgba(255, 255, 255, 0.16); }
 .story-art,
 .story-shade { display: none; }
+.story-card--has-company-image .story-art { position: absolute; inset: 0; display: block; opacity: 0.46; pointer-events: none; }
+.story-card--has-company-image .story-art img { width: 100%; height: 100%; object-fit: cover; }
+.story-card--has-company-image .story-shade { position: absolute; inset: 0; z-index: 1; display: block; pointer-events: none; background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.18) 45%, rgba(255, 255, 255, 0.82) 100%); }
+:root[data-color-mode="dark"] .story-card--has-company-image .story-art { opacity: 0.36; }
+:root[data-color-mode="dark"] .story-card--has-company-image .story-shade { background: linear-gradient(180deg, rgba(17, 21, 38, 0.08) 0%, rgba(17, 21, 38, 0.22) 45%, rgba(17, 21, 38, 0.8) 100%); }
 .story-content { position: relative; z-index: 3; color: var(--ink); }
 .story-tag { display: inline-block; margin-bottom: 7px; padding: 5px 7px; border: 1px solid rgba(230, 184, 55, 0.96); border-radius: 6px; color: #513b00; background: #e6b837; box-shadow: 0 6px 14px rgba(63, 47, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.36); font-size: 0.54rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .story-card h2 { max-width: 90%; margin: 0; font-size: clamp(0.84rem, 1.5vw, 1.05rem); line-height: 1.12; letter-spacing: -0.025em; }

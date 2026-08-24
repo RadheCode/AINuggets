@@ -1,0 +1,328 @@
+[
+  {
+    "id": "openai",
+    "file": "assets/companies/openai.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/openai-2.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "OpenAI",
+      "ChatGPT",
+      "GPT-4",
+      "GPT-5",
+      "Sora"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 297780
+  },
+  {
+    "id": "microsoft",
+    "file": "assets/companies/microsoft.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/microsoft-5.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Microsoft",
+      "Azure",
+      "Copilot",
+      "GitHub Copilot"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 69957
+  },
+  {
+    "id": "google",
+    "file": "assets/companies/google.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/google",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Google",
+      "Alphabet",
+      "Gemini",
+      "DeepMind",
+      "Google Cloud"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 33704
+  },
+  {
+    "id": "anthropic",
+    "file": "assets/companies/anthropic.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/anthropic",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Anthropic",
+      "Claude"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 178416
+  },
+  {
+    "id": "meta",
+    "file": "assets/companies/meta.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/meta",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Meta",
+      "Llama",
+      "Facebook AI"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 100923
+  },
+  {
+    "id": "amazon",
+    "file": "assets/companies/amazon.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/amazon-web-services.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Amazon",
+      "AWS",
+      "Bedrock",
+      "Amazon Web Services"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 291873
+  },
+  {
+    "id": "nvidia",
+    "file": "assets/companies/nvidia.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/nvidia",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "NVIDIA",
+      "CUDA",
+      "GeForce",
+      "DGX"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 72870
+  },
+  {
+    "id": "apple",
+    "file": "assets/companies/apple.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/apple",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Apple",
+      "Apple Intelligence",
+      "Siri"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 29108
+  },
+  {
+    "id": "ibm",
+    "file": "assets/companies/ibm.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/ibm-1.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "IBM",
+      "watsonx",
+      "Watson"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 197133
+  },
+  {
+    "id": "oracle",
+    "file": "assets/companies/oracle.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/oracle-6.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Oracle",
+      "OCI"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 101098
+  },
+  {
+    "id": "salesforce",
+    "file": "assets/companies/salesforce.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/salesforce-2.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Salesforce",
+      "Agentforce",
+      "Einstein"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 301975
+  },
+  {
+    "id": "adobe",
+    "file": "assets/companies/adobe.jpg",
+    "sourceUrl": "https://cdn.worldvectorlogo.com/logos/adobe-2.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Adobe",
+      "Firefly"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 71907
+  },
+  {
+    "id": "xai",
+    "file": "assets/companies/xai.jpg",
+    "sourceUrl": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/x.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "xAI",
+      "Grok"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 36021
+  },
+  {
+    "id": "mistral",
+    "file": "assets/companies/mistral.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/mistralai",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Mistral",
+      "Le Chat"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 191451
+  },
+  {
+    "id": "hugging-face",
+    "file": "assets/companies/hugging-face.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/huggingface",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Hugging Face",
+      "HuggingFace",
+      "Transformers"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 114110
+  },
+  {
+    "id": "perplexity",
+    "file": "assets/companies/perplexity.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/perplexity",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Perplexity"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 297673
+  },
+  {
+    "id": "databricks",
+    "file": "assets/companies/databricks.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/databricks",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Databricks"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 73770
+  },
+  {
+    "id": "snowflake",
+    "file": "assets/companies/snowflake.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/snowflake",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Snowflake"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 38470
+  },
+  {
+    "id": "palantir",
+    "file": "assets/companies/palantir.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/palantir",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Palantir",
+      "AIP Platform"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 177205
+  },
+  {
+    "id": "github",
+    "file": "assets/companies/github.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/github",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "GitHub"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 99820
+  },
+  {
+    "id": "intel",
+    "file": "assets/companies/intel.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/intel",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Intel",
+      "Gaudi"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 309949
+  },
+  {
+    "id": "amd",
+    "file": "assets/companies/amd.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/amd",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "AMD",
+      "Advanced Micro Devices",
+      "Instinct"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 66474
+  },
+  {
+    "id": "samsung",
+    "file": "assets/companies/samsung.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/samsung",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Samsung"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 32233
+  },
+  {
+    "id": "qualcomm",
+    "file": "assets/companies/qualcomm.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/qualcomm",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Qualcomm",
+      "Snapdragon"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 192512
+  },
+  {
+    "id": "baidu",
+    "file": "assets/companies/baidu.jpg",
+    "sourceUrl": "https://cdn.simpleicons.org/baidu",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Baidu",
+      "ERNIE"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 106091
+  },
+  {
+    "id": "alibaba",
+    "file": "assets/companies/alibaba.jpg",
+    "sourceUrl": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/alibabacloud.svg",
+    "backgroundSourceUrl": "https://images.unsplash.com/",
+    "matchTerms": [
+      "Alibaba",
+      "Qwen",
+      "AliCloud"
+    ],
+    "dimensions": "1600x900",
+    "bytes": 308809
+  }
+]

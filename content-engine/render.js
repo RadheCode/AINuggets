@@ -39,8 +39,18 @@
     article.setAttribute("aria-haspopup", "dialog");
     article.setAttribute("aria-label", `Show summary: ${story.title}`);
 
+    const company = window.AINuggetsCompanyImages?.findCompanyImage(story);
+    if (company) article.classList.add("story-card--has-company-image");
+
     const art = createElement("div", `story-art story-art--${story.art}`);
     art.setAttribute("aria-hidden", "true");
+    if (company) {
+      const image = document.createElement("img");
+      image.src = company.image;
+      image.alt = "";
+      image.decoding = "async";
+      art.append(image);
+    }
     const shade = createElement("div", "story-shade");
     shade.setAttribute("aria-hidden", "true");
 

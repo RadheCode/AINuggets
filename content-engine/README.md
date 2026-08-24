@@ -5,6 +5,7 @@ This folder owns how AI Nuggets loads and renders content from the Cloudflare D1
 - `config.js` defines the public content API endpoint.
 - `loader.js` requests the latest edition or the edition selected by `?date=YYYY-MM-DD`.
 - `render.js` converts that content into the stable semantic selectors used by every theme.
+- `company-images.js` matches recognized AI-company terms in each story title and summaries to local artwork in `../assets/companies/`. Stories without a match remain image-free.
 - `automation/` contains the portable daily-edition job, scheduler-neutral runner, CLI trigger, RSS/Atom blog collector, HTTP source/model adapters, provider-configuration contract, domain validation, and tests. It is not published as a Pages asset.
 
 The source of truth is the `ai-nuggets-content` Cloudflare D1 database. Its schema, seed data, API Worker, and scheduled trigger live under `infra/cloudflare/content-worker/`.
