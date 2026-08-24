@@ -158,6 +158,7 @@ button, input { font: inherit; }
 :root[data-color-mode="dark"] .nav-tabs a:hover { background: rgba(126, 146, 232, 0.14); }
 :root[data-color-mode="dark"] .eyebrow, :root[data-color-mode="dark"] .briefing-meta span { border-color: rgba(215, 224, 255, 0.18); background: rgba(24, 30, 61, 0.5); box-shadow: 0 7px 0 rgba(2, 4, 18, 0.14), 0 14px 26px rgba(2, 5, 24, 0.24), inset 0 1px rgba(255, 255, 255, 0.1); }
 :root[data-color-mode="dark"] .subscribe-dialog { border-color: rgba(217, 225, 255, 0.2); background: rgba(22, 27, 57, 0.92); box-shadow: 0 32px 90px rgba(0, 0, 12, 0.62), inset 0 1px rgba(255, 255, 255, 0.12); }
+:root[data-color-mode="dark"] .story-dialog { border-color: rgba(217, 225, 255, 0.2); background: rgba(22, 27, 57, 0.92); box-shadow: 0 32px 90px rgba(0, 0, 12, 0.62), inset 0 1px rgba(255, 255, 255, 0.12); }
 :root[data-color-mode="dark"] .dialog-close, :root[data-color-mode="dark"] .email-row input { color: var(--ink); background: rgba(38, 45, 82, 0.8); }
 
 main { position: relative; display: grid; min-height: 0; grid-template-rows: auto minmax(0, 1fr); padding: clamp(22px, 3.2vh, 38px) clamp(28px, 4.5vw, 58px); overflow: hidden; }
@@ -176,7 +177,9 @@ h1 em { color: #5570df; font-style: normal; }
 .briefing-meta span:hover { color: var(--blue-deep); transform: translateY(-3px); }
 
 .story-grid { display: grid; min-height: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 16px; perspective: 1000px; }
-.story-card { position: relative; display: flex; min-height: 0; padding: 20px; flex-direction: column; justify-content: flex-end; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.64); border-radius: 18px; background: rgba(255, 255, 255, 0.28); box-shadow: 0 9px 0 rgba(64, 61, 143, 0.1), 0 20px 38px rgba(47, 57, 139, 0.2), inset 0 1px rgba(255, 255, 255, 0.82), inset 0 -1px rgba(51, 62, 150, 0.14); backdrop-filter: blur(16px) saturate(1.18); transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.32s ease, border-color 0.32s ease; animation: tile-in 0.65s cubic-bezier(0.2, 0.85, 0.25, 1.15) both; animation-delay: calc(0.2s + var(--order) * 0.07s); transform-origin: center; }
+.story-grid[data-story-count="5"] { grid-template-rows: repeat(3, minmax(0, 1fr)); }
+.story-grid[data-story-count="5"] .story-card:last-child { grid-column: span 4; }
+.story-card { position: relative; display: flex; min-height: 0; padding: 20px; flex-direction: column; justify-content: flex-end; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.64); border-radius: 18px; color: inherit; background: rgba(255, 255, 255, 0.28); box-shadow: 0 9px 0 rgba(64, 61, 143, 0.1), 0 20px 38px rgba(47, 57, 139, 0.2), inset 0 1px rgba(255, 255, 255, 0.82), inset 0 -1px rgba(51, 62, 150, 0.14); backdrop-filter: blur(16px) saturate(1.18); transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.32s ease, border-color 0.32s ease; animation: tile-in 0.65s cubic-bezier(0.2, 0.85, 0.25, 1.15) both; animation-delay: calc(0.2s + var(--order) * 0.07s); transform-origin: center; cursor: pointer; text-align: left; }
 .story-card::after { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(125deg, rgba(255, 255, 255, 0.5), transparent 26%, transparent 72%, rgba(255, 255, 255, 0.12)); content: ""; }
 .story-card--lead { grid-column: span 2; grid-row: span 2; padding: 26px; }
 .story-card--wide { grid-column: span 2; }
@@ -203,11 +206,18 @@ h1 em { color: #5570df; font-style: normal; }
 .subscribe-button:hover { transform: translateY(-3px); box-shadow: 0 7px 0 rgba(84, 82, 180, 0.12), 0 16px 28px rgba(69, 80, 181, 0.26); }
 
 .subscribe-dialog { width: min(440px, calc(100% - 32px)); padding: 30px; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 24px; color: var(--ink); background: rgba(248, 249, 255, 0.86); box-shadow: 0 32px 90px rgba(40, 44, 112, 0.32), inset 0 1px #fff; backdrop-filter: blur(24px); }
+.story-dialog { width: min(480px, calc(100% - 32px)); padding: 34px; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 24px; color: var(--ink); background: rgba(248, 249, 255, 0.94); box-shadow: 0 32px 90px rgba(40, 44, 112, 0.32), inset 0 1px #fff; backdrop-filter: blur(24px); }
 .subscribe-dialog::backdrop { background: rgba(31, 35, 76, 0.25); backdrop-filter: blur(8px); }
+.story-dialog::backdrop { background: rgba(31, 35, 76, 0.25); backdrop-filter: blur(8px); }
 .subscribe-dialog[open] { animation: dialog-in 0.28s cubic-bezier(0.2, 0.85, 0.25, 1.15); }
+.story-dialog[open] { animation: dialog-in 0.28s cubic-bezier(0.2, 0.85, 0.25, 1.15); }
 .dialog-close { position: absolute; top: 14px; right: 14px; width: 34px; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: rgba(255, 255, 255, 0.65); cursor: pointer; }
 .dialog-mark { width: 45px; aspect-ratio: 1; border-radius: 13px; }
 .subscribe-dialog h2 { margin: 22px 0 8px; font-size: 1.7rem; letter-spacing: -0.04em; }
+.story-dialog-category { margin: 0 0 10px; color: var(--blue-deep); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.story-dialog h2 { max-width: 90%; margin: 0 0 14px; font-size: clamp(1.45rem, 4vw, 2rem); line-height: 1.05; letter-spacing: -0.045em; }
+.story-dialog > p:not(.story-dialog-category) { margin: 0; color: var(--muted); line-height: 1.6; }
+.story-dialog-source { display: inline-flex; margin-top: 22px; padding: 10px 13px; border-radius: 9px; color: #fff; background: linear-gradient(145deg, #6d87eb, #4355bd); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .subscribe-dialog p { margin: 0 0 22px; color: var(--muted); }
 .subscribe-dialog label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
 .email-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }

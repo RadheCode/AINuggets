@@ -30,7 +30,7 @@
       </nav>
 
       <div class="header-actions">
-        <time class="current-date" id="currentDate" datetime="2026-08-23">Sunday / Aug 23</time>
+        <span class="current-date">Daily edition</span>
         <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
           <span class="mode-icon mode-icon--sun" aria-hidden="true">&#9728;</span>
           <span class="mode-icon mode-icon--moon" aria-hidden="true">&#9790;</span>
@@ -39,7 +39,19 @@
     </header>
 
     <main id="today">
-      <section class="briefing-intro" id="briefingIntro" aria-labelledby="pageTitle"></section>
+      <section class="briefing-intro" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow"><span aria-hidden="true"></span> AI news daily briefing</p>
+          <h1 id="pageTitle">AI news. <em>Less noise.</em></h1>
+        </div>
+        <div class="briefing-copy">
+          <p>Five useful updates, selected to help you keep up without the endless feed.</p>
+          <div class="briefing-meta" aria-label="Briefing details">
+            <span>Five stories</span>
+            <span>Updated daily</span>
+          </div>
+        </div>
+      </section>
 
       <section class="story-grid" id="storyGrid" aria-label="Today's AI stories"></section>
     </main>
@@ -63,6 +75,14 @@
       </div>
       <output id="formMessage" aria-live="polite"></output>
     </form>
+  </dialog>
+
+  <dialog class="story-dialog" id="storyDialog" aria-labelledby="storyDialogTitle">
+    <button class="dialog-close" id="storyDialogClose" type="button" aria-label="Close story summary">&times;</button>
+    <p class="story-dialog-category" id="storyDialogCategory"></p>
+    <h2 id="storyDialogTitle"></h2>
+    <p id="storyDialogSummary"></p>
+    <a class="story-dialog-source" id="storyDialogSource" target="_blank" rel="noopener noreferrer">Read the source <span aria-hidden="true">&nearr;</span></a>
   </dialog>
 
   <script src="content-engine/config.js"></script>
