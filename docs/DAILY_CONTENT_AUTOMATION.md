@@ -44,15 +44,15 @@ content-worker/
 | Capability | Status | Behavior |
 |---|---|---|
 | Scheduler-neutral runner | Complete | Calculates the editorial date from the supplied scheduled instant and timezone, then calls the shared job. |
-| Cloudflare Cron adapter | Complete | Invokes the portable runner daily at `0 1 * * *`; it only supplies runtime dependencies. |
+| Cloudflare Cron adapter | Complete | Deploys the Cron expression from the central configuration and invokes the portable runner with its runtime dependencies. |
 | Built-in blog collector | Complete | Fetches up to three recent RSS/Atom posts from each editable source, then deduplicates, ranks, and category-diversifies five candidates. |
 | Generic JSON content source | Complete | Requests an HTTPS endpoint with `?date=YYYY-MM-DD`; accepts an array or `{ "candidates": [...] }`. |
 | OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON from Chat Completions and returns an edition for domain validation. |
-| D1 repository | Complete | Checks idempotency, records runs, and saves a draft edition plus stories in one D1 batch. |
+| D1 repository | Complete | Checks idempotency, records runs, and saves a draft or directly published edition plus stories in one D1 batch. |
 | Auditing and safe failure | Complete | Records `started`, `skipped`, `succeeded`, or `failed`; failures do not alter existing editions. |
 | Public content delivery | Complete | The Worker exposes published editions only; drafts are excluded. |
 | Provider configuration | Complete | `content-engine` defines the setting names, validates complete model settings, and creates portable source/model dependencies from runtime values. |
-| Publication workflow | Manual | Successful automation saves drafts. An editorial process must publish reviewed editions. |
+| Publication workflow | Configurable | Defaults to draft-and-review; the explicit central `automaticallyPublish` switch can publish validated future editions directly. |
 
 ## Data model
 
@@ -78,22 +78,22 @@ The frontend endpoint is committed in `content-engine/config.js`. The public Wor
 
 ## Daily scheduled algorithm
 
-1. A scheduler invokes the portable runner at the configured cron time. Cloudflare's current adapter uses `0 1 * * *` (01:00 UTC / 06:30 IST).
-2. The runner calculates the target date using its supplied editorial timezone, currently `Asia/Kolkata` for the Cloudflare deployment.
+1. A scheduler invokes the portable runner at the Cron time in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `0 1 * * *` (01:00 UTC / 06:30 IST).
+2. The runner calculates the target date using the IANA editorial timezone in that same central configuration, currently `Asia/Kolkata`.
 3. It checks D1 for an existing edition on that date and exits idempotently if one exists.
-4. It reads the editable 15-source list and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
+4. It reads the editable feed list in `content-engine/content-engine.config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
 5. It removes duplicate candidates using normalized `canonicalUrl` or `url`, ranks remaining posts by source priority and freshness, and selects five candidates. It first takes one per category, then fills any remaining positions by rank.
 6. The summary provider selects four or five stories from those candidates, each supported by source metadata.
 7. It generates concise original summaries and validates all required fields, HTTPS source URLs, unique IDs, supported artwork keys, and exactly one lead story.
-8. It writes the edition and all stories in one D1 transaction as `draft`.
-9. A human review process changes the edition to `published`. Automatic publication should only be enabled after source and model quality are proven.
+8. It writes the edition and all stories in one D1 transaction as `draft`, unless `publication.automaticallyPublish` is explicitly set to `true` in the central configuration.
+9. With automatic publication disabled, a human review process changes the edition to `published`. Enable automatic publication only after source and model quality are proven.
 10. Every attempt writes a `generation_runs` audit record. A failed run must leave the last published edition untouched.
 
 The built-in collector is the default candidate source and does not need a source API key. Individual unavailable feeds do not cancel a run; the collector proceeds with available feeds and fails only when every configured feed fails. The job still records a `skipped` run until a complete summary-provider configuration is supplied. It does not fabricate content.
 
 ## Scheduler-neutral cron integration
 
-The cron platform is deliberately separate from content and persistence. Create a trusted adapter module outside browser-delivered assets that exports `createAutomationDependencies({ targetDate, scheduledAt })`. It must return an `editionRepository`, `contentSources`, `summaryProvider`, and optional `logger`. The portable job owns validation, idempotency, audit records, and draft creation.
+The cron platform is deliberately separate from content and persistence. Create a trusted adapter module outside browser-delivered assets that exports `createAutomationDependencies({ targetDate, scheduledAt })`. It must return an `editionRepository`, `contentSources`, `summaryProvider`, optional `automaticallyPublish`, and optional `logger`. The portable job owns validation, idempotency, audit records, and draft-or-published creation.
 
 ```javascript
 export async function createAutomationDependencies() {
@@ -101,6 +101,7 @@ export async function createAutomationDependencies() {
     editionRepository,
     contentSources: [primarySource],
     summaryProvider,
+    automaticallyPublish: false,
     logger: console
   };
 }
@@ -120,7 +121,7 @@ Use `--scheduled-at=2026-08-24T01:00:00Z` for deterministic backfills and tests.
 
 The portable configuration contract is `content-engine/automation/config/create-generation-provider-dependencies.mjs`. It accepts a plain runtime-values object, so it is independent of any secret store. The runtime injects values while this module owns the setting names, completeness validation, and adapter construction. For a human-editable setup, copy `content-engine/automation/config/providers.example.env` to `content-engine/automation/config/providers.local.env` and fill in the values. The local file is Git-ignored.
 
-By default, `content-engine/automation/config/ai-blog-sources.mjs` is the editable list of 15 public RSS/Atom feeds. Each entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
+By default, `content-engine/content-engine.config.mjs` is the editable list of public RSS/Atom feeds and the source of truth for the Cron schedule, editorial timezone, and publication mode. Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
 
 | Variable | Purpose |
 |---|---|

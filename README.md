@@ -8,7 +8,7 @@ Daily briefing content is stored in Cloudflare D1 and delivered through the cont
 
 Daily generation is implemented as a portable Node workflow: schedulers provide a runtime adapter, while the shared job handles editorial dates, idempotency, source deduplication, edition validation, audit records, and draft persistence. Cloudflare Cron is one thin trigger adapter; the same workflow can run from GitHub Actions, a container scheduler, or operating-system cron.
 
-The included runtime adapters accept a generic HTTPS JSON candidate endpoint and an OpenAI-compatible Chat Completions endpoint. Generation remains safely skipped until both adapters are configured with runtime secrets; successful runs save **draft** editions, so publication remains a separate editorial action. See `docs/DAILY_CONTENT_AUTOMATION.md` for architecture, configuration, and operational commands. See `docs/VIEW_D1_DATABASE.md` for dashboard and Wrangler commands to inspect current database contents.
+The included runtime adapters accept a generic HTTPS JSON candidate endpoint and an OpenAI-compatible Chat Completions endpoint. Generation remains safely skipped until both adapters are configured with runtime secrets; successful runs save **draft** editions by default, while the explicit opt-in in `content-engine/content-engine.config.mjs` can publish validated editions directly. See `docs/DAILY_CONTENT_AUTOMATION.md` for architecture, configuration, and operational commands. See `docs/VIEW_D1_DATABASE.md` for dashboard and Wrangler commands to inspect current database contents.
 
 ## Themes
 

@@ -2,6 +2,7 @@ import { editorialDate, isValidEditorialDate } from "../../../../content-engine/
 import { generateDailyEdition } from "../../../../content-engine/automation/jobs/generate-daily-edition.mjs";
 import { runScheduledEdition } from "../../../../content-engine/automation/jobs/run-scheduled-edition.mjs";
 import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
+import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
 import { createD1EditionRepository } from "./d1-edition-repository.js";
 
 function json(body, status = 200, headers = {}) {
@@ -26,6 +27,7 @@ function createAutomationDependencies(env) {
   return {
     editionRepository: createD1EditionRepository(env.CONTENT_DB),
     ...createGenerationProviderDependencies(env),
+    automaticallyPublish: CONTENT_ENGINE_CONFIG.publication.automaticallyPublish,
     logger: console
   };
 }
@@ -46,7 +48,7 @@ async function handleAutomationRequest(request, env) {
     return json({ error: "Request body must be valid JSON." }, 400);
   }
 
-  const targetDate = body.targetDate || editorialDate(env.EDITORIAL_TIMEZONE || "UTC");
+  const targetDate = body.targetDate || editorialDate(CONTENT_ENGINE_CONFIG.schedule.timezone);
   if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid target date." }, 400);
 
   const result = await generateDailyEdition({
@@ -123,7 +125,7 @@ async function handleRequest(request, env) {
   if (!match) return json({ error: "Not found." }, 404, cors);
 
   const targetDate = match[1] === "latest"
-    ? editorialDate(env.EDITORIAL_TIMEZONE || "UTC")
+    ? editorialDate(CONTENT_ENGINE_CONFIG.schedule.timezone)
     : match[1];
   if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid edition date." }, 400, cors);
 
@@ -139,7 +141,7 @@ async function handleRequest(request, env) {
 async function handleScheduled(controller, env) {
   return runScheduledEdition({
     scheduledAt: new Date(controller.scheduledTime),
-    timezone: env.EDITORIAL_TIMEZONE || "UTC",
+    timezone: CONTENT_ENGINE_CONFIG.schedule.timezone,
     createDependencies: () => createAutomationDependencies(env)
   });
 }

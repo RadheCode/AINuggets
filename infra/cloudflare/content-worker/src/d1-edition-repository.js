@@ -13,19 +13,22 @@ export function createD1EditionRepository(db) {
       `).bind(targetDate, status, details, status).run();
     },
 
-    async saveEdition(edition) {
+    async saveEdition(edition, { status = "draft" } = {}) {
+      if (!["draft", "published"].includes(status)) throw new Error(`Unsupported edition status: ${status}.`);
       const statements = [
         db.prepare(`
           INSERT INTO editions (
-            edition_date, status, eyebrow, title, emphasis, summary, meta_json
-          ) VALUES (?, 'draft', ?, ?, ?, ?, ?)
+            edition_date, status, eyebrow, title, emphasis, summary, meta_json, published_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN CURRENT_TIMESTAMP ELSE NULL END)
         `).bind(
           edition.date,
+          status,
           edition.briefing.eyebrow,
           edition.briefing.title,
           edition.briefing.emphasis,
           edition.briefing.summary,
-          JSON.stringify(edition.briefing.meta)
+          JSON.stringify(edition.briefing.meta),
+          status
         ),
         ...edition.stories.map((story, index) => db.prepare(`
           INSERT INTO stories (

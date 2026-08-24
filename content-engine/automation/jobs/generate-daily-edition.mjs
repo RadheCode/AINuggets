@@ -20,6 +20,7 @@ export async function generateDailyEdition({
   editionRepository,
   contentSources = [],
   summaryProvider,
+  automaticallyPublish = false,
   logger = console
 }) {
   if (!isValidEditorialDate(targetDate)) throw new Error(`Invalid target date: ${targetDate}.`);
@@ -52,14 +53,14 @@ export async function generateDailyEdition({
       targetDate
     );
 
-    await editionRepository.saveEdition(edition);
+    await editionRepository.saveEdition(edition, { status: automaticallyPublish ? "published" : "draft" });
     await editionRepository.recordRun({
       targetDate,
       status: "succeeded",
-      details: `Created draft edition with ${edition.stories.length} stories.`
+      details: `Created ${automaticallyPublish ? "published" : "draft"} edition with ${edition.stories.length} stories.`
     });
-    logger.info?.(`Created draft edition for ${targetDate}.`);
-    return { targetDate, status: "succeeded", storyCount: edition.stories.length };
+    logger.info?.(`Created ${automaticallyPublish ? "published" : "draft"} edition for ${targetDate}.`);
+    return { targetDate, status: "succeeded", storyCount: edition.stories.length, publicationStatus: automaticallyPublish ? "published" : "draft" };
   } catch (error) {
     await editionRepository.recordRun({
       targetDate,

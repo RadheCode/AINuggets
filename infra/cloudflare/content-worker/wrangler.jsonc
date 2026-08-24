@@ -7,10 +7,9 @@
     "enabled": true
   },
   "triggers": {
-    "crons": ["0 1 * * *"]
+    "crons": ["__CONTENT_ENGINE_CRON__"]
   },
   "vars": {
-    "EDITORIAL_TIMEZONE": "Asia/Kolkata",
     "ALLOWED_ORIGINS": "https://ai-nuggets.pages.dev,http://localhost:8080,http://127.0.0.1:8080"
   },
   "d1_databases": [

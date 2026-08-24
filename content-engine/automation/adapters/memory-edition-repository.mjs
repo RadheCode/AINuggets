@@ -8,9 +8,9 @@ export function createMemoryEditionRepository(initialEditions = []) {
     async hasEdition(date) {
       return editions.has(date);
     },
-    async saveEdition(edition) {
+    async saveEdition(edition, { status = "draft" } = {}) {
       if (editions.has(edition.date)) throw new Error(`Edition ${edition.date} already exists.`);
-      editions.set(edition.date, structuredClone(edition));
+      editions.set(edition.date, { ...structuredClone(edition), status });
     },
     async recordRun(run) {
       runs.push({ ...run });

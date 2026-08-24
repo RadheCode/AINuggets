@@ -4,6 +4,9 @@ import {
   GENERATION_PROVIDER_CONFIGURATION,
   createGenerationProviderDependencies
 } from "../config/create-generation-provider-dependencies.mjs";
+import { AI_BLOG_SOURCES } from "../config/ai-blog-sources.mjs";
+import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
+import { validateContentEngineConfig } from "../../validate-content-engine-config.mjs";
 
 test("uses the built-in blog collector when no source URL is supplied", () => {
   const dependencies = createGenerationProviderDependencies({});
@@ -32,4 +35,9 @@ test("rejects partial summary provider configuration", () => {
     }),
     /configuration is incomplete.*SUMMARY_PROVIDER_API_KEY.*SUMMARY_PROVIDER_MODEL/i
   );
+});
+
+test("uses the centralized content-engine feed configuration", () => {
+  assert.strictEqual(AI_BLOG_SOURCES, CONTENT_ENGINE_CONFIG.feeds);
+  assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
 });

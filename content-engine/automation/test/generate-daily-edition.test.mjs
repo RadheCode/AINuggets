@@ -82,7 +82,24 @@ test("deduplicates candidates and saves a validated edition", async () => {
   assert.equal(receivedCandidates.length, 2);
   assert.equal(result.status, "succeeded");
   assert.equal(repository.editions.size, 1);
+  assert.equal(repository.editions.get(targetDate).status, "draft");
   assert.deepEqual(repository.runs.map((run) => run.status), ["started", "succeeded"]);
+});
+
+test("publishes a validated edition when automatic publication is enabled", async () => {
+  const repository = createMemoryEditionRepository();
+  const result = await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+    summaryProvider: { async generateEdition() { return edition(); } },
+    automaticallyPublish: true,
+    logger: {}
+  });
+
+  assert.equal(result.publicationStatus, "published");
+  assert.equal(repository.editions.get(targetDate).status, "published");
+  assert.match(repository.runs.at(-1).details, /published edition/i);
 });
 
 test("records a failed run when validation rejects an edition", async () => {

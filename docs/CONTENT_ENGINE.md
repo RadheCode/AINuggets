@@ -44,6 +44,7 @@ flowchart TD
 | Public API configuration | `content-engine/config.js` | Defines the browser-visible Worker base URL. |
 | Browser loader | `content-engine/loader.js` | Validates an optional preview date, requests an edition, and rejects malformed API payloads. |
 | Browser renderer | `content-engine/render.js` | Creates semantic tile buttons, stable slot classes, and the summary dialog behavior. |
+| Central configuration | `content-engine/content-engine.config.mjs` | Human-editable schedule, editorial timezone, publication mode, and approved feeds. |
 | Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, idempotency, and audit orchestration. |
 | Worker adapter | `infra/cloudflare/content-worker/src/` | Connects the portable automation to Cron, D1, secrets, and public HTTP routes. |
 | Content database | Cloudflare D1 `ai-nuggets-content` | Source of truth for editions, stories, and generation audit records. |
@@ -53,7 +54,7 @@ flowchart TD
 
 ### 1. Schedule and editorial date
 
-The scheduler calls the portable runner. The runtime adapter supplies the scheduled instant and editorial timezone; the current Cloudflare configuration uses `Asia/Kolkata`. The runner computes the editorial `YYYY-MM-DD` date rather than relying on the server's local clock.
+The scheduler calls the portable runner. The central configuration supplies the Cron expression and IANA editorial timezone; the deployment script derives the Cloudflare Cron trigger from those values. The runner computes the editorial `YYYY-MM-DD` date rather than relying on the server's local clock.
 
 ### 2. Idempotency and auditing
 
@@ -61,7 +62,7 @@ Before collection, the job asks the repository whether an edition already exists
 
 ### 3. Candidate collection
 
-By default, the built-in collector reads the editable approved feed list in `content-engine/automation/config/ai-blog-sources.mjs`:
+By default, the built-in collector reads the editable approved feed list in `content-engine/content-engine.config.mjs`:
 
 1. Fetch up to three recent posts from each RSS or Atom feed.
 2. Remove tracking parameters and normalize candidate URLs.
@@ -92,7 +93,7 @@ Validation happens before persistence. A malformed provider response cannot repl
 
 ### 6. Draft persistence and review
 
-A valid edition and all of its stories are written together in one D1 transaction with status `draft`. Automated generation never makes content public by itself. An editor reviews the draft and changes it to `published` when it is ready.
+A valid edition and all of its stories are written together in one D1 transaction. By default, `publication.automaticallyPublish` is `false`, so the edition is saved as `draft` and an editor changes it to `published` when it is ready. Set it to `true` only when you intentionally want validated editions to bypass editorial review and be published immediately.
 
 If any step fails, the run is marked `failed`; the last valid published edition remains available to readers.
 
@@ -136,8 +137,27 @@ The rendering layer is intentionally theme-independent, so a theme switch can re
 - Raw copyrighted article text is not stored; the product stores original summaries and source attribution.
 - Missing model configuration produces a safe skipped run rather than fabricated content.
 - Partial provider configuration is rejected with the missing setting names.
-- Publishing is separate from generation, preserving an editorial checkpoint.
+- Publishing is separate from generation unless the explicit central configuration switch enables automatic publication.
 - Failure leaves the last published edition available.
+
+## Central configuration
+
+Edit `content-engine/content-engine.config.mjs` to control the following non-secret settings in one place:
+
+| Setting | Purpose | Change effect |
+|---|---|---|
+| `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. | Worker deployment applies the new trigger. |
+| `schedule.timezone` | IANA timezone used to calculate the editorial date, such as `Asia/Kolkata`. | Worker deployment applies it to generation and API date selection. |
+| `publication.automaticallyPublish` | `false` saves validated editions as drafts; `true` saves them as published immediately. | Worker deployment changes future generation only. |
+| `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
+
+After editing this file, deploy the content Worker so its Cron trigger and runtime adapter receive the updated configuration:
+
+```powershell
+.\infra\cloudflare\content-worker\deploy.ps1
+```
+
+Keep `automaticallyPublish` set to `false` unless you intentionally accept direct publication without editorial review. Feed changes apply only when `CONTENT_SOURCE_URL` is not configured; that optional runtime setting replaces the built-in feed collector with a custom JSON source.
 
 ## Related documentation
 
