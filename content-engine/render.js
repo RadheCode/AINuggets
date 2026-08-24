@@ -9,6 +9,7 @@
   const storyDialogPrevious = document.querySelector("#storyDialogPrevious");
   const storyDialogNext = document.querySelector("#storyDialogNext");
   const summaryContextButtons = [...document.querySelectorAll("[data-summary-context]")];
+  const summaryContexts = summaryContextButtons.map((button) => button.dataset.summaryContext);
   let activeStory;
   let activeStoryIndex;
   let stories = [];
@@ -62,6 +63,7 @@
   function selectSummaryContext(context) {
     activeSummaryContext = context;
     storyDialogSummary.textContent = activeStory.summaries[context];
+    storyDialogSummary.scrollTop = 0;
     for (const button of summaryContextButtons) {
       const isSelected = button.dataset.summaryContext === context;
       button.classList.toggle("is-selected", isSelected);
@@ -75,8 +77,8 @@
     storyDialogCategory.textContent = activeStory.category;
     storyDialogTitle.textContent = activeStory.title;
     storyDialogSource.href = activeStory.href;
-    storyDialogPrevious.hidden = index === 0;
-    storyDialogNext.hidden = index === stories.length - 1;
+    storyDialogPrevious.disabled = index === 0;
+    storyDialogNext.disabled = index === stories.length - 1;
     selectSummaryContext(activeSummaryContext);
   }
 
@@ -90,8 +92,29 @@
     button.addEventListener("click", () => selectSummaryContext(button.dataset.summaryContext));
   }
 
-  storyDialogPrevious.addEventListener("click", () => updateStoryDialog(activeStoryIndex - 1));
-  storyDialogNext.addEventListener("click", () => updateStoryDialog(activeStoryIndex + 1));
+  storyDialogPrevious.addEventListener("click", () => {
+    if (activeStoryIndex > 0) updateStoryDialog(activeStoryIndex - 1);
+  });
+  storyDialogNext.addEventListener("click", () => {
+    if (activeStoryIndex < stories.length - 1) updateStoryDialog(activeStoryIndex + 1);
+  });
+  storyDialog.addEventListener("keydown", (event) => {
+    if (event.key === "Tab") {
+      event.preventDefault();
+      const currentContextIndex = summaryContexts.indexOf(activeSummaryContext);
+      const direction = event.shiftKey ? -1 : 1;
+      const nextContextIndex = (currentContextIndex + direction + summaryContexts.length) % summaryContexts.length;
+      selectSummaryContext(summaryContexts[nextContextIndex]);
+    }
+    if (event.key === "ArrowLeft" && activeStoryIndex > 0) {
+      event.preventDefault();
+      updateStoryDialog(activeStoryIndex - 1);
+    }
+    if (event.key === "ArrowRight" && activeStoryIndex < stories.length - 1) {
+      event.preventDefault();
+      updateStoryDialog(activeStoryIndex + 1);
+    }
+  });
   storyDialogClose.addEventListener("click", () => storyDialog.close());
   storyDialog.addEventListener("click", (event) => {
     if (event.target === storyDialog) storyDialog.close();
