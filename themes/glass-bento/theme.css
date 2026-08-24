@@ -387,6 +387,19 @@ main::before { display: none; }
   box-shadow: 8px 8px 16px var(--tile-shadow), -6px -6px 14px var(--tile-highlight);
 }
 
+/* A soft spectrum gives each daily story a distinct place without changing the grid's calm tactile character. */
+.story-card--slot-1 { background: #d9d5f5; }
+.story-card--slot-2 { background: #cce8e5; }
+.story-card--slot-3 { background: #f2c48f; }
+.story-card--slot-4 { background: #f3dfba; }
+.story-card--slot-5 { background: #ebd2dc; }
+
+:root[data-color-mode="dark"] .story-card--slot-1 { background: #2e527a; }
+:root[data-color-mode="dark"] .story-card--slot-2 { background: #276351; }
+:root[data-color-mode="dark"] .story-card--slot-3 { background: #6b3e61; }
+:root[data-color-mode="dark"] .story-card--slot-4 { background: #743f3c; }
+:root[data-color-mode="dark"] .story-card--slot-5 { background: #57467d; }
+
 @keyframes frame-in { from { opacity: 0; transform: scale(0.975) translateY(10px); } }
 @keyframes copy-in { from { opacity: 0; transform: translateY(18px); } }
 @keyframes tile-in { from { opacity: 0; transform: translateY(24px) scale(0.94); } to { opacity: 1; transform: none; } }
