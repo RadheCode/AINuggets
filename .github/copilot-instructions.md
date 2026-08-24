@@ -78,6 +78,7 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 
 ## Engineering rules
 
+- Write and maintain all repository documentation as Markdown (`.md`) files. Store every documentation file in the root `docs/` directory; do not add documentation files elsewhere in the repository.
 - Prefer dependency-free HTML, CSS, and JavaScript unless a new dependency has a clear product need.
 - Keep content and rendering in `content-engine/`, shared interactions in `script.js`, configuration in root config files, and presentation in `themes/`.
 - Keep every feature and implementation infrastructure-agnostic by default. Domain logic, UI behavior, application contracts, and workflows must not import, name, or depend on a cloud provider, database, scheduler, deployment platform, or provider SDK.

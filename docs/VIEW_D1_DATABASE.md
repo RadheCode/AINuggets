@@ -90,7 +90,7 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
 
 The `--remote` flag queries the live Cloudflare database. Without `--remote`, Wrangler uses a separate local development database. Always include `--remote` when you intend to inspect production content.
 
-These examples use `SELECT` statements and do not modify data. Before running `INSERT`, `UPDATE`, `DELETE`, migrations, or SQL files against `--remote`, review the command carefully and follow the migration process documented in `infra/cloudflare/README.md`.
+These examples use `SELECT` statements and do not modify data. Before running `INSERT`, `UPDATE`, `DELETE`, migrations, or SQL files against `--remote`, review the command carefully and follow the migration process documented in [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md).
 
 ## Public API view
 

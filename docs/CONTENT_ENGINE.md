@@ -165,4 +165,4 @@ After editing this file, deploy the content Worker so its Cron trigger and runti
 
 - [Daily content automation](DAILY_CONTENT_AUTOMATION.md): provider configuration, scheduler adapters, local testing, and deployment details.
 - [Viewing the D1 database](VIEW_D1_DATABASE.md): dashboard and Wrangler queries for editions, stories, and runs.
-- [`content-engine/README.md`](../content-engine/README.md): quick directory-level API and ownership reference.
+- [Content Engine API](CONTENT_ENGINE_API.md): quick directory-level API and ownership reference.
