@@ -24,6 +24,18 @@ Every UI change must be visually checked in both light and dark modes before rel
 
 Deployment providers live under `infra/<provider>/`, with the active provider selected in `infra/config.json`. Cloudflare Pages is currently active and supports browser OAuth deployment; see [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md) for setup and credential requirements.
 
+## Google sign-in
+
+The site supports Google-only OAuth/OpenID Connect sign-in through [Google Identity Services](https://developers.google.com/identity/gsi/web/guides/overview). Create a **Web application** OAuth client in Google Cloud, add each deployed site URL and local development URL to its authorized JavaScript origins, then set its public client ID in `auth.config.js`:
+
+```js
+window.AINuggetsAuthConfig = Object.freeze({
+  googleClientId: "YOUR_CLIENT_ID.apps.googleusercontent.com"
+});
+```
+
+The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. The current static-site implementation keeps a signed-in display identity in `sessionStorage`; it does not create accounts or authorize backend requests. A future protected backend must verify the Google ID token server-side before trusting it.
+
 ## Run locally
 
 Open `index.html` directly in a browser, or serve the directory with any static file server.

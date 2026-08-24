@@ -54,7 +54,7 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Test down to 320px viewport width and 600px viewport height.
 - Use fluid dimensions, CSS Grid or Flexbox, `minmax(0, 1fr)`, and `100dvh` where appropriate.
 - Never solve overflow by clipping essential text or controls. Condense secondary copy at constrained breakpoints while retaining every story title and action.
-- Treat responsive placement as a strict requirement: every visible element must remain deliberately anchored and fluid across resizing. Never permit implicit grid tracks, overlap, overflow, clipped essential controls, or detached/floating controls; validate representative desktop, laptop, tablet, mobile portrait, and mobile landscape resolutions.
+- Treat responsive placement as a strict requirement: every visible element must remain deliberately anchored and fluid across resizing. Keep related controls in an explicit Grid or Flex group with a defined anchor; never position them from viewport-relative, absolute, or incidental free space in a way that lets them detach, drift, or float. Never permit implicit grid tracks, overlap, overflow, clipped essential controls, or detached/floating controls; resize through and validate representative desktop, laptop, tablet, mobile portrait, and mobile landscape resolutions.
 
 ## Color modes
 

@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script src="theme.config.js"></script>
   <script src="theme-loader.js"></script>
+  <script src="auth.config.js"></script>
 </head>
 <body>
   <div class="site-frame">
@@ -31,6 +32,12 @@
 
       <div class="header-actions">
         <span class="current-date">Daily edition</span>
+        <div class="sign-in-control">
+          <div id="googleSignInButton"></div>
+          <button class="google-sign-in-fallback" id="googleSignInFallback" type="button" disabled>Continue with Google</button>
+          <button class="sign-out-button" id="signOutButton" type="button" hidden>Sign out</button>
+          <output class="sign-in-status" id="signInStatus" aria-live="polite"></output>
+        </div>
         <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
           <span class="mode-icon mode-icon--sun" aria-hidden="true">&#9728;</span>
           <span class="mode-icon mode-icon--moon" aria-hidden="true">&#9790;</span>

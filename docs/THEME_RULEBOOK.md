@@ -74,7 +74,7 @@ Theme styles must scope reusable variables under `:root` and may use the `data-t
 5. Use fluid sizing and `minmax(0, 1fr)` so grid content cannot force overflow.
 6. Prefer `100dvh` for viewport layouts and account for browser chrome on mobile.
 7. Test narrow mobile widths down to 320px and short laptop heights down to 600px.
-8. Treat responsive placement as mandatory: every visible element must remain deliberately anchored and fluid while resizing. Do not allow implicit grid tracks, overlap, clipping of essential controls, overflow, or detached/floating controls.
+8. Treat responsive placement as mandatory: every visible element must remain deliberately anchored and fluid while resizing. Controls that belong together (such as header actions) must be in an explicit Grid or Flex group with a defined anchor; they must never use viewport-relative, absolute, or incidental free space to appear detached, drift, or float. Do not allow implicit grid tracks, overlap, clipping of essential controls, overflow, or detached/floating controls.
 9. Keep elevation semantics consistent between light and dark modes: a raised, inset, selected, or disabled component must retain that same depth meaning in both themes.
 10. Use the established accent color for selected controls. Selected controls should retain a raised treatment unless an intentionally pressed interaction state is being represented.
 
@@ -109,6 +109,6 @@ Before accepting a theme:
 
 1. Select it through `theme.config.js` and confirm its stylesheet loads without console errors.
 2. Confirm all five cards, header, intro, and footer fit without page scrolling.
-3. Check multiple representative desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights; confirm every control remains intentionally positioned during resizing.
+3. Check multiple representative desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights; resize through each breakpoint and confirm every control remains in its declared group and anchor, without drifting, detaching, overlapping, or becoming unreachable.
 4. Verify the light/dark switcher, persistence, keyboard focus, newsletter dialog behavior, readable contrast in both modes, reduced motion, and identical element geometry before and after a mode change.
 5. Confirm missing or invalid theme configuration fails visibly instead of silently loading a fallback.
