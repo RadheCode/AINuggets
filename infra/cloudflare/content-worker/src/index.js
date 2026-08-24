@@ -4,6 +4,7 @@ import { runScheduledEdition } from "../../../../content-engine/automation/jobs/
 import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
 import { createD1EditionRepository } from "./d1-edition-repository.js";
+import { createSessionToken, hashToken, verifyGoogleCredential } from "./google-auth.js";
 
 function json(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -21,6 +22,72 @@ function corsHeaders(request, env) {
   return origin && allowed.includes(origin)
     ? { "access-control-allow-origin": origin, vary: "Origin" }
     : {};
+}
+
+function userResponse(user) {
+  return { user: { email: user.email, name: user.display_name, pictureUrl: user.picture_url } };
+}
+
+function bearerToken(request) {
+  const authorization = request.headers.get("authorization") || "";
+  return authorization.startsWith("Bearer ") ? authorization.slice(7) : null;
+}
+
+async function sessionUser(request, env) {
+  const token = bearerToken(request);
+  if (!token || token.length > 512) return null;
+  const tokenHash = await hashToken(token);
+  const now = Math.floor(Date.now() / 1000);
+  return env.CONTENT_DB.prepare(`
+    SELECT user_profiles.email, user_profiles.display_name, user_profiles.picture_url
+    FROM user_sessions
+    JOIN user_profiles ON user_profiles.id = user_sessions.user_id
+    WHERE user_sessions.token_hash = ? AND user_sessions.expires_at > ?
+    LIMIT 1
+  `).bind(tokenHash, now).first();
+}
+
+async function createSession(request, env, cors) {
+  if (!env.GOOGLE_CLIENT_ID) return json({ error: "Google authentication is not configured." }, 503, cors);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400, cors);
+  }
+
+  let profile;
+  try {
+    profile = await verifyGoogleCredential(body.credential, env.GOOGLE_CLIENT_ID);
+  } catch (error) {
+    return json({ error: error.message }, 401, cors);
+  }
+
+  await env.CONTENT_DB.prepare(`
+    INSERT INTO user_profiles (google_subject, email, display_name, picture_url)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(google_subject) DO UPDATE SET
+      email = excluded.email,
+      display_name = excluded.display_name,
+      picture_url = excluded.picture_url,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(profile.subject, profile.email, profile.displayName, profile.pictureUrl).run();
+  const user = await env.CONTENT_DB.prepare("SELECT id, email, display_name, picture_url FROM user_profiles WHERE google_subject = ?").bind(profile.subject).first();
+  if (!user) return json({ error: "Google profile could not be saved." }, 500, cors);
+  const token = createSessionToken();
+  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+  await env.CONTENT_DB.prepare("INSERT INTO user_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)").bind(user.id, await hashToken(token), expiresAt).run();
+
+  return json({ ...userResponse(user), sessionToken: token, expiresAt }, 201, cors);
+}
+
+async function signOut(request, env, cors) {
+  const token = bearerToken(request);
+  if (token && token.length <= 512) {
+    await env.CONTENT_DB.prepare("DELETE FROM user_sessions WHERE token_hash = ?").bind(await hashToken(token)).run();
+  }
+  return new Response(null, { status: 204, headers: cors });
 }
 
 function createAutomationDependencies(env) {
@@ -118,8 +185,15 @@ async function handleRequest(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: { ...cors, "access-control-allow-methods": "GET, OPTIONS" }
+      headers: { ...cors, "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "authorization, content-type" }
     });
+  }
+
+  if (request.method === "POST" && url.pathname === "/auth/google") return createSession(request, env, cors);
+  if (request.method === "POST" && url.pathname === "/auth/sign-out") return signOut(request, env, cors);
+  if (request.method === "GET" && url.pathname === "/auth/session") {
+    const user = await sessionUser(request, env);
+    return user ? json(userResponse(user), 200, cors) : json({ error: "Unauthenticated." }, 401, cors);
   }
 
   if (request.method !== "GET") return json({ error: "Method not allowed." }, 405, cors);

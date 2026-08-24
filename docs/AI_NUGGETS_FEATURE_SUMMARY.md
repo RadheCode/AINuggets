@@ -18,7 +18,7 @@ AI Nuggets is a responsive daily AI-news briefing website. It presents a curated
 | Light and dark modes | Provides a color-mode toggle, respects the operating-system preference when no choice has been saved, and remembers the reader's choice in browser storage. |
 | Theme system | Loads the active visual theme from centralized configuration, allowing the site presentation to change without changing content retrieval or behavior. |
 | Newsletter sign-up experience | Offers a newsletter modal with native email validation, a submission acknowledgement, close controls, and click-outside dismissal. |
-| Google sign-in | Supports Google-only OAuth/OpenID Connect sign-in through Google's hosted button. The browser session retains the signed-in identity and the header offers an application sign-out control. Until a Google client ID is configured, the visible disabled action explains the unavailable state. |
+| Google sign-in | Supports Google-only OAuth/OpenID Connect sign-in through Google Identity Services. The Worker verifies each credential, creates or updates a D1 user profile, and issues an opaque 30-day session token so the signed-in state survives refresh. The header offers an application sign-out control. Until a Google client ID is configured, the visible disabled action explains the unavailable state. |
 | Accessible interactions | Uses semantic navigation and controls, descriptive labels, live feedback for the newsletter form, modal dialogs, keyboard summary switching, and keyboard story navigation. |
 
 ## Content and publishing platform
@@ -52,4 +52,4 @@ AI Nuggets is a responsive daily AI-news briefing website. It presents a curated
 
 The newsletter form currently provides an on-page early-access confirmation only. The implemented client code does not submit subscriber information to a mailing-list service or backend endpoint.
 
-Google sign-in establishes a browser-session identity only. It does not create a server account, authorize protected API calls, or submit profile data to a backend.
+Google sign-in creates or updates a D1 profile containing the verified Google subject, email, display name, and optional picture URL. Browser storage contains only an opaque bearer session token; D1 stores only its SHA-256 hash. The current authenticated API surface is limited to session restoration and sign-out, and sessions expire after 30 days.

@@ -10,7 +10,8 @@
     "crons": ["__CONTENT_ENGINE_CRON__"]
   },
   "vars": {
-    "ALLOWED_ORIGINS": "https://ai-nuggets.pages.dev,http://localhost:8080,http://127.0.0.1:8080"
+    "ALLOWED_ORIGINS": "https://ai-nuggets.pages.dev,http://localhost:8080,http://127.0.0.1:8080",
+    "GOOGLE_CLIENT_ID": "119476209987-a7plo7e675cl200cjnk78msq7ol06umr.apps.googleusercontent.com"
   },
   "d1_databases": [
     {

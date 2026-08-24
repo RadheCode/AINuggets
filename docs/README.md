@@ -34,7 +34,7 @@ window.AINuggetsAuthConfig = Object.freeze({
 });
 ```
 
-The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. The current static-site implementation keeps a signed-in display identity in `sessionStorage`; it does not create accounts or authorize backend requests. A future protected backend must verify the Google ID token server-side before trusting it.
+The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. Set the same public value in `infra/cloudflare/content-worker/wrangler.jsonc` as `GOOGLE_CLIENT_ID`, then deploy the content Worker before deploying Pages. The Worker verifies every Google ID token, stores a profile in D1, and returns an opaque 30-day session token. The browser keeps only that opaque token in `localStorage` and restores the profile through the Worker after refresh; the Worker stores only its SHA-256 hash. See [Content Engine API](CONTENT_ENGINE_API.md#authentication-api) for the endpoint contract.
 
 ## Run locally
 

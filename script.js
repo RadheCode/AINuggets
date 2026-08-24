@@ -5,60 +5,68 @@ const subscribeForm = document.querySelector("#subscribeForm");
 const formMessage = document.querySelector("#formMessage");
 const colorModeToggle = document.querySelector("#colorModeToggle");
 const googleSignInButton = document.querySelector("#googleSignInButton");
-const googleSignInFallback = document.querySelector("#googleSignInFallback");
 const signOutButton = document.querySelector("#signOutButton");
 const signInStatus = document.querySelector("#signInStatus");
 const authConfig = window.AINuggetsAuthConfig;
+const contentConfig = window.AINuggetsContentConfig;
+const sessionTokenKey = "ai-nuggets-session-token";
 let googleIdentityInitialized = false;
 
-function decodeGoogleCredential(credential) {
-  const payload = credential.split(".")[1];
-  if (!payload) return null;
-
-  try {
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(decodeURIComponent(atob(base64).split("").map((character) => `%${character.charCodeAt(0).toString(16).padStart(2, "0")}`).join("")));
-  } catch {
-    return null;
-  }
+function authApiUrl(path) {
+  if (!contentConfig?.apiBaseUrl) throw new Error("Authentication is currently unavailable.");
+  return `${contentConfig.apiBaseUrl.replace(/\/$/, "")}${path}`;
 }
 
 function setSignedInUser(user) {
   googleSignInButton.hidden = Boolean(user);
-  googleSignInFallback.hidden = Boolean(user);
   signOutButton.hidden = !user;
   signInStatus.textContent = user ? `Signed in as ${user.name || user.email}.` : "";
 }
 
-function handleGoogleCredential(response) {
-  const profile = decodeGoogleCredential(response.credential);
-  if (!profile?.sub || !profile.email) {
+async function authRequest(path, options = {}) {
+  const token = localStorage.getItem(sessionTokenKey);
+  const headers = new Headers(options.headers);
+  if (token) headers.set("authorization", `Bearer ${token}`);
+  return fetch(authApiUrl(path), { ...options, headers });
+}
+
+async function responseData(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Authentication request failed.");
+  return data;
+}
+
+async function handleGoogleCredential(response) {
+  if (!response.credential) {
     signInStatus.textContent = "Google sign-in could not be completed. Please try again.";
     return;
   }
 
-  const user = { id: profile.sub, email: profile.email, name: profile.name || profile.email };
-  sessionStorage.setItem("ai-nuggets-user", JSON.stringify(user));
-  setSignedInUser(user);
+  googleSignInButton.disabled = true;
+  signInStatus.textContent = "Signing you in...";
+  try {
+    const data = await responseData(await authRequest("/auth/google", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ credential: response.credential })
+    }));
+    localStorage.setItem(sessionTokenKey, data.sessionToken);
+    setSignedInUser(data.user);
+  } catch (error) {
+    signInStatus.textContent = error.message;
+    googleSignInButton.disabled = false;
+  }
 }
 
-function renderGoogleSignInButton() {
-  googleSignInButton.replaceChildren();
-  googleSignInButton.hidden = false;
-  googleSignInFallback.hidden = true;
-  google.accounts.id.renderButton(googleSignInButton, {
-    theme: document.documentElement.dataset.colorMode === "dark" ? "filled_black" : "outline",
-    size: "medium",
-    text: "signin_with",
-    shape: "rectangular"
-  });
+function promptGoogleSignIn() {
+  if (!googleIdentityInitialized) return;
+  signInStatus.textContent = "Choose a Google account to continue.";
+  window.google.accounts.id.prompt();
 }
 
 function initializeGoogleSignIn() {
   if (!authConfig || typeof authConfig.googleClientId !== "string" || !authConfig.googleClientId.trim()) {
-    googleSignInButton.hidden = true;
-    googleSignInFallback.hidden = false;
-    googleSignInFallback.title = "Google sign-in requires a configured Google client ID.";
+    googleSignInButton.title = "Google sign-in requires a configured Google client ID.";
     signInStatus.textContent = "Google sign-in requires configuration.";
     return;
   }
@@ -71,7 +79,7 @@ function initializeGoogleSignIn() {
       });
       googleIdentityInitialized = true;
     }
-    renderGoogleSignInButton();
+    googleSignInButton.disabled = false;
     return;
   }
 
@@ -84,12 +92,10 @@ function initializeGoogleSignIn() {
       callback: handleGoogleCredential
     });
     googleIdentityInitialized = true;
-    renderGoogleSignInButton();
+    googleSignInButton.disabled = false;
   };
   googleScript.onerror = () => {
-    googleSignInButton.hidden = true;
-    googleSignInFallback.hidden = false;
-    googleSignInFallback.title = "Google sign-in is currently unavailable.";
+    googleSignInButton.title = "Google sign-in is currently unavailable.";
     signInStatus.textContent = "Google sign-in is currently unavailable.";
   };
   document.head.appendChild(googleScript);
@@ -110,20 +116,34 @@ colorModeToggle.addEventListener("click", () => {
 
 updateColorModeToggle();
 
-signOutButton.addEventListener("click", () => {
-  sessionStorage.removeItem("ai-nuggets-user");
+googleSignInButton.addEventListener("click", promptGoogleSignIn);
+
+signOutButton.addEventListener("click", async () => {
+  signOutButton.disabled = true;
+  try {
+    await authRequest("/auth/sign-out", { method: "POST" });
+  } catch {
+    // A locally removed bearer token must remain unusable even if its revocation request fails.
+  }
+  localStorage.removeItem(sessionTokenKey);
   window.google?.accounts.id.disableAutoSelect();
   setSignedInUser(null);
-  renderGoogleSignInButton();
+  signOutButton.disabled = false;
+  googleSignInButton.disabled = !googleIdentityInitialized;
 });
 
-try {
-  setSignedInUser(JSON.parse(sessionStorage.getItem("ai-nuggets-user")));
-} catch {
-  sessionStorage.removeItem("ai-nuggets-user");
+async function restoreSession() {
+  if (!localStorage.getItem(sessionTokenKey)) return;
+  try {
+    const data = await responseData(await authRequest("/auth/session"));
+    setSignedInUser(data.user);
+  } catch {
+    localStorage.removeItem(sessionTokenKey);
+  }
 }
 
 initializeGoogleSignIn();
+restoreSession();
 
 subscribeButton.addEventListener("click", () => {
   subscribeDialog.showModal();

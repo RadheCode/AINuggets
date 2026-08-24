@@ -33,8 +33,10 @@
       <div class="header-actions">
         <span class="current-date">Daily edition</span>
         <div class="sign-in-control">
-          <div id="googleSignInButton"></div>
-          <button class="google-sign-in-fallback" id="googleSignInFallback" type="button" disabled>Continue with Google</button>
+          <button class="google-sign-in-button" id="googleSignInButton" type="button" disabled>
+            <span class="google-sign-in-button__mark" aria-hidden="true">G</span>
+            <span>Continue with Google</span>
+          </button>
           <button class="sign-out-button" id="signOutButton" type="button" hidden>Sign out</button>
           <output class="sign-in-status" id="signInStatus" aria-live="polite"></output>
         </div>
