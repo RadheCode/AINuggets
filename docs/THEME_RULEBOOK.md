@@ -66,6 +66,7 @@ The article-summary dialog is the canonical dialog shell. Every new dialog, pane
 - The shared switcher persists an explicit choice under the `ai-nuggets-color-mode` local-storage key.
 - Define mode colors through CSS custom properties where practical so component states remain consistent.
 - Both modes must meet the same accessibility, responsive, and no-scroll requirements.
+- Any visible motion or emphasis effect in one color mode must remain perceptible and equally purposeful in the other mode. Validate its contrast, animation state, and interaction states in both modes; do not rely on near-identical colors that make an effect disappear.
 - Switching modes must preserve the exact geometry and alignment of every page element. Color modes may change styling only; they must not move, resize, or reflow tiles or other content.
 - Do not implement a separate dark-theme directory when the layout and visual identity are otherwise the same theme.
 

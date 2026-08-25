@@ -606,6 +606,49 @@ main::before { display: none; }
   transform: translateY(-50%) translateX(-2px);
 }
 
+.google-sign-in-button,
+:root[data-color-mode="dark"] .google-sign-in-button {
+  border-color: transparent;
+  color: #fff7e8;
+  background: #e77b2f;
+  box-shadow: 5px 5px 10px rgba(141, 65, 24, 0.38), -4px -4px 9px rgba(255, 207, 170, 0.48), inset 1px 1px rgba(255, 241, 218, 0.42);
+}
+
+.google-sign-in-button:not(:disabled):hover,
+:root[data-color-mode="dark"] .google-sign-in-button:not(:disabled):hover {
+  color: #fff7e8;
+  background: #d96921;
+  box-shadow: 7px 7px 13px rgba(141, 65, 24, 0.46), -5px -5px 10px rgba(255, 207, 170, 0.56), inset 1px 1px rgba(255, 241, 218, 0.42);
+}
+
+.brand-mark,
+.eyebrow,
+.briefing-meta span,
+.subscribe-button,
+:root[data-color-mode="dark"] .brand-mark,
+:root[data-color-mode="dark"] .eyebrow,
+:root[data-color-mode="dark"] .briefing-meta span,
+:root[data-color-mode="dark"] .subscribe-button {
+  border-color: transparent;
+  color: #fff7e8;
+  background: #e77b2f;
+  box-shadow: 5px 5px 10px rgba(141, 65, 24, 0.38), -4px -4px 9px rgba(255, 207, 170, 0.48), inset 1px 1px rgba(255, 241, 218, 0.42);
+}
+
+.eyebrow span {
+  background: #fff7e8;
+  box-shadow: 0 0 0 4px rgba(255, 247, 232, 0.18);
+}
+
+.briefing-meta span:hover,
+.subscribe-button:hover,
+:root[data-color-mode="dark"] .briefing-meta span:hover,
+:root[data-color-mode="dark"] .subscribe-button:hover {
+  color: #fff7e8;
+  background: #d96921;
+  box-shadow: 7px 7px 13px rgba(141, 65, 24, 0.46), -5px -5px 10px rgba(255, 207, 170, 0.56), inset 1px 1px rgba(255, 241, 218, 0.42);
+}
+
 .feedback-tab:focus-visible { outline: 3px solid #101326; outline-offset: -5px; }
 .feedback-tab > span:first-child { color: #e4b638; font-size: 0.82rem; line-height: 1; text-shadow: 0 1px rgba(255, 255, 255, 0.54); }
 
@@ -700,7 +743,8 @@ main::before { display: none; }
 
 :root[data-color-mode="dark"] .briefing-copy > .briefing-copy__shine {
   color: transparent;
-  background-image: linear-gradient(110deg, #f3f5ff 35%, #fff 50%, #f3f5ff 65%);
+  background-image: linear-gradient(110deg, #d3d9f0 32%, #fff 47%, #fff 53%, #d3d9f0 68%);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.16));
 }
 
 @media (max-width: 1050px) {
