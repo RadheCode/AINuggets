@@ -25,7 +25,60 @@ function corsHeaders(request, env) {
 }
 
 function userResponse(user) {
-  return { user: { email: user.email, name: user.display_name, pictureUrl: user.picture_url } };
+  return {
+    user: {
+      email: user.email,
+      name: user.display_name,
+      pictureUrl: user.picture_url,
+      lastLoggedInAt: user.last_logged_in_at,
+      lastRefreshedAt: user.last_refreshed_at,
+      currentStreak: user.current_streak,
+      longestStreak: user.longest_streak
+    }
+  };
+}
+
+function utcActivityDate(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function previousUtcDate(date = new Date()) {
+  const previousDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - 1));
+  return utcActivityDate(previousDay);
+}
+
+async function recordDailyActivity(db, userId, date = new Date()) {
+  const today = utcActivityDate(date);
+  const yesterday = previousUtcDate(date);
+  await db.batch([
+    db.prepare(`
+      INSERT INTO user_daily_activity (user_id, activity_date)
+      VALUES (?, ?)
+      ON CONFLICT(user_id, activity_date) DO NOTHING
+    `).bind(userId, today),
+    db.prepare(`
+      UPDATE user_profiles
+      SET current_streak = CASE
+            WHEN streak_last_active_date = ? THEN current_streak + 1
+            ELSE 1
+          END,
+          longest_streak = MAX(
+            longest_streak,
+            CASE WHEN streak_last_active_date = ? THEN current_streak + 1 ELSE 1 END
+          ),
+          streak_last_active_date = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+        AND (streak_last_active_date IS NULL OR streak_last_active_date <> ?)
+    `).bind(yesterday, yesterday, today, userId, today)
+  ]);
+
+  return db.prepare(`
+    SELECT id, email, display_name, picture_url, last_logged_in_at, last_refreshed_at,
+           current_streak, longest_streak
+    FROM user_profiles
+    WHERE id = ?
+  `).bind(userId).first();
 }
 
 function bearerToken(request) {
@@ -39,7 +92,9 @@ async function sessionUser(request, env) {
   const tokenHash = await hashToken(token);
   const now = Math.floor(Date.now() / 1000);
   return env.CONTENT_DB.prepare(`
-    SELECT user_profiles.email, user_profiles.display_name, user_profiles.picture_url
+    SELECT user_profiles.id, user_profiles.email, user_profiles.display_name, user_profiles.picture_url,
+           user_profiles.last_logged_in_at, user_profiles.last_refreshed_at,
+           user_profiles.current_streak, user_profiles.longest_streak
     FROM user_sessions
     JOIN user_profiles ON user_profiles.id = user_sessions.user_id
     WHERE user_sessions.token_hash = ? AND user_sessions.expires_at > ?
@@ -71,10 +126,24 @@ async function createSession(request, env, cors) {
       email = excluded.email,
       display_name = excluded.display_name,
       picture_url = excluded.picture_url,
+      last_logged_in_at = CURRENT_TIMESTAMP,
       updated_at = CURRENT_TIMESTAMP
   `).bind(profile.subject, profile.email, profile.displayName, profile.pictureUrl).run();
-  const user = await env.CONTENT_DB.prepare("SELECT id, email, display_name, picture_url FROM user_profiles WHERE google_subject = ?").bind(profile.subject).first();
+  await env.CONTENT_DB.prepare(`
+    UPDATE user_profiles
+    SET last_logged_in_at = CURRENT_TIMESTAMP,
+        last_refreshed_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE google_subject = ?
+  `).bind(profile.subject).run();
+  let user = await env.CONTENT_DB.prepare(`
+    SELECT id, email, display_name, picture_url, last_logged_in_at, last_refreshed_at,
+           current_streak, longest_streak
+    FROM user_profiles
+    WHERE google_subject = ?
+  `).bind(profile.subject).first();
   if (!user) return json({ error: "Google profile could not be saved." }, 500, cors);
+  user = await recordDailyActivity(env.CONTENT_DB, user.id);
   const token = createSessionToken();
   const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
   await env.CONTENT_DB.prepare("INSERT INTO user_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)").bind(user.id, await hashToken(token), expiresAt).run();
@@ -210,9 +279,19 @@ async function handleRequest(request, env) {
   const edition = await getEdition(env.CONTENT_DB, targetDate);
   if (!edition) return json({ error: `No published edition is available on or before ${targetDate}.` }, 404, cors);
 
+  let user = await sessionUser(request, env);
+  if (user) {
+    await env.CONTENT_DB.prepare(`
+      UPDATE user_profiles
+      SET last_refreshed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(user.id).run();
+    user = await recordDailyActivity(env.CONTENT_DB, user.id);
+  }
+
   return json(edition, 200, {
     ...cors,
-    "cache-control": "public, max-age=300, s-maxage=900"
+    "cache-control": user ? "private, no-store" : "public, max-age=300, s-maxage=900"
   });
 }
 

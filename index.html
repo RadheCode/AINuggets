@@ -32,6 +32,11 @@
 
       <div class="header-actions">
         <span class="current-date">Daily edition</span>
+        <output class="streak-pill" id="streakPill" aria-live="polite" hidden>
+          <span class="streak-pill__flame" aria-hidden="true">&#128293;</span>
+          <strong id="streakPillCount">0</strong>
+          <span class="streak-pill__label" id="streakPillLabel">day streaks</span>
+        </output>
         <div class="sign-in-control">
           <button class="google-sign-in-button" id="googleSignInButton" type="button" disabled>
             <span class="google-sign-in-button__mark" aria-hidden="true">G</span>

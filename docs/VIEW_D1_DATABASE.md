@@ -42,6 +42,42 @@ FROM generation_runs
 ORDER BY started_at DESC;
 ```
 
+## User login and page-refresh activity
+
+Each signed-in Google user has one `user_profiles` record. Completing Google sign-in updates both `last_logged_in_at` and `last_refreshed_at`, because sign-in counts as a page refresh. `last_refreshed_at` is also updated when that user's authenticated browser requests a published edition. Both timestamps are UTC.
+
+The Worker records qualifying activity in `user_daily_activity`, with one row per user and UTC calendar date. It stores the resulting active streak in `current_streak`, the historical best in `longest_streak`, and the last qualifying UTC date in `streak_last_active_date` on `user_profiles`. Duplicate requests on the same date do not change a streak.
+
+View all user activity, most recently refreshed first:
+
+```sql
+SELECT
+  email,
+  display_name,
+  last_logged_in_at,
+  last_refreshed_at,
+  current_streak,
+  longest_streak,
+  streak_last_active_date
+FROM user_profiles
+ORDER BY last_refreshed_at DESC, last_logged_in_at DESC;
+```
+
+View activity for one user by email:
+
+```sql
+SELECT
+  email,
+  display_name,
+  last_logged_in_at,
+  last_refreshed_at,
+  current_streak,
+  longest_streak,
+  streak_last_active_date
+FROM user_profiles
+WHERE email = 'reader@example.com';
+```
+
 ## Wrangler CLI
 
 Run commands from the repository root. Authenticate first if needed:
@@ -84,6 +120,15 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config infra\cloudflare\content-worker\wrangler.jsonc `
   --command "SELECT * FROM generation_runs ORDER BY started_at DESC LIMIT 20;"
+```
+
+View user login and refresh activity:
+
+```powershell
+npx --yes wrangler@latest d1 execute ai-nuggets-content `
+  --remote `
+  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --command "SELECT email, display_name, last_logged_in_at, last_refreshed_at, current_streak, longest_streak, streak_last_active_date FROM user_profiles ORDER BY last_refreshed_at DESC, last_logged_in_at DESC;"
 ```
 
 ## Production versus local data

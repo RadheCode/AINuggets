@@ -77,6 +77,7 @@ Theme styles must scope reusable variables under `:root` and may use the `data-t
 8. Treat responsive placement as mandatory: every visible element must remain deliberately anchored and fluid while resizing. Controls that belong together (such as header actions) must be in an explicit Grid or Flex group with a defined anchor; they must never use viewport-relative, absolute, or incidental free space to appear detached, drift, or float. Do not allow implicit grid tracks, overlap, clipping of essential controls, overflow, or detached/floating controls.
 9. Keep elevation semantics consistent between light and dark modes: a raised, inset, selected, or disabled component must retain that same depth meaning in both themes.
 10. Use the established accent color for selected controls. Selected controls should retain a raised treatment unless an intentionally pressed interaction state is being represented.
+11. Every standalone widget and control must conform to every applicable rule in this document and the active theme's established surface, elevation, glass, motion, responsive, color-mode, and accessibility language. In themes that use neumorphism, use corresponding raised or inset shadow pairs; when a widget uses glass, retain a translucent background and an opaque-enough fallback for browsers without backdrop filtering.
 
 ## Accessibility rules
 

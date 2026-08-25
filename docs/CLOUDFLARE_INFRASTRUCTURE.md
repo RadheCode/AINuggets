@@ -78,6 +78,8 @@ The public API provides:
 - `GET /api/editions/latest`
 - `GET /api/editions/YYYY-MM-DD`
 
+Authenticated published-edition requests update the caller's single D1 user profile with `last_refreshed_at`; Google sign-in updates both `last_logged_in_at` and `last_refreshed_at`, because sign-in counts as a refresh. The Worker stores one qualifying activity per user per UTC day in `user_daily_activity`, atomically maintaining `current_streak`, `longest_streak`, and `streak_last_active_date` on the profile. These authenticated edition responses are private and no-store so a page fetch cannot be satisfied by a shared cache.
+
 The dated route falls back to the newest published edition on or before the requested date. The frontend reads the Worker URL from `content-engine/config.js`.
 
 The scheduled handler is a thin adapter around the runtime-neutral job in `content-engine/automation/`. It calculates the edition date in UTC, injects the D1 repository, and passes Worker runtime values to `content-engine/automation/config/create-generation-provider-dependencies.mjs`. That portable module defines the setting names, validation, and generic content/summary adapters; Cloudflare only stores and injects secure values. With no provider configuration, it writes a safe `skipped` audit record and never invents stories. With complete provider configuration, it creates a validated edition and applies the configured publication mode.

@@ -22,6 +22,10 @@ After editing `automation/config/providers.local.env`, run `.\automation\test-pr
 
 The content Worker provides Google-only sign-in and durable session endpoints. The browser sends the opaque session token as `Authorization: Bearer <token>`. Tokens are valid for 30 days; the Worker stores only their SHA-256 hashes in D1. Authentication endpoints allow configured browser origins, `GET`, `POST`, and the `authorization` and `content-type` request headers.
 
+Each Google identity has one `user_profiles` record. The Worker updates both `last_logged_in_at` and `last_refreshed_at` when that email completes Google sign-in, because a completed login counts as a page refresh. An authenticated browser requesting a published edition also updates `last_refreshed_at`.
+
+The Worker records at most one qualifying activity for each user per UTC calendar date. A qualifying Google sign-in or authenticated published-edition request starts a streak at `1`, increments it when the prior active date was the preceding UTC date, and resets it to `1` after a missed UTC date. `currentStreak` is the active streak and `longestStreak` is the user's historical best. The browser never submits a date or counter value. Authenticated edition responses are private and not cached, ensuring that each page fetch reaches the Worker and can record the refresh.
+
 ### `POST /auth/google`
 
 Exchange a Google Identity Services credential for an AI Nuggets session. The Worker verifies the credential signature, issuer, audience, expiry, and verified email before creating or updating the matching D1 profile.
@@ -41,7 +45,11 @@ Successful response (`201 Created`):
   "user": {
     "email": "reader@example.com",
     "name": "Reader",
-    "pictureUrl": "https://..."
+    "pictureUrl": "https://...",
+    "lastLoggedInAt": "2026-08-25 01:00:00",
+    "lastRefreshedAt": "2026-08-25 01:00:00",
+    "currentStreak": 4,
+    "longestStreak": 11
   },
   "sessionToken": "OPAQUE_SESSION_TOKEN",
   "expiresAt": 1780000000
@@ -61,7 +69,11 @@ Successful response (`200 OK`):
   "user": {
     "email": "reader@example.com",
     "name": "Reader",
-    "pictureUrl": "https://..."
+    "pictureUrl": "https://...",
+    "lastLoggedInAt": "2026-08-25 01:00:00",
+    "lastRefreshedAt": "2026-08-25 01:05:00",
+    "currentStreak": 4,
+    "longestStreak": 11
   }
 }
 ```

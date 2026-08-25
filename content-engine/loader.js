@@ -9,7 +9,10 @@
   }
 
   async function fetchJson(url) {
-    const response = await fetch(url, { headers: { accept: "application/json" } });
+    const headers = new Headers({ accept: "application/json" });
+    const sessionToken = localStorage.getItem("ai-nuggets-session-token");
+    if (sessionToken) headers.set("authorization", `Bearer ${sessionToken}`);
+    const response = await fetch(url, { headers });
     if (!response.ok) throw new Error(`Could not load the requested edition (${response.status}).`);
     return response.json();
   }

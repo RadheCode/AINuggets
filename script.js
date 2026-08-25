@@ -12,6 +12,9 @@ const accountMenuAvatar = document.querySelector("#accountMenuAvatar");
 const accountName = document.querySelector("#accountName");
 const accountMenuName = document.querySelector("#accountMenuName");
 const accountEmail = document.querySelector("#accountEmail");
+const streakPill = document.querySelector("#streakPill");
+const streakPillCount = document.querySelector("#streakPillCount");
+const streakPillLabel = document.querySelector("#streakPillLabel");
 const signOutButton = document.querySelector("#signOutButton");
 const signInStatus = document.querySelector("#signInStatus");
 const authConfig = window.AINuggetsAuthConfig;
@@ -46,6 +49,7 @@ function renderAuthWidget(state, user = null, message = "") {
   accountMenuToggle.hidden = !signedIn;
   accountMenuToggle.disabled = signingOut;
   signOutButton.disabled = signingOut;
+  streakPill.hidden = !signedIn;
   closeAccountMenu();
 
   if (signedIn && user) {
@@ -54,6 +58,11 @@ function renderAuthWidget(state, user = null, message = "") {
     accountName.textContent = name;
     accountMenuName.textContent = name;
     accountEmail.textContent = user.email;
+    const streak = Number.isInteger(user.currentStreak) && user.currentStreak > 0 ? user.currentStreak : 0;
+    const streakLabel = `day streak${streak === 1 ? "" : "s"}`;
+    streakPillCount.textContent = String(streak);
+    streakPillLabel.textContent = streakLabel;
+    streakPill.setAttribute("aria-label", `${streak} ${streakLabel}`);
     accountAvatar.textContent = initial;
     accountMenuAvatar.textContent = initial;
   }
@@ -204,6 +213,7 @@ async function restoreSession() {
     return;
   }
   try {
+    await window.AINuggetsContentReady.catch(() => undefined);
     const data = await responseData(await authRequest("/auth/session"));
     renderAuthWidget("signed-in", data.user, `Signed in as ${displayName(data.user)}.`);
   } catch {
