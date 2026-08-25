@@ -77,6 +77,9 @@ The public API provides:
 - `GET /health`
 - `GET /api/editions/latest`
 - `GET /api/editions/YYYY-MM-DD`
+- `POST /api/feedback`
+
+The `reader_feedback` D1 table stores a reader email, a whole-star rating from 1 through 5, message, timestamp, and optional `user_profiles` association. Feedback may be submitted without signing in. When the request includes a valid session token, the Worker stores the verified profile email instead of trusting the browser-provided email.
 
 Authenticated published-edition requests update the caller's single D1 user profile with `last_refreshed_at`; Google sign-in updates both `last_logged_in_at` and `last_refreshed_at`, because sign-in counts as a refresh. The Worker stores one qualifying activity per user per UTC day in `user_daily_activity`, atomically maintaining `current_streak`, `longest_streak`, and `streak_last_active_date` on the profile. These authenticated edition responses are private and no-store so a page fetch cannot be satisfied by a shared cache.
 

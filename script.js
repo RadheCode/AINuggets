@@ -17,11 +17,22 @@ const streakPillCount = document.querySelector("#streakPillCount");
 const streakPillLabel = document.querySelector("#streakPillLabel");
 const signOutButton = document.querySelector("#signOutButton");
 const signInStatus = document.querySelector("#signInStatus");
+const feedbackTab = document.querySelector("#feedbackTab");
+const feedbackDialog = document.querySelector("#feedbackDialog");
+const feedbackDialogClose = document.querySelector("#feedbackDialogClose");
+const feedbackForm = document.querySelector("#feedbackForm");
+const feedbackEmail = document.querySelector("#feedbackEmail");
+const feedbackEmailLock = document.querySelector("#feedbackEmailLock");
+const feedbackRating = document.querySelector("#feedbackRating");
+const feedbackRatingDisplay = document.querySelector("#feedbackRatingDisplay");
+const feedbackSubmit = document.querySelector("#feedbackSubmit");
+const feedbackMessageStatus = document.querySelector("#feedbackMessageStatus");
 const authConfig = window.AINuggetsAuthConfig;
 const contentConfig = window.AINuggetsContentConfig;
 const sessionTokenKey = "ai-nuggets-session-token";
 let googleIdentityInitialized = false;
 let authState = "initializing";
+let currentUser = null;
 
 function displayName(user) {
   return user.name || user.email;
@@ -34,6 +45,33 @@ function avatarInitial(user) {
 function closeAccountMenu() {
   accountMenu.hidden = true;
   accountMenuToggle.setAttribute("aria-expanded", "false");
+}
+
+function updateFeedbackEmail() {
+  if (!feedbackEmail) return;
+  const signedIn = Boolean(currentUser?.email);
+  feedbackEmail.value = signedIn ? currentUser.email : "";
+  feedbackEmail.readOnly = signedIn;
+  feedbackEmail.classList.toggle("is-locked", signedIn);
+  feedbackEmailLock.hidden = !signedIn;
+}
+
+function ratingLabel(ratingHalves) {
+  const rating = ratingHalves / 2;
+  return `${rating % 1 === 0 ? rating.toFixed(0) : rating.toFixed(1)} out of 5 stars`;
+}
+
+function updateFeedbackRating() {
+  const selected = feedbackRating.querySelector("input:checked");
+  const ratingHalves = selected ? Number(selected.value) : 0;
+  const ratingChoices = feedbackRating.querySelector(".feedback-rating__choices");
+
+  feedbackRating.querySelectorAll(".feedback-rating__star").forEach((star, index) => {
+    const fill = Math.max(0, Math.min(2, ratingHalves - index * 2));
+    ratingChoices.style.setProperty(`--star-${index + 1}-fill`, `${fill * 50}%`);
+  });
+
+  feedbackRatingDisplay.textContent = selected ? ratingLabel(ratingHalves) : "Choose a rating";
 }
 
 function renderAuthWidget(state, user = null, message = "") {
@@ -51,6 +89,8 @@ function renderAuthWidget(state, user = null, message = "") {
   signOutButton.disabled = signingOut;
   streakPill.hidden = !signedIn;
   closeAccountMenu();
+  currentUser = signedIn && user ? user : null;
+  updateFeedbackEmail();
 
   if (signedIn && user) {
     const name = displayName(user);
@@ -84,7 +124,7 @@ async function authRequest(path, options = {}) {
 
 async function responseData(response) {
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Authentication request failed.");
+  if (!response.ok) throw new Error(data.error || "Request failed.");
   return data;
 }
 
@@ -246,4 +286,58 @@ subscribeForm.addEventListener("submit", (event) => {
   const email = data.get("email");
   formMessage.textContent = `Thanks - ${email} is on the early-access list.`;
   subscribeForm.reset();
+});
+
+feedbackTab.addEventListener("click", () => {
+  feedbackMessageStatus.textContent = "";
+  feedbackForm.reset();
+  updateFeedbackEmail();
+  updateFeedbackRating();
+  feedbackDialog.showModal();
+  feedbackEmail.focus();
+});
+
+feedbackDialogClose.addEventListener("click", () => {
+  feedbackDialog.close();
+});
+
+feedbackDialog.addEventListener("click", (event) => {
+  if (event.target === feedbackDialog) feedbackDialog.close();
+});
+
+feedbackDialog.addEventListener("close", () => {
+  feedbackTab.focus();
+});
+
+feedbackRating.addEventListener("change", updateFeedbackRating);
+
+feedbackForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  feedbackMessageStatus.textContent = "";
+  if (!feedbackForm.reportValidity()) return;
+
+  feedbackSubmit.disabled = true;
+  feedbackSubmit.textContent = "Sending...";
+  try {
+    const data = new FormData(feedbackForm);
+    const response = await authRequest("/api/feedback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: data.get("email"),
+        ratingHalves: Number(data.get("ratingHalves")),
+        message: data.get("message")
+      })
+    });
+    const result = await responseData(response);
+    feedbackMessageStatus.textContent = result.message;
+    feedbackForm.reset();
+    updateFeedbackEmail();
+    updateFeedbackRating();
+  } catch (error) {
+    feedbackMessageStatus.textContent = error.message;
+  } finally {
+    feedbackSubmit.disabled = false;
+    feedbackSubmit.textContent = "Send feedback";
+  }
 });

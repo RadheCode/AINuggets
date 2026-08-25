@@ -83,3 +83,17 @@ Returns `401` when the bearer token is absent, unknown, expired, or revoked.
 ### `POST /auth/sign-out`
 
 Revoke the supplied bearer token. A successful request returns `204 No Content`. The browser must remove its local token regardless of whether this revocation request reaches the Worker.
+
+### `POST /api/feedback`
+
+Persist reader feedback submitted from the site feedback dialog. This endpoint accepts anonymous and signed-in readers. For a signed-in reader, the Worker stores the verified profile email and associates the feedback with that profile rather than trusting the submitted email.
+
+```json
+{
+  "email": "reader@example.com",
+  "ratingHalves": 8,
+  "message": "The concise summaries make it easy to stay informed."
+}
+```
+
+`ratingHalves` is an even integer from `2` through `10`, representing whole-star ratings from 1 to 5. The trimmed message must contain 20 through 4,000 characters and the email must be valid. A successful `201 Created` response is `{ "message": "Thank you for sharing your feedback." }`; malformed JSON or invalid fields return `400`.

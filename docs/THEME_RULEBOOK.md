@@ -55,6 +55,10 @@ Themes must style the existing semantic classes and must not require theme-speci
 
 Theme styles must scope reusable variables under `:root` and may use the `data-theme` attribute on `<html>` for explicit scoping. Themes must not rename IDs used by `script.js` or introduce behavior into CSS.
 
+### Dialog-shell consistency
+
+The article-summary dialog is the canonical dialog shell. Every new dialog, panel, or overlay must reuse its surface, elevation, backdrop, entrance motion, close-control treatment, spacing scale, responsive dimensions, and internal-scroll behavior. Feature-specific controls and content may differ, but they must be added within that shell rather than creating a separate modal visual system. Any intentional exception requires a documented shared-contract change in this rulebook and `.github/copilot-instructions.md`.
+
 ## Color mode contract
 
 - Every theme must support both `data-color-mode="light"` and `data-color-mode="dark"` on the root `<html>` element.
@@ -77,7 +81,7 @@ Theme styles must scope reusable variables under `:root` and may use the `data-t
 8. Treat responsive placement as mandatory: every visible element must remain deliberately anchored and fluid while resizing. Controls that belong together (such as header actions) must be in an explicit Grid or Flex group with a defined anchor; they must never use viewport-relative, absolute, or incidental free space to appear detached, drift, or float. Do not allow implicit grid tracks, overlap, clipping of essential controls, overflow, or detached/floating controls.
 9. Keep elevation semantics consistent between light and dark modes: a raised, inset, selected, or disabled component must retain that same depth meaning in both themes.
 10. Use the established accent color for selected controls. Selected controls should retain a raised treatment unless an intentionally pressed interaction state is being represented.
-11. Every standalone widget and control must conform to every applicable rule in this document and the active theme's established surface, elevation, glass, motion, responsive, color-mode, and accessibility language. In themes that use neumorphism, use corresponding raised or inset shadow pairs; when a widget uses glass, retain a translucent background and an opaque-enough fallback for browsers without backdrop filtering.
+11. Every standalone widget and control must conform to every applicable rule in this document and the active theme's established surface, elevation, glass, motion, responsive, color-mode, and accessibility language. New dialogs must reuse the canonical article-summary dialog shell; do not reproduce or override its shell styling per feature. In themes that use neumorphism, use corresponding raised or inset shadow pairs; when a widget uses glass, retain a translucent background and an opaque-enough fallback for browsers without backdrop filtering.
 
 ## Accessibility rules
 
@@ -111,5 +115,5 @@ Before accepting a theme:
 1. Select it through `theme.config.js` and confirm its stylesheet loads without console errors.
 2. Confirm all five cards, header, intro, and footer fit without page scrolling.
 3. Check multiple representative desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights; resize through each breakpoint and confirm every control remains in its declared group and anchor, without drifting, detaching, overlapping, or becoming unreachable.
-4. Verify the light/dark switcher, persistence, keyboard focus, newsletter dialog behavior, readable contrast in both modes, reduced motion, and identical element geometry before and after a mode change.
+4. Verify the light/dark switcher, persistence, keyboard focus, all dialogs against the canonical article-summary shell, readable contrast in both modes, reduced motion, and identical element geometry before and after a mode change.
 5. Confirm missing or invalid theme configuration fails visibly instead of silently loading a fallback.

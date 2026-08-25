@@ -31,6 +31,7 @@ These instructions are mandatory for AI-assisted changes in this repository.
 - Keep `theme-loader.js` generic. It must load any registered theme without theme-specific conditions.
 - Themes own presentation only. Do not put data fetching, event handling, story content, or application state in theme files.
 - Do not add theme-specific HTML unless the shared page contract is intentionally revised for every theme.
+- Reuse the established shared component shell for every new dialog, panel, or overlay. A new dialog may add feature-specific content and controls, but it must inherit the canonical dialog's surface, elevation, backdrop, animation, spacing, responsive sizing, and scrolling behavior; do not create a visually independent modal unless the shared dialog contract is intentionally revised and documented.
 - Follow the complete contract in `docs/THEME_RULEBOOK.md` whenever creating or editing a theme.
 
 ## Stable shared selectors
@@ -89,6 +90,6 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Make a change only when it is necessary to satisfy the product need or prevent a concrete defect. Challenge requests that would add needless complexity, duplicate an existing responsibility, or weaken maintainability; explain the concern and preserve the simpler working design when the requested change is not justified.
 - Do not silently fall back when theme configuration is invalid; surface a clear error.
 - Make focused changes and avoid unrelated formatting or restructuring.
-- Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Create the relevant documentation when none exists, and keep root documentation links current.
+- Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Every new or materially changed user-facing feature must also update `docs/AI_NUGGETS_FEATURE_SUMMARY.md`. Create the relevant documentation when none exists, and keep root documentation links current.
 - Update `docs/THEME_RULEBOOK.md` and this instruction file when the theme contract changes.
 - Before completing changes, verify JavaScript syntax, theme asset paths, keyboard interactions, reduced-motion behavior, and no-scroll viewport fit at representative breakpoints.

@@ -159,6 +159,40 @@ async function signOut(request, env, cors) {
   return new Response(null, { status: 204, headers: cors });
 }
 
+function validFeedbackEmail(email) {
+  return typeof email === "string"
+    && email.length <= 254
+    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function submitFeedback(request, env, cors) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400, cors);
+  }
+
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const ratingHalves = Number(body.ratingHalves);
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  if (!validFeedbackEmail(email)) return json({ error: "Enter a valid email address." }, 400, cors);
+  if (!Number.isInteger(ratingHalves) || ratingHalves < 2 || ratingHalves > 10 || ratingHalves % 2 !== 0) {
+    return json({ error: "Choose a whole-star rating from one to five." }, 400, cors);
+  }
+  if (message.length < 20 || message.length > 4000) {
+    return json({ error: "Feedback must be between 20 and 4,000 characters." }, 400, cors);
+  }
+
+  const user = await sessionUser(request, env);
+  const storedEmail = user ? user.email.toLowerCase() : email;
+  await env.CONTENT_DB.prepare(`
+    INSERT INTO reader_feedback (user_id, email, rating_halves, message)
+    VALUES (?, ?, ?, ?)
+  `).bind(user?.id ?? null, storedEmail, ratingHalves, message).run();
+  return json({ message: "Thank you for sharing your feedback." }, 201, cors);
+}
+
 function createAutomationDependencies(env) {
   return {
     editionRepository: createD1EditionRepository(env.CONTENT_DB),
@@ -260,6 +294,7 @@ async function handleRequest(request, env) {
 
   if (request.method === "POST" && url.pathname === "/auth/google") return createSession(request, env, cors);
   if (request.method === "POST" && url.pathname === "/auth/sign-out") return signOut(request, env, cors);
+  if (request.method === "POST" && url.pathname === "/api/feedback") return submitFeedback(request, env, cors);
   if (request.method === "GET" && url.pathname === "/auth/session") {
     const user = await sessionUser(request, env);
     return user ? json(userResponse(user), 200, cors) : json({ error: "Unauthenticated." }, 401, cors);

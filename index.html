@@ -85,6 +85,9 @@
       <span>One useful briefing, every weekday.</span>
       <button class="subscribe-button" id="subscribeButton" type="button">Get the newsletter <span aria-hidden="true">&nearr;</span></button>
     </footer>
+    <button class="feedback-tab" id="feedbackTab" type="button" aria-haspopup="dialog" aria-controls="feedbackDialog">
+      <span aria-hidden="true">★</span><span>Feedback</span>
+    </button>
   </div>
 
   <dialog class="subscribe-dialog" id="subscribeDialog" aria-labelledby="subscribeTitle">
@@ -99,6 +102,42 @@
         <button type="submit">Join</button>
       </div>
       <output id="formMessage" aria-live="polite"></output>
+    </form>
+  </dialog>
+
+  <dialog class="feedback-dialog" id="feedbackDialog" aria-labelledby="feedbackTitle" aria-describedby="feedbackDescription">
+    <button class="dialog-close" id="feedbackDialogClose" type="button" aria-label="Close feedback form">&times;</button>
+    <span class="dialog-mark feedback-dialog-mark" aria-hidden="true">★</span>
+    <h2 id="feedbackTitle">How are we doing?</h2>
+    <p id="feedbackDescription">A quick note helps us make each briefing more useful.</p>
+    <form id="feedbackForm">
+      <label for="feedbackEmail">Email address</label>
+      <div class="feedback-email-control">
+        <input id="feedbackEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <span class="feedback-email-lock" id="feedbackEmailLock" aria-hidden="true" hidden>Locked</span>
+      </div>
+      <fieldset class="feedback-rating" id="feedbackRating">
+        <legend>Your rating</legend>
+        <div class="feedback-rating__choices" aria-label="Choose a rating from one to five stars">
+          <span class="feedback-rating__stars" aria-hidden="true">
+            <span class="feedback-rating__star"></span>
+            <span class="feedback-rating__star"></span>
+            <span class="feedback-rating__star"></span>
+            <span class="feedback-rating__star"></span>
+            <span class="feedback-rating__star"></span>
+          </span>
+          <input id="rating-1" name="ratingHalves" type="radio" value="2" required><label for="rating-1">1 star</label>
+          <input id="rating-2" name="ratingHalves" type="radio" value="4"><label for="rating-2">2 stars</label>
+          <input id="rating-3" name="ratingHalves" type="radio" value="6"><label for="rating-3">3 stars</label>
+          <input id="rating-4" name="ratingHalves" type="radio" value="8"><label for="rating-4">4 stars</label>
+          <input id="rating-5" name="ratingHalves" type="radio" value="10"><label for="rating-5">5 stars</label>
+        </div>
+        <output class="feedback-rating__display" id="feedbackRatingDisplay" aria-live="polite">Choose a rating</output>
+      </fieldset>
+      <label for="feedbackMessage">Feedback</label>
+      <textarea id="feedbackMessage" name="message" rows="4" minlength="20" maxlength="4000" placeholder="Tell us what you think..." required></textarea>
+      <button class="feedback-submit" id="feedbackSubmit" type="submit">Send feedback</button>
+      <output class="feedback-message" id="feedbackMessageStatus" aria-live="polite"></output>
     </form>
   </dialog>
 
