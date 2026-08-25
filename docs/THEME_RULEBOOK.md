@@ -51,7 +51,6 @@ Themes must style the existing semantic classes and must not require theme-speci
 - `.briefing-intro`, `.briefing-copy`, `.briefing-meta`, `.eyebrow`
 - `.story-grid`, `.story-card`, `.story-card--lead`, `.story-card--wide`
 - `.story-art`, `.story-shade`, `.story-content`, `.story-tag`, `.story-number`, `.story-link`
-- `.subscribe-button`, `.subscribe-dialog`
 
 Theme styles must scope reusable variables under `:root` and may use the `data-theme` attribute on `<html>` for explicit scoping. Themes must not rename IDs used by `script.js` or introduce behavior into CSS.
 

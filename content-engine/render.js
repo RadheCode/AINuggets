@@ -124,6 +124,11 @@
     if (activeStoryIndex < stories.length - 1) updateStoryDialog(activeStoryIndex + 1);
   });
   storyDialog.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      event.preventDefault();
+      storyDialogSummary.scrollTop += event.key === "ArrowDown" ? 96 : -96;
+      return;
+    }
     if (event.key === "Tab") {
       event.preventDefault();
       const currentContextIndex = summaryContexts.indexOf(activeSummaryContext);

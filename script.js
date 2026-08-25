@@ -1,8 +1,3 @@
-const subscribeButton = document.querySelector("#subscribeButton");
-const subscribeDialog = document.querySelector("#subscribeDialog");
-const dialogClose = document.querySelector("#dialogClose");
-const subscribeForm = document.querySelector("#subscribeForm");
-const formMessage = document.querySelector("#formMessage");
 const colorModeToggle = document.querySelector("#colorModeToggle");
 const googleSignInButton = document.querySelector("#googleSignInButton");
 const accountMenuToggle = document.querySelector("#accountMenuToggle");
@@ -265,28 +260,6 @@ async function restoreSession() {
 renderAuthWidget("initializing");
 initializeGoogleSignIn();
 restoreSession();
-
-subscribeButton.addEventListener("click", () => {
-  subscribeDialog.showModal();
-});
-
-dialogClose.addEventListener("click", () => {
-  subscribeDialog.close();
-});
-
-subscribeDialog.addEventListener("click", (event) => {
-  if (event.target === subscribeDialog) {
-    subscribeDialog.close();
-  }
-});
-
-subscribeForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const data = new FormData(subscribeForm);
-  const email = data.get("email");
-  formMessage.textContent = `Thanks - ${email} is on the early-access list.`;
-  subscribeForm.reset();
-});
 
 feedbackTab.addEventListener("click", () => {
   feedbackMessageStatus.textContent = "";

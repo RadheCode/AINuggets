@@ -4,7 +4,7 @@ These instructions are mandatory for AI-assisted changes in this repository.
 
 ## Product contract
 
-- AI Nuggets is a concise daily AI-news and newsletter website showing exactly four or five high-value updates.
+- AI Nuggets is a concise daily AI-news briefing website showing exactly four or five high-value updates.
 - Keep the homepage as a single-screen experience. The document must not scroll at supported viewport sizes.
 - Preserve the calm, premium editorial experience. Avoid dense dashboards, infinite feeds, intrusive prompts, autoplay media, and distracting motion.
 - Treat `index.html` as the shared semantic shell, `content-engine/` as the content layer, and `script.js` as shared interaction behavior.
@@ -44,7 +44,6 @@ Preserve these selectors across themes unless a deliberate shared-shell migratio
 - `.briefing-intro`, `.briefing-copy`, `.briefing-meta`, `.eyebrow`
 - `.story-grid`, `.story-card`, `.story-card--lead`, `.story-card--wide`
 - `.story-art`, `.story-shade`, `.story-content`, `.story-tag`, `.story-number`
-- `.subscribe-button`, `.subscribe-dialog`
 
 Do not rename IDs referenced by `script.js` without updating and validating the corresponding behavior.
 

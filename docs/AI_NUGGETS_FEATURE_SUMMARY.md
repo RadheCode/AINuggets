@@ -17,11 +17,10 @@ AI Nuggets is a responsive daily AI-news briefing website. It presents a curated
 | Company artwork matching | Recognizes selected AI-company references in story text and associates them with local company artwork; unmatched stories remain image-free. |
 | Light and dark modes | Provides a color-mode toggle, respects the operating-system preference when no choice has been saved, and remembers the reader's choice in browser storage. |
 | Theme system | Loads the active visual theme from centralized configuration, allowing the site presentation to change without changing content retrieval or behavior. |
-| Newsletter sign-up experience | Offers a newsletter modal with native email validation, a submission acknowledgement, close controls, and click-outside dismissal. |
 | Google sign-in | Supports Google-only OAuth/OpenID Connect sign-in through Google Identity Services. The Worker verifies each credential, creates or updates a D1 user profile, and issues an opaque 30-day session token so the signed-in state survives refresh. The signed-in header shows the account menu and application sign-out control. Until a Google client ID is configured, the visible disabled action explains the unavailable state. |
 | Daily reading streak | Shows a signed-in reader's current consecutive UTC-day streak in the header. A verified sign-in or an authenticated published-edition request qualifies once per UTC day; the Worker calculates and persists current and longest streaks, so the browser cannot alter them. |
 | Reader feedback | Provides an attached Edge tab that opens an accessible soft-rounded feedback dialog with a required email address, a whole-star rating from 1 through 5, feedback message, acknowledgement, and D1-backed submission. Signed-in readers see their verified email prefilled and locked; anonymous readers can enter their own email. |
-| Accessible interactions | Uses semantic navigation and controls, descriptive labels, live feedback for the newsletter form, modal dialogs, keyboard summary switching, and keyboard story navigation. |
+| Accessible interactions | Uses semantic navigation and controls, descriptive labels, feedback status updates, modal dialogs, keyboard summary switching and scrolling, and keyboard story navigation. |
 
 ## Content and publishing platform
 
@@ -49,9 +48,5 @@ AI Nuggets is a responsive daily AI-news briefing website. It presents a curated
 | Untrusted-source handling | Treats article and feed content as untrusted input and does not execute instructions contained in source material. |
 | Copyright-aware storage | Stores original summaries and source attribution rather than raw copyrighted article text. |
 | Cloudflare deployment support | Includes deployment scripts and infrastructure configuration for Cloudflare Pages, the content Worker, D1 migrations, Worker secrets, and Cron registration. |
-
-## Scope note
-
-The newsletter form currently provides an on-page early-access confirmation only. The implemented client code does not submit subscriber information to a mailing-list service or backend endpoint.
 
 Google sign-in creates or updates a D1 profile containing the verified Google subject, email, display name, optional picture URL, and server-managed activity data. Browser storage contains only an opaque bearer session token; D1 stores only its SHA-256 hash. Authenticated published-edition requests refresh the profile activity and can record one qualifying daily streak activity; the browser never sends a date or streak value. Sessions expire after 30 days.

@@ -1,6 +1,6 @@
 # AI Nuggets
 
-A responsive, single-screen daily AI news and newsletter homepage.
+A responsive, single-screen daily AI news briefing homepage.
 
 ## Content engine and automation
 
