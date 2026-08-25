@@ -121,6 +121,12 @@ The Worker exposes only published content:
 
 The API returns a single edition object with briefing metadata and ordered stories. Responses are edge-cacheable and browser access is restricted to configured allowed origins. Draft and archived editions never appear in public API responses.
 
+## Beta and production isolation
+
+Beta and production run identical content contracts on separate Cloudflare resources. The browser configuration selects the production Worker only when the hostname is exactly `ai-nuggets.pages.dev`; beta and all non-production preview hostnames select `beta-ai-nuggets-content.ainuggets123.workers.dev`. This keeps preview traffic, editions, sessions, feedback, automation, and scheduled generation away from production.
+
+The beta Worker accepts browser requests only from `https://beta-ai-nuggets.pages.dev` plus local development origins. The production Worker retains its separate production-origin allowlist. See [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md) for protected deployment commands and resource provisioning.
+
 ## Browser rendering path
 
 1. `content-engine/loader.js` reads `?date=YYYY-MM-DD`, when provided, and validates the date.

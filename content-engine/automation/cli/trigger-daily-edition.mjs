@@ -6,7 +6,7 @@ function readArgument(name) {
 }
 
 const endpoint = process.env.AI_NUGGETS_AUTOMATION_URL
-  || "https://ai-nuggets-content.ainuggets123.workers.dev/internal/generate";
+  || "https://beta-ai-nuggets-content.ainuggets123.workers.dev/internal/generate";
 const token = process.env.AI_NUGGETS_AUTOMATION_TOKEN;
 const targetDate = readArgument("date");
 

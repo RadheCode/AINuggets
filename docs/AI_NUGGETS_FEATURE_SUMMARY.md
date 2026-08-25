@@ -47,6 +47,9 @@ AI Nuggets is a responsive daily AI-news briefing website. It presents a curated
 | Bounded external requests | Uses request timeouts for feeds, custom sources, and the summary provider to limit stalled integrations. |
 | Untrusted-source handling | Treats article and feed content as untrusted input and does not execute instructions contained in source material. |
 | Copyright-aware storage | Stores original summaries and source attribution rather than raw copyrighted article text. |
+| Isolated beta deployment | Uses an independent beta Pages project, Worker, D1 database, Cron trigger, and Worker secrets at `https://beta-ai-nuggets.pages.dev`, preserving production data and traffic. |
+| Protected production deployment | Defaults all deployment and secret-sync scripts to beta. Production at `https://ai-nuggets.pages.dev` requires an explicit environment and confirmation switch, preventing accidental production releases. |
+| Beta parity gate | Requires beta to receive and validate every application and infrastructure change before a production release. A guarded editorial sync copies only published editions and stories into beta, preserving the isolation of reader data and operational history. |
 | Cloudflare deployment support | Includes deployment scripts and infrastructure configuration for Cloudflare Pages, the content Worker, D1 migrations, Worker secrets, and Cron registration. |
 
 Google sign-in creates or updates a D1 profile containing the verified Google subject, email, display name, optional picture URL, and server-managed activity data. Browser storage contains only an opaque bearer session token; D1 stores only its SHA-256 hash. Authenticated published-edition requests refresh the profile activity and can record one qualifying daily streak activity; the browser never sends a date or streak value. Sessions expire after 30 days.

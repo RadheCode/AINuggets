@@ -3,11 +3,25 @@
   "authentication": "oauth",
   "accountEmail": "ainuggets123@gmail.com",
   "accountId": "b0253ba555b02a254367db91ab9c0b0b",
-  "projectName": "ai-nuggets",
-  "contentWorkerName": "ai-nuggets-content",
-  "contentDatabaseName": "ai-nuggets-content",
-  "contentDatabaseId": "7b4e45e1-00f6-4113-aa77-1e51b887a2ca",
-  "contentApiUrl": "https://ai-nuggets-content.ainuggets123.workers.dev",
+  "defaultEnvironment": "beta",
+  "environments": {
+    "beta": {
+      "pagesProjectName": "beta-ai-nuggets",
+      "pagesUrl": "https://beta-ai-nuggets.pages.dev",
+      "contentWorkerName": "beta-ai-nuggets-content",
+      "contentApiUrl": "https://beta-ai-nuggets-content.ainuggets123.workers.dev",
+      "contentDatabaseName": "beta-ai-nuggets-content",
+      "contentDatabaseId": "ba4fcc26-44d8-4688-adbd-69a2f5ce25af"
+    },
+    "production": {
+      "pagesProjectName": "ai-nuggets",
+      "pagesUrl": "https://ai-nuggets.pages.dev",
+      "contentWorkerName": "ai-nuggets-content",
+      "contentApiUrl": "https://ai-nuggets-content.ainuggets123.workers.dev",
+      "contentDatabaseName": "ai-nuggets-content",
+      "contentDatabaseId": "7b4e45e1-00f6-4113-aa77-1e51b887a2ca"
+    }
+  },
   "productionBranch": "main",
   "buildCommand": null,
   "outputDirectory": "."

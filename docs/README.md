@@ -22,7 +22,7 @@ Every UI change must be visually checked in both light and dark modes before rel
 
 ## Infrastructure
 
-Deployment providers live under `infra/<provider>/`, with the active provider selected in `infra/config.json`. Cloudflare Pages is currently active and supports browser OAuth deployment; see [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md) for setup and credential requirements.
+Deployment providers live under `infra/<provider>/`, with the active provider selected in `infra/config.json`. Cloudflare Pages is currently active and supports browser OAuth deployment. Deployments default to the fully isolated beta stack at `https://beta-ai-nuggets.pages.dev`; production at `https://ai-nuggets.pages.dev` is protected and requires explicit `-Environment Production -ConfirmProduction` switches. See [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md) for setup and credential requirements.
 
 ## Google sign-in
 
@@ -34,7 +34,7 @@ window.AINuggetsAuthConfig = Object.freeze({
 });
 ```
 
-The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. Set the same public value in `infra/cloudflare/content-worker/wrangler.jsonc` as `GOOGLE_CLIENT_ID`, then deploy the content Worker before deploying Pages. The Worker verifies every Google ID token, stores a profile in D1, and returns an opaque 30-day session token. The browser keeps only that opaque token in `localStorage` and restores the profile through the Worker after refresh; the Worker stores only its SHA-256 hash. See [Content Engine API](CONTENT_ENGINE_API.md#authentication-api) for the endpoint contract and [Daily Streak](DAILY_STREAK.md) for streak rules, persistence, and D1 queries.
+The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. Keep the same public value in both beta (`infra/cloudflare/content-worker/wrangler.jsonc`) and production (`infra/cloudflare/content-worker/wrangler.production.jsonc`) Worker configurations, then deploy the matching Worker before its Pages site. The Worker verifies every Google ID token, stores a profile in D1, and returns an opaque 30-day session token. The browser keeps only that opaque token in `localStorage` and restores the profile through the Worker after refresh; the Worker stores only its SHA-256 hash. See [Content Engine API](CONTENT_ENGINE_API.md#authentication-api) for the endpoint contract and [Daily Streak](DAILY_STREAK.md) for streak rules, persistence, and D1 queries.
 
 ## Run locally
 

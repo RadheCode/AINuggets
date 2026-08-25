@@ -79,6 +79,8 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 
 ## Engineering rules
 
+- Treat beta as the required pre-production replica. Deploy every Pages, Worker, schema, secret-contract, and application change to beta first; verify beta parity before an explicitly approved production deployment. A plain "deploy" always means beta. Production is sacred: never deploy, configure auto-deployment, or mutate production unless the user explicitly requests production.
+- Keep beta's public published editorial content aligned with production through `infra/cloudflare/content-worker/sync-beta-editorial-content.ps1`. That sync may copy only `editions` and `stories`; never copy production profiles, sessions, activity, feedback, secrets, or generation-run history without explicit user approval.
 - Write and maintain all repository documentation as Markdown (`.md`) files. Store every documentation file in the root `docs/` directory; do not add documentation files elsewhere in the repository.
 - Prefer dependency-free HTML, CSS, and JavaScript unless a new dependency has a clear product need.
 - Keep content and rendering in `content-engine/`, shared interactions in `script.js`, configuration in root config files, and presentation in `themes/`.
