@@ -86,12 +86,19 @@ Run commands from the repository root. Authenticate first if needed:
 .\infra\cloudflare\login.ps1
 ```
 
+Render a production manifest from the authoritative Cloudflare configuration, then use it for read-only database commands:
+
+```powershell
+$workerConfig = Join-Path (Resolve-Path ".\infra\cloudflare\content-worker") "wrangler.inspect.generated.jsonc"
+.\infra\cloudflare\content-worker\render-worker-config.ps1 -Environment Production -OutputPath $workerConfig
+```
+
 List the tables in the production database:
 
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
-  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --config $workerConfig `
   --command "SELECT name FROM sqlite_schema WHERE type = 'table' ORDER BY name;"
 ```
 
@@ -100,7 +107,7 @@ View editions:
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
-  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --config $workerConfig `
   --command "SELECT * FROM editions ORDER BY edition_date DESC;"
 ```
 
@@ -109,7 +116,7 @@ View stories:
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
-  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --config $workerConfig `
   --command "SELECT e.edition_date, s.position, s.category, s.title, s.summary FROM stories s JOIN editions e ON e.id = s.edition_id ORDER BY e.edition_date DESC, s.position;"
 ```
 
@@ -118,7 +125,7 @@ View recent generation runs:
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
-  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --config $workerConfig `
   --command "SELECT * FROM generation_runs ORDER BY started_at DESC LIMIT 20;"
 ```
 
@@ -127,7 +134,7 @@ View user login and refresh activity:
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
-  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --config $workerConfig `
   --command "SELECT email, display_name, last_logged_in_at, last_refreshed_at, current_streak, longest_streak, streak_last_active_date FROM user_profiles ORDER BY last_refreshed_at DESC, last_logged_in_at DESC;"
 ```
 
@@ -135,7 +142,7 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
 
 The `--remote` flag queries the live Cloudflare database. Without `--remote`, Wrangler uses a separate local development database. Always include `--remote` when you intend to inspect production content.
 
-These examples use `SELECT` statements and do not modify data. Before running `INSERT`, `UPDATE`, `DELETE`, migrations, or SQL files against `--remote`, review the command carefully and follow the migration process documented in [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md).
+These examples use `SELECT` statements and do not modify data. Before running `INSERT`, `UPDATE`, `DELETE`, migrations, or SQL files against `--remote`, review the command carefully and follow the migration process documented in [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md). Remove the generated file when finished with `Remove-Item $workerConfig`.
 
 ## Public API view
 

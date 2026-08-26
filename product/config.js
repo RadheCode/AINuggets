@@ -1,0 +1,32 @@
+window.ProductConfig = Object.freeze({
+  identity: Object.freeze({
+    name: "AI Nuggets",
+    mark: "AI",
+    storageNamespace: "ai-nuggets"
+  }),
+  copy: Object.freeze({
+    documentTitle: "AI Nuggets - AI news, less noise",
+    metaDescription: "AI Nuggets distills the five AI updates worth knowing into a quick daily briefing.",
+    homeLabel: "AI Nuggets home",
+    brandTagline: "Five things worth knowing",
+    eyebrow: "AI news daily briefing",
+    headline: Object.freeze({ lead: "AI news. ", emphasis: "Less noise." }),
+    briefingDescription: "Five useful updates, selected to help you keep up without the endless feed.",
+    storyCountLabel: "Five stories",
+    updateCadenceLabel: "Updated daily",
+    storyGridLabel: "Today's AI stories",
+    footer: "One useful briefing, every weekday."
+  }),
+  runtime: Object.freeze({
+    sites: Object.freeze({
+      production: "ai-nuggets.pages.dev"
+    }),
+    contentApiUrls: Object.freeze({
+      production: "https://ai-nuggets-content.ainuggets123.workers.dev",
+      beta: "https://beta-ai-nuggets-content.ainuggets123.workers.dev"
+    })
+  }),
+  authentication: Object.freeze({
+    googleClientId: "119476209987-a7plo7e675cl200cjnk78msq7ol06umr.apps.googleusercontent.com"
+  })
+});

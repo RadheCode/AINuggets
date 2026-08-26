@@ -11,14 +11,12 @@ $repositoryRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $configPath = Join-Path $PSScriptRoot "config.json"
 $config = Get-Content $configPath -Raw | ConvertFrom-Json
 $environmentKey = $Environment.ToLowerInvariant()
-
-if ($environmentKey -eq "production" -and -not $ConfirmProduction) {
-  throw "Production is protected. To deploy https://ai-nuggets.pages.dev, pass -Environment Production -ConfirmProduction explicitly."
-}
-
 $deployment = $config.environments.$environmentKey
 if ($null -eq $deployment) {
   throw "No Cloudflare configuration exists for '$Environment'."
+}
+if ($environmentKey -eq "production" -and -not $ConfirmProduction) {
+  throw "Production is protected. To deploy $($deployment.pagesUrl), pass -Environment Production -ConfirmProduction explicitly."
 }
 
 $outputDirectory = Resolve-Path (Join-Path $repositoryRoot $config.outputDirectory)

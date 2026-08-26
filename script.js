@@ -22,9 +22,14 @@ const feedbackRating = document.querySelector("#feedbackRating");
 const feedbackRatingDisplay = document.querySelector("#feedbackRatingDisplay");
 const feedbackSubmit = document.querySelector("#feedbackSubmit");
 const feedbackMessageStatus = document.querySelector("#feedbackMessageStatus");
-const authConfig = window.AINuggetsAuthConfig;
-const contentConfig = window.AINuggetsContentConfig;
-const sessionTokenKey = "ai-nuggets-session-token";
+const productConfig = window.ProductConfig;
+const authConfig = productConfig?.authentication;
+const contentRuntime = productConfig?.runtime;
+const storageNamespace = productConfig?.identity?.storageNamespace;
+if (typeof storageNamespace !== "string" || !storageNamespace.trim()) {
+  throw new Error("Product storage namespace is missing or invalid.");
+}
+const sessionTokenKey = `${storageNamespace}-session-token`;
 let googleIdentityInitialized = false;
 let authState = "initializing";
 let currentUser = null;
@@ -106,8 +111,11 @@ function renderAuthWidget(state, user = null, message = "") {
 }
 
 function authApiUrl(path) {
-  if (!contentConfig?.apiBaseUrl) throw new Error("Authentication is currently unavailable.");
-  return `${contentConfig.apiBaseUrl.replace(/\/$/, "")}${path}`;
+  if (!contentRuntime?.contentApiUrls || !contentRuntime?.sites?.production) throw new Error("Authentication is currently unavailable.");
+  const apiBaseUrl = window.location.hostname === contentRuntime.sites.production
+    ? contentRuntime.contentApiUrls.production
+    : contentRuntime.contentApiUrls.beta;
+  return `${apiBaseUrl.replace(/\/$/, "")}${path}`;
 }
 
 async function authRequest(path, options = {}) {
@@ -199,7 +207,7 @@ function updateColorModeToggle() {
 colorModeToggle.addEventListener("click", () => {
   const nextMode = document.documentElement.dataset.colorMode === "dark" ? "light" : "dark";
   document.documentElement.dataset.colorMode = nextMode;
-  localStorage.setItem("ai-nuggets-color-mode", nextMode);
+  localStorage.setItem(`${storageNamespace}-color-mode`, nextMode);
   updateColorModeToggle();
 });
 
@@ -248,7 +256,7 @@ async function restoreSession() {
     return;
   }
   try {
-    await window.AINuggetsContentReady.catch(() => undefined);
+    await window.ProductContentReady.catch(() => undefined);
     const data = await responseData(await authRequest("/auth/session"));
     renderAuthWidget("signed-in", data.user, `Signed in as ${displayName(data.user)}.`);
   } catch {

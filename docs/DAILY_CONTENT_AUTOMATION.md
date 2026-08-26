@@ -12,7 +12,7 @@ flowchart LR
     Sources --> Generate[Select and summarize]
     Generate --> Validate[Validate 4-5 stories]
     Validate --> D1[(Cloudflare D1)]
-    Browser[AI Nuggets website] --> API[Worker HTTP API]
+    Browser[Website] --> API[Worker HTTP API]
     API --> D1
 ```
 
@@ -74,14 +74,14 @@ Each story can retain source name, source URL, and source publication time. Publ
 
 Draft and archived editions are never returned. Responses are cacheable at Cloudflare's edge. Browser access is restricted to origins configured in `ALLOWED_ORIGINS`.
 
-The frontend endpoint is committed in `content-engine/config.js`. The public Worker URL and D1 identifiers are not secrets. OAuth tokens and provider API keys must never be committed.
+The frontend endpoint is committed in `product/config.js`. The public Worker URL and D1 identifiers are not secrets. OAuth tokens and provider API keys must never be committed.
 
 ## Daily scheduled algorithm
 
 1. A scheduler invokes the portable runner at the UTC Cron time in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `0 12 * * *` (12:00 UTC).
 2. The runner calculates the target date in UTC. There is no separate editorial timezone setting.
 3. It checks D1 for an existing edition on that date and exits idempotently if one exists.
-4. It reads the editable feed list in `content-engine/content-engine.config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
+4. It reads the editable product feed list in `product/editorial-config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
 5. It removes duplicate candidates using normalized `canonicalUrl` or `url`, ranks remaining posts by source priority and freshness, and selects five candidates. It first takes one per category, then fills any remaining positions by rank.
 6. The summary provider selects four or five stories from those candidates, each supported by source metadata.
 7. It generates compact, standard, and detailed original summary layers and validates all required fields, HTTPS source URLs, unique IDs, supported artwork keys, and exactly one lead story.
@@ -120,7 +120,7 @@ Use `--scheduled-at=2026-08-24T01:00:00Z` for deterministic backfills and tests.
 
 The portable configuration contract is `content-engine/automation/config/create-generation-provider-dependencies.mjs`. It accepts a plain runtime-values object, so it is independent of any secret store. The runtime injects values while this module owns the setting names, completeness validation, and adapter construction. For a human-editable setup, copy `content-engine/automation/config/providers.example.env` to `content-engine/automation/config/providers.local.env` and fill in the values. The local file is Git-ignored.
 
-By default, `content-engine/content-engine.config.mjs` is the editable list of public RSS/Atom feeds and the source of truth for the UTC Cron schedule, publication mode, and story-summary contexts. `summaries.contexts` sets the labels plus minimum and maximum lengths for Quick take (100-180 characters), Full context (240-420 characters), and Deep dive (500-900 characters); `summaries.defaultContext` is `standard` (Full context). The model schema, prompt, and pre-persistence validation all enforce these bounds. Full context uses three or four bullet points, and Deep dive uses two to four short paragraphs separated by blank lines. Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
+`content-engine/content-engine.config.mjs` is the source of truth for the UTC Cron schedule, publication mode, and story-summary contexts. Product-approved public RSS/Atom feeds and the generation instruction are editable in `product/editorial-config.mjs`. `summaries.contexts` sets the labels plus minimum and maximum lengths for Quick take (100-180 characters), Full context (240-420 characters), and Deep dive (500-900 characters); `summaries.defaultContext` is `standard` (Full context). The model schema, prompt, and pre-persistence validation all enforce these bounds. Full context uses three or four bullet points, and Deep dive uses two to four short paragraphs separated by blank lines. Each feed entry defines a source name, feed URL, category, and priority. The collector fetches at most three posts per feed, removes duplicate normalized links, scores posts by priority and freshness, chooses one post per category first, then fills up to five candidates with the next best posts. Set `CONTENT_SOURCE_URL` only when replacing the built-in collector with a custom JSON endpoint.
 
 | Variable | Purpose |
 |---|---|
@@ -155,19 +155,27 @@ Authenticate as the account configured in `infra/cloudflare/config.json`, then d
 
 The deployment script verifies both the configured Cloudflare email and account ID before making changes, applies pending D1 migrations remotely, deploys the Worker, and registers its Cron Trigger.
 
-For local Worker development:
+For local Worker development, first render the beta manifest from the authoritative provider configuration:
 
 ```powershell
-npx wrangler dev --config infra\cloudflare\content-worker\wrangler.jsonc
+$workerConfig = Join-Path (Resolve-Path ".\infra\cloudflare\content-worker") "wrangler.local.generated.jsonc"
+.\infra\cloudflare\content-worker\render-worker-config.ps1 -OutputPath $workerConfig
+npx wrangler dev --config $workerConfig
 ```
 
 To invoke the scheduled handler locally:
 
 ```powershell
-npx wrangler dev --test-scheduled --config infra\cloudflare\content-worker\wrangler.jsonc
+npx wrangler dev --test-scheduled --config $workerConfig
 ```
 
 Then request `/__scheduled?cron=0+12+*+*+*` from the local Wrangler server.
+
+Remove the temporary file after stopping Wrangler:
+
+```powershell
+Remove-Item $workerConfig
+```
 
 ## Cloudflare secret setup
 

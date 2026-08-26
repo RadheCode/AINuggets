@@ -7,7 +7,7 @@ The Daily Streak feature rewards a signed-in reader for returning on consecutive
 The content Worker records a qualifying activity when a user:
 
 - completes verified Google sign-in; or
-- requests a published edition with a valid AI Nuggets session token.
+- requests a published edition with a valid session token.
 
 The Worker calculates the date from its UTC clock and records at most one activity per user for that date. Multiple page refreshes, browser tabs, or retried requests on the same date do not increase the streak.
 
@@ -91,10 +91,13 @@ LIMIT 25;
 From the repository root, query production D1 with:
 
 ```powershell
+$workerConfig = Join-Path (Resolve-Path ".\infra\cloudflare\content-worker") "wrangler.streak-inspect.generated.jsonc"
+.\infra\cloudflare\content-worker\render-worker-config.ps1 -Environment Production -OutputPath $workerConfig
+
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
-  --config infra\cloudflare\content-worker\wrangler.jsonc `
+  --config $workerConfig `
   --command "SELECT email, display_name, current_streak, longest_streak, streak_last_active_date, last_logged_in_at, last_refreshed_at FROM user_profiles WHERE email = 'reader@example.com';"
 ```
 
-Omit `--remote` only when intentionally querying the local Wrangler D1 database. The streak schema must be deployed with the Worker migration before production queries can use these columns.
+Omit `--remote` only when intentionally querying the local Wrangler D1 database. The streak schema must be deployed with the Worker migration before production queries can use these columns. Remove the generated file when finished with `Remove-Item $workerConfig`.

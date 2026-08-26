@@ -1,4 +1,4 @@
-window.AINuggetsThemeConfig = Object.freeze({
+window.ThemeConfig = Object.freeze({
   activeTheme: "glass-bento",
   defaultColorMode: "system",
   themes: Object.freeze({

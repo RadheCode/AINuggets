@@ -4,5 +4,5 @@
 content-engine/automation/config/providers.local.env
 !.env.example
 .wrangler/
-infra/cloudflare/content-worker/wrangler.generated.jsonc
+infra/cloudflare/content-worker/wrangler*.generated.jsonc
 node_modules/

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "beta-ai-nuggets-content",
+  "name": "__CONTENT_WORKER_NAME__",
   "main": "src/index.js",
   "compatibility_date": "2026-08-23",
   "observability": {
@@ -10,13 +10,13 @@
     "crons": ["__CONTENT_ENGINE_CRON__"]
   },
   "vars": {
-    "ALLOWED_ORIGINS": "https://beta-ai-nuggets.pages.dev,http://localhost:8080,http://127.0.0.1:8080",
-    "GOOGLE_CLIENT_ID": "119476209987-a7plo7e675cl200cjnk78msq7ol06umr.apps.googleusercontent.com"
+    "ALLOWED_ORIGINS": "__ALLOWED_ORIGINS__",
+    "GOOGLE_CLIENT_ID": "__GOOGLE_CLIENT_ID__"
   },
   "d1_databases": [
     {
       "binding": "CONTENT_DB",
-      "database_name": "beta-ai-nuggets-content",
+      "database_name": "__CONTENT_DATABASE_NAME__",
       "database_id": "__CONTENT_DATABASE_ID__",
       "migrations_dir": "migrations"
     }

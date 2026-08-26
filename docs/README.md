@@ -1,6 +1,10 @@
-# AI Nuggets
+# Website Documentation
 
-A responsive, single-screen daily AI news briefing homepage.
+A responsive, single-screen daily briefing homepage. The currently configured product identity and topic live in [`product/`](PRODUCT_CONFIGURATION.md).
+
+## Product configuration
+
+All browser-visible product identity, topic framing, public runtime endpoints, browser storage namespace, public OAuth client ID, and product-specific artwork matching live in the root [`product/`](PRODUCT_CONFIGURATION.md) folder. Update that folder to rebrand the site for another concept; keep daily editions in the content engine, presentation in themes, and deployment identifiers in `infra/`. The [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.md) explains the complete boundary and provider handoff.
 
 ## Content engine and automation
 
@@ -26,15 +30,17 @@ Deployment providers live under `infra/<provider>/`, with the active provider se
 
 ## Google sign-in
 
-The site supports Google-only OAuth/OpenID Connect sign-in through [Google Identity Services](https://developers.google.com/identity/gsi/web/guides/overview). Create a **Web application** OAuth client in Google Cloud, add each deployed site URL and local development URL to its authorized JavaScript origins, then set its public client ID in `auth.config.js`:
+The site supports Google-only OAuth/OpenID Connect sign-in through [Google Identity Services](https://developers.google.com/identity/gsi/web/guides/overview). Create a **Web application** OAuth client in Google Cloud, add each deployed site URL and local development URL to its authorized JavaScript origins, then set its public client ID in `product/config.js`:
 
 ```js
-window.AINuggetsAuthConfig = Object.freeze({
-  googleClientId: "YOUR_CLIENT_ID.apps.googleusercontent.com"
+window.ProductConfig = Object.freeze({
+  authentication: Object.freeze({
+    googleClientId: "YOUR_CLIENT_ID.apps.googleusercontent.com"
+  })
 });
 ```
 
-The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. Keep the same public value in both beta (`infra/cloudflare/content-worker/wrangler.jsonc`) and production (`infra/cloudflare/content-worker/wrangler.production.jsonc`) Worker configurations, then deploy the matching Worker before its Pages site. The Worker verifies every Google ID token, stores a profile in D1, and returns an opaque 30-day session token. The browser keeps only that opaque token in `localStorage` and restores the profile through the Worker after refresh; the Worker stores only its SHA-256 hash. See [Content Engine API](CONTENT_ENGINE_API.md#authentication-api) for the endpoint contract and [Daily Streak](DAILY_STREAK.md) for streak rules, persistence, and D1 queries.
+The OAuth client ID is intentionally browser-visible. Never add a Google OAuth client secret to this repository or any browser asset. The Worker deployment renders its matching public value from `product/config.js`; deploy the matching Worker before its Pages site. The Worker verifies every Google ID token, stores a profile in D1, and returns an opaque 30-day session token. The browser keeps only that opaque token in `localStorage` and restores the profile through the Worker after refresh; the Worker stores only its SHA-256 hash. See [Content Engine API](CONTENT_ENGINE_API.md#authentication-api) for the endpoint contract and [Daily Streak](DAILY_STREAK.md) for streak rules, persistence, and D1 queries.
 
 ## Run locally
 

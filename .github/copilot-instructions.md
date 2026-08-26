@@ -14,12 +14,21 @@ These instructions are mandatory for AI-assisted changes in this repository.
 - Keep all briefing data and shared content-rendering implementations under `content-engine/`.
 - Store editions, stories, source attribution, and generation runs in the Cloudflare D1 database defined under `infra/cloudflare/content-worker/`.
 - Keep daily-edition orchestration runtime-neutral under `content-engine/automation/`. Cloud provider triggers and persistence implementations must be adapters that inject dependencies into the portable job.
-- Access public content only through the content Worker API configured in `content-engine/config.js`; do not hard-code stories in `index.html` or theme files.
+- Access public content only through the content Worker API configured in `product/config.js`; do not hard-code stories in `index.html` or theme files.
 - Change the D1 schema only through ordered SQL migrations. Never edit an already-applied migration.
 - Keep draft editions out of public API responses; only `published` editions may be rendered publicly.
 - Keep `content-engine/render.js` theme-agnostic and preserve the stable shared selectors it emits.
 - Publish exactly four or five stories. Each story must have a unique ID, category, concise title, summary, destination, and supported artwork key.
 - Keep content trustworthy and concise. Verify news against primary sources before publishing and avoid unsupported hype.
+
+## Product externalization
+
+- Treat `product/` as the sole ownership boundary for rebrandable product identity, reader-facing copy, public browser settings, editorial sources and instructions, entity-artwork mappings, and product artwork. Do not hard-code product-specific values in the shared shell, themes, shared behavior, or portable content engine.
+- Before adding or changing copy, configuration, integration settings, assets, or a user-facing feature, classify it as product-owned (`product/`), shared behavior, current editorial data, or provider infrastructure. Externalize every new product-owned value under `product/` and make shared code consume it through the established product contracts.
+- Keep provider resource names, account/database identifiers, deployment manifests, and provider-specific secrets/contracts in `infra/<provider>/`. Do not move them into `product/`; provider deployment adapters may read public product settings only through an explicit rendered handoff. Never duplicate a product-owned public setting in a checked-in provider manifest.
+- Never modify applied migrations to remove old product references. Treat them as immutable history; publish new editorial data or add a new ordered migration when required.
+- When product ownership, configuration shape, product-to-provider handoff, or rebranding follow-up work changes, update `docs/PRODUCT_CONFIGURATION.md`, `docs/PRODUCT_EXTERNALIZATION_ARCHITECTURE.md`, and `.github/skills/product-rebranding/SKILL.md` in the same change. Keep the skill's inventory, validation steps, and user-actions checklist synchronized with the implementation.
+- Before completing product-related work, scan for stale product-specific runtime values outside `product/`; classify allowed provider identifiers, migration history, and operational documentation explicitly. Run the narrow relevant validation and do not claim externalization is complete while unclassified runtime product values remain.
 
 ## Theme architecture
 

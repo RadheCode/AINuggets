@@ -35,7 +35,7 @@ function testCandidates() {
     canonicalUrl: `https://example.com/${id}`,
     title: `Test ${category} candidate`,
     excerpt: "This is test metadata used only to verify the configured summary provider.",
-    sourceName: "AI Nuggets provider check",
+    sourceName: "Product provider check",
     sourceUrl: `https://example.com/${id}`,
     sourcePublishedAt: "2026-08-24T00:00:00.000Z",
     category

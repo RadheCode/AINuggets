@@ -15,8 +15,8 @@
   let stories = [];
   let activeSummaryContext = "standard";
 
-  if (!window.AINuggetsContentReady || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !storyDialogSummary || !storyDialogSource || !storyDialogPrevious || !storyDialogNext) {
-    throw new Error("AI Nuggets content engine could not find its loader or rendering targets.");
+  if (!window.ProductContentReady || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !storyDialogSummary || !storyDialogSource || !storyDialogPrevious || !storyDialogNext) {
+    throw new Error("The content engine could not find its loader or rendering targets.");
   }
 
   function createElement(tagName, className, text) {
@@ -39,7 +39,7 @@
     article.setAttribute("aria-haspopup", "dialog");
     article.setAttribute("aria-label", `Show summary: ${story.title}`);
 
-    const company = window.AINuggetsCompanyImages?.findCompanyImage(story);
+    const company = window.ProductCompanyImages?.findCompanyImage(story);
     if (company) article.classList.add("story-card--has-company-image");
 
     const art = createElement("div", `story-art story-art--${story.art}`);
@@ -151,7 +151,7 @@
   });
 
   try {
-    const content = await window.AINuggetsContentReady;
+    const content = await window.ProductContentReady;
     stories = content.stories;
     storyGrid.dataset.storyCount = String(content.stories.length);
     storyGrid.replaceChildren(...content.stories.map(renderStory));

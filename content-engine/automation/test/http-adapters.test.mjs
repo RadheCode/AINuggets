@@ -20,12 +20,13 @@ test("fetches candidates from a generic JSON endpoint", async () => {
   assert.deepEqual(candidates, [{ url: "https://example.com/story" }]);
 });
 
-test("requests a structured edition from an OpenAI-compatible endpoint", async () => {
+test("requests a structured edition from a compatible endpoint", async () => {
   let request;
   const provider = createOpenAiCompatibleSummaryProvider({
     baseUrl: "https://model.example/v1",
     apiKey: "model-secret",
     model: "editorial-model",
+    generationInstruction: "Create a factual daily science-news edition only from the supplied candidate metadata.",
     summaryContexts: {
       compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 },
       standard: { label: "Full context", minCharacters: 240, maxCharacters: 420 },

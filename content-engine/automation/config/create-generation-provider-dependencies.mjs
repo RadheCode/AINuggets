@@ -1,7 +1,7 @@
 import { createHttpJsonContentSource } from "../adapters/http-json-content-source.mjs";
 import { createOpenAiCompatibleSummaryProvider } from "../adapters/openai-compatible-summary-provider.mjs";
 import { createRssBlogContentSource } from "../adapters/rss-blog-content-source.mjs";
-import { AI_BLOG_SOURCES } from "./ai-blog-sources.mjs";
+import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
 
 export const GENERATION_PROVIDER_CONFIGURATION = Object.freeze({
@@ -48,13 +48,14 @@ export function createGenerationProviderDependencies(values, { fetchImpl } = {})
         apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.contentSourceApiKey),
         ...options
       })]
-      : [createRssBlogContentSource({ sources: AI_BLOG_SOURCES, ...options })],
+      : [createRssBlogContentSource({ sources: PRODUCT_EDITORIAL_CONFIG.feeds, ...options })],
     summaryProvider: summaryProviderUrl
       ? createOpenAiCompatibleSummaryProvider({
         baseUrl: summaryProviderUrl,
         apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey),
         model: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
         summaryContexts: CONTENT_ENGINE_CONFIG.summaries.contexts,
+        generationInstruction: PRODUCT_EDITORIAL_CONFIG.generationInstruction,
         ...options
       })
       : null

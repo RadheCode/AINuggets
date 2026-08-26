@@ -10,7 +10,7 @@
 
   async function fetchJson(url) {
     const headers = new Headers({ accept: "application/json" });
-    const sessionToken = localStorage.getItem("ai-nuggets-session-token");
+    const sessionToken = localStorage.getItem(window.ProductConfig.identity.storageNamespace + "-session-token");
     if (sessionToken) headers.set("authorization", `Bearer ${sessionToken}`);
     const response = await fetch(url, { headers });
     if (!response.ok) throw new Error(`Could not load the requested edition (${response.status}).`);
@@ -18,8 +18,8 @@
   }
 
   async function loadEdition() {
-    const config = window.AINuggetsContentConfig;
-    if (!config?.apiBaseUrl) throw new Error("The content API is not configured.");
+    const runtime = window.ProductConfig?.runtime;
+    if (!runtime?.contentApiUrls || !runtime?.sites?.production) throw new Error("The content API is not configured.");
 
     const requestedDate = new URLSearchParams(window.location.search).get("date");
     if (requestedDate && !isValidDate(requestedDate)) {
@@ -27,7 +27,9 @@
     }
 
     const editionKey = requestedDate || "latest";
-    const apiBaseUrl = config.apiBaseUrl.replace(/\/$/, "");
+    const apiBaseUrl = (window.location.hostname === runtime.sites.production
+      ? runtime.contentApiUrls.production
+      : runtime.contentApiUrls.beta).replace(/\/$/, "");
     const content = await fetchJson(`${apiBaseUrl}/api/editions/${editionKey}`);
     if (!content.briefing || !Array.isArray(content.stories) || content.stories.length < 4 || content.stories.length > 5) {
       throw new Error("The content API returned an invalid edition.");
@@ -43,5 +45,5 @@
     return Object.freeze(content);
   }
 
-  window.AINuggetsContentReady = loadEdition();
+  window.ProductContentReady = loadEdition();
 }());

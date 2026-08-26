@@ -1,6 +1,6 @@
-# AI Nuggets Theme Rulebook
+# Theme Rulebook
 
-This document defines the contract for every visual theme in AI Nuggets. Themes may change presentation, but they must not change content structure, behavior, accessibility, or the single-screen product promise.
+This document defines the contract for every visual theme. Themes may change presentation, but they must not change content structure, behavior, accessibility, or the single-screen product promise.
 
 ## Directory contract
 
@@ -28,7 +28,7 @@ Do not place theme-specific CSS, images, fonts, or animations at the repository 
 Register every theme in the `themes` map inside `theme.config.js`. Select exactly one theme with `activeTheme`:
 
 ```js
-window.AINuggetsThemeConfig = Object.freeze({
+window.ThemeConfig = Object.freeze({
   activeTheme: "glass-bento",
   themes: Object.freeze({
     "glass-bento": Object.freeze({
@@ -62,7 +62,7 @@ The article-summary dialog is the canonical dialog shell. Every new dialog, pane
 
 - Every theme must support both `data-color-mode="light"` and `data-color-mode="dark"` on the root `<html>` element.
 - `theme.config.js` controls the initial behavior with `defaultColorMode`: `"system"`, `"light"`, or `"dark"`.
-- The shared switcher persists an explicit choice under the `ai-nuggets-color-mode` local-storage key.
+- The shared switcher persists an explicit choice under the `${storageNamespace}-color-mode` local-storage key, where `storageNamespace` is configured in `product/config.js`.
 - Define mode colors through CSS custom properties where practical so component states remain consistent.
 - Both modes must meet the same accessibility, responsive, and no-scroll requirements.
 - Any visible motion or emphasis effect in one color mode must remain perceptible and equally purposeful in the other mode. Validate its contrast, animation state, and interaction states in both modes; do not rely on near-identical colors that make an effect disappear.

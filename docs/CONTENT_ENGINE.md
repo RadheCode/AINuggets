@@ -1,6 +1,6 @@
 # Content Engine
 
-This guide describes the complete path from approved AI-news sources to the fixed story tiles on the AI Nuggets homepage. It covers daily generation, review and publication, public delivery, and browser rendering.
+This guide describes the complete path from product-approved sources to the fixed story tiles on the homepage. It covers daily generation, review and publication, public delivery, and browser rendering.
 
 ## What the content engine owns
 
@@ -42,10 +42,11 @@ flowchart TD
 
 | Area | Location | Responsibility |
 |---|---|---|
-| Public API configuration | `content-engine/config.js` | Defines the browser-visible Worker base URL. |
+| Public API configuration | `product/config.js` | Defines the browser-visible Worker base URLs. |
 | Browser loader | `content-engine/loader.js` | Validates an optional preview date, requests an edition, and rejects malformed API payloads. |
 | Browser renderer | `content-engine/render.js` | Creates semantic tile buttons, stable slot classes, and the summary dialog behavior. |
-| Central configuration | `content-engine/content-engine.config.mjs` | Human-editable UTC schedule, publication mode, and approved feeds. |
+| Engine configuration | `content-engine/content-engine.config.mjs` | Human-editable UTC schedule and publication mode. |
+| Product editorial configuration | `product/editorial-config.mjs` | Product-approved feeds and generation instruction. |
 | Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, idempotency, and audit orchestration. |
 | Worker adapter | `infra/cloudflare/content-worker/src/` | Connects the portable automation to Cron, D1, secrets, and public HTTP routes. |
 | Content database | Cloudflare D1 `ai-nuggets-content` | Source of truth for editions, stories, and generation audit records. |
@@ -63,7 +64,7 @@ Before collection, the job asks the repository whether an edition already exists
 
 ### 3. Candidate collection
 
-By default, the built-in collector reads the editable approved feed list in `content-engine/content-engine.config.mjs`:
+By default, the built-in collector reads the editable product-approved feed list in `product/editorial-config.mjs`:
 
 1. Fetch up to three recent posts from each RSS or Atom feed.
 2. Remove tracking parameters and normalize candidate URLs.
@@ -123,15 +124,15 @@ The API returns a single edition object with briefing metadata and ordered stori
 
 ## Beta and production isolation
 
-Beta and production run identical content contracts on separate Cloudflare resources. The browser configuration selects the production Worker only when the hostname is exactly `ai-nuggets.pages.dev`; beta and all non-production preview hostnames select `beta-ai-nuggets-content.ainuggets123.workers.dev`. This keeps preview traffic, editions, sessions, feedback, automation, and scheduled generation away from production.
+Beta and production run identical content contracts on separate Cloudflare resources. The product configuration selects the production Worker only when the hostname exactly matches its configured production hostname; beta and all non-production preview hostnames select the configured beta endpoint. This keeps preview traffic, editions, sessions, feedback, automation, and scheduled generation away from production.
 
 The beta Worker accepts browser requests only from `https://beta-ai-nuggets.pages.dev` plus local development origins. The production Worker retains its separate production-origin allowlist. See [Cloudflare infrastructure](CLOUDFLARE_INFRASTRUCTURE.md) for protected deployment commands and resource provisioning.
 
 ## Browser rendering path
 
 1. `content-engine/loader.js` reads `?date=YYYY-MM-DD`, when provided, and validates the date.
-2. It requests `/api/editions/latest` or the date-specific route from the Worker URL in `content-engine/config.js`.
-3. It verifies the returned briefing and four-to-five-story payload before exposing it as `window.AINuggetsContentReady`.
+2. It requests `/api/editions/latest` or the date-specific route from the Worker URL in `product/config.js`.
+3. It verifies the returned briefing and four-to-five-story payload before exposing it as `window.ProductContentReady`.
 4. `content-engine/render.js` creates one accessible button per story and assigns deterministic slot classes such as `story-card--slot-1` through `story-card--slot-5`.
 5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the Full context summary. Readers can switch to Quick take or Deep dive using the accessible in-dialog controls; all three persisted layers are already in the API response, so switching does not make another request.
 

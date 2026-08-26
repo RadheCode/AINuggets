@@ -1,22 +1,24 @@
-# AI Nuggets Website Feature Summary
+# Website Feature Summary
 
 ## Overview
 
-AI Nuggets is a responsive daily AI-news briefing website. It presents a curated set of four or five AI stories in a single-screen, bento-style experience, backed by an automated content-generation and publication platform.
+The website is a responsive daily briefing experience. Its current identity and topic are configured in `product/`; it presents four or five curated stories in a single-screen, bento-style experience backed by an automated content-generation and publication platform.
 
 ## Reader-facing website features
 
 | Feature | What it provides |
 |---|---|
-| Daily AI briefing | Presents a focused daily briefing of four or five selected AI-news stories, designed to reduce the need to follow an endless news feed. |
+| Daily briefing | Presents a focused daily briefing of four or five selected stories, designed to reduce the need to follow an endless news feed. |
 | Responsive story grid | Displays stories as fixed, visually distinct tiles with lead and wide layouts. The layout adapts across desktop and mobile breakpoints. |
 | Story detail dialog | Selecting a story opens an accessible modal with its category, title, summary, source link, and previous/next story navigation. |
 | Three summary levels | Each story offers Quick take, Full context, and Deep dive summaries. Full context is the default view, and readers can switch detail levels without another API request. |
 | Source attribution | Each story detail view provides a safe external link to the original source, opening in a new tab with appropriate security attributes. |
 | Edition preview by date | Supports a `?date=YYYY-MM-DD` URL parameter so a reader or editor can load the appropriate published edition for a specified date, or the latest available edition. |
-| Company artwork matching | Recognizes selected AI-company references in story text and associates them with local company artwork; unmatched stories remain image-free. |
+| Entity artwork matching | Recognizes configured entity references in story text and associates them with local artwork; unmatched stories remain image-free. |
 | Light and dark modes | Provides a color-mode toggle, respects the operating-system preference when no choice has been saved, and remembers the reader's choice in browser storage. |
 | Theme system | Loads the active visual theme from centralized configuration, allowing the site presentation to change without changing content retrieval or behavior. |
+| Product configuration boundary | Keeps product identity, editorial framing copy, public API endpoints, browser storage namespace, public OAuth settings, and product-specific artwork matching together in the root `product/` folder so the site can be retargeted without changing shared behavior or themes. |
+| One-prompt product rebranding | Provides a repository-local skill that converts the configured product to a new editorial domain, validates remaining references, and clearly identifies the external provider, OAuth, deployment, and editorial-data actions that still require user approval. |
 | Google sign-in | Supports Google-only OAuth/OpenID Connect sign-in through Google Identity Services. The Worker verifies each credential, creates or updates a D1 user profile, and issues an opaque 30-day session token so the signed-in state survives refresh. The signed-in header shows the account menu and application sign-out control. Until a Google client ID is configured, the visible disabled action explains the unavailable state. |
 | Daily reading streak | Shows a signed-in reader's current consecutive UTC-day streak in the header. A verified sign-in or an authenticated published-edition request qualifies once per UTC day; the Worker calculates and persists current and longest streaks, so the browser cannot alter them. |
 | Reader feedback | Provides an attached Edge tab that opens an accessible soft-rounded feedback dialog with a required email address, a whole-star rating from 1 through 5, feedback message, acknowledgement, and D1-backed submission. Signed-in readers see their verified email prefilled and locked; anonymous readers can enter their own email. |
@@ -31,7 +33,7 @@ AI Nuggets is a responsive daily AI-news briefing website. It presents a curated
 | Daily scheduled generation | Runs a scheduler-neutral job on a UTC schedule. It can be invoked by Cloudflare Cron, GitHub Actions, container schedulers, or operating-system cron. |
 | RSS/Atom source collection | Collects recent articles from an editable approved feed list, with a custom HTTPS JSON candidate source available as an optional replacement. |
 | Candidate selection | Normalizes URLs, removes duplicates, ranks candidates by configured source priority and freshness, and prefers category diversity when selecting stories. |
-| AI-powered summarization | Uses an OpenAI-compatible Chat Completions provider to produce structured original summaries for the three available detail levels. |
+| Provider-powered summarization | Uses an OpenAI-compatible Chat Completions provider to produce structured original summaries for the three available detail levels. |
 | Content validation | Rejects invalid editions before storage by enforcing date, story count, unique IDs and positions, required fields, supported layouts and artwork, summary lengths, and HTTPS URLs. |
 | Publishing workflow | Publishes valid editions automatically by default, with a configuration option to save future editions as drafts for editorial review before publication. |
 | Idempotency and audits | Prevents duplicate editions for a date and records each generation attempt as started, skipped, succeeded, or failed. |

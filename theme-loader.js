@@ -1,5 +1,5 @@
 (function loadActiveTheme() {
-  const config = window.AINuggetsThemeConfig;
+  const config = window.ThemeConfig;
 
   if (!config || !config.activeTheme || !config.themes) {
     throw new Error("Theme configuration is missing or invalid.");
@@ -10,7 +10,11 @@
     throw new Error(`Theme "${config.activeTheme}" is not registered.`);
   }
 
-  const savedColorMode = localStorage.getItem("ai-nuggets-color-mode");
+  const storageNamespace = window.ProductConfig?.identity?.storageNamespace;
+  if (typeof storageNamespace !== "string" || !storageNamespace.trim()) {
+    throw new Error("Product storage namespace is missing or invalid.");
+  }
+  const savedColorMode = localStorage.getItem(`${storageNamespace}-color-mode`);
   const systemColorMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const configuredColorMode = config.defaultColorMode === "dark" ? "dark" : config.defaultColorMode === "light" ? "light" : systemColorMode;
 

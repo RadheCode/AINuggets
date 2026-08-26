@@ -1,17 +1,18 @@
 import { isValidEditorialDate } from "../domain/editorial-date.mjs";
+import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
 
 function readArgument(name) {
   const prefix = `--${name}=`;
   return process.argv.slice(2).find((argument) => argument.startsWith(prefix))?.slice(prefix.length);
 }
 
-const endpoint = process.env.AI_NUGGETS_AUTOMATION_URL
-  || "https://beta-ai-nuggets-content.ainuggets123.workers.dev/internal/generate";
-const token = process.env.AI_NUGGETS_AUTOMATION_TOKEN;
+const endpoint = process.env.CONTENT_AUTOMATION_URL
+  || PRODUCT_EDITORIAL_CONFIG.automation.betaTriggerUrl;
+const token = process.env.CONTENT_AUTOMATION_TOKEN;
 const targetDate = readArgument("date");
 
 if (!token) {
-  throw new Error("Set AI_NUGGETS_AUTOMATION_TOKEN before triggering content generation.");
+  throw new Error("Set CONTENT_AUTOMATION_TOKEN before triggering content generation.");
 }
 if (targetDate && !isValidEditorialDate(targetDate)) {
   throw new Error(`Invalid --date value: ${targetDate}. Use YYYY-MM-DD.`);

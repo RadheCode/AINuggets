@@ -27,7 +27,7 @@ function edition() {
     date: targetDate,
     briefing: {
       eyebrow: "Fresh briefing",
-      title: "AI news.",
+      title: "Daily briefing.",
       emphasis: "Less noise.",
       summary: "Today's useful updates.",
       meta: ["4 stories"]

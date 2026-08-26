@@ -12,19 +12,19 @@ if ($Environment -eq "Production" -and -not $ConfirmProduction) {
   throw "Production is protected. To sync production Worker secrets, pass -Environment Production -ConfirmProduction explicitly."
 }
 
-$workerConfigName = if ($Environment -eq "Production") { "wrangler.production.jsonc" } else { "wrangler.jsonc" }
-$workerConfig = Join-Path $PSScriptRoot $workerConfigName
-
 if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
   throw "Provider configuration was not found at '$ConfigPath'. Copy content-engine\automation\config\providers.example.env to providers.local.env and fill in the values."
 }
 
 Push-Location (Join-Path $PSScriptRoot "..\..\..")
+$generatedWorkerConfig = Join-Path $PSScriptRoot "wrangler.secret-sync.generated.jsonc"
 try {
-  npx wrangler secret bulk $ConfigPath --config $workerConfig
+  & (Join-Path $PSScriptRoot "render-worker-config.ps1") -Environment $Environment -OutputPath $generatedWorkerConfig | Out-Null
+  npx wrangler secret bulk $ConfigPath --config $generatedWorkerConfig
   if ($LASTEXITCODE -ne 0) {
     throw "Cloudflare rejected the provider configuration."
   }
 } finally {
+  Remove-Item -LiteralPath $generatedWorkerConfig -ErrorAction SilentlyContinue
   Pop-Location
 }

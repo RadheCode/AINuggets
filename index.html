@@ -3,24 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="AI Nuggets distills the five AI updates worth knowing into a quick daily briefing.">
+  <meta name="description" content="">
   <meta name="theme-color" content="#e9ebf9">
-  <title>AI Nuggets - AI news, less noise</title>
+  <title></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="product/config.js"></script>
   <script src="theme.config.js"></script>
   <script src="theme-loader.js"></script>
-  <script src="auth.config.js"></script>
 </head>
 <body>
   <div class="site-frame">
     <header class="site-header">
-      <a class="brand" href="#today" aria-label="AI Nuggets home">
-        <span class="brand-mark" aria-hidden="true">AI</span>
+      <a class="brand" href="#today" data-product-home>
+        <span class="brand-mark" aria-hidden="true" data-product-copy="brandMark"></span>
         <span class="brand-copy">
-          <strong>AI Nuggets</strong>
-          <small>Five things worth knowing</small>
+          <strong data-product-copy="brandName"></strong>
+          <small data-product-copy="brandTagline"></small>
         </span>
       </a>
 
@@ -66,23 +66,23 @@
     <main id="today">
       <section class="briefing-intro" aria-labelledby="pageTitle">
         <div>
-          <p class="eyebrow"><span aria-hidden="true"></span> AI news daily briefing</p>
-          <h1 id="pageTitle">AI news. <em>Less noise.</em></h1>
+          <p class="eyebrow"><span class="eyebrow-indicator" aria-hidden="true"></span> <span data-product-copy="eyebrow"></span></p>
+          <h1 id="pageTitle" data-product-headline></h1>
         </div>
         <div class="briefing-copy">
-          <p class="briefing-copy__shine">Five useful updates, selected to help you keep up without the endless feed.</p>
+          <p class="briefing-copy__shine" data-product-copy="briefingDescription"></p>
           <div class="briefing-meta" aria-label="Briefing details">
-            <span>Five stories</span>
-            <span>Updated daily</span>
+            <span data-product-copy="storyCountLabel"></span>
+            <span data-product-copy="updateCadenceLabel"></span>
           </div>
         </div>
       </section>
 
-      <section class="story-grid" id="storyGrid" aria-label="Today's AI stories"></section>
+      <section class="story-grid" id="storyGrid"></section>
     </main>
 
     <footer class="site-footer">
-      <span>One useful briefing, every weekday.</span>
+      <span data-product-copy="footer"></span>
     </footer>
     <button class="feedback-tab" id="feedbackTab" type="button" aria-haspopup="dialog" aria-controls="feedbackDialog">
       <span aria-hidden="true">★</span><span>Feedback</span>
@@ -144,9 +144,9 @@
     </div>
   </dialog>
 
-  <script src="content-engine/config.js"></script>
+  <script src="product/apply-copy.js"></script>
   <script src="content-engine/loader.js"></script>
-  <script src="content-engine/company-images.js"></script>
+  <script src="product/company-images.js"></script>
   <script src="content-engine/render.js"></script>
   <script src="script.js"></script>
 </body>

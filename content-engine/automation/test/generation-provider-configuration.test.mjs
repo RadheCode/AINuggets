@@ -4,7 +4,7 @@ import {
   GENERATION_PROVIDER_CONFIGURATION,
   createGenerationProviderDependencies
 } from "../config/create-generation-provider-dependencies.mjs";
-import { AI_BLOG_SOURCES } from "../config/ai-blog-sources.mjs";
+import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
 import { validateContentEngineConfig } from "../../validate-content-engine-config.mjs";
 
@@ -37,8 +37,8 @@ test("rejects partial summary provider configuration", () => {
   );
 });
 
-test("uses the centralized content-engine feed configuration", () => {
-  assert.strictEqual(AI_BLOG_SOURCES, CONTENT_ENGINE_CONFIG.feeds);
+test("uses the centralized product editorial configuration", () => {
+  assert.ok(PRODUCT_EDITORIAL_CONFIG.feeds.length > 0);
   assert.equal(CONTENT_ENGINE_CONFIG.schedule.cron, "0 12 * * *");
   assert.equal("timezone" in CONTENT_ENGINE_CONFIG.schedule, false);
   assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180 });
