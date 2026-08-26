@@ -80,10 +80,9 @@ function renderAuthWidget(state, user = null, message = "") {
   const signingIn = state === "signing-in";
   const signingOut = state === "signing-out";
 
-  googleSignInButton.hidden = Boolean(signedIn);
-  googleSignInButton.disabled = state === "initializing" || signingIn || state === "unavailable";
-  googleSignInButton.classList.toggle("is-loading", signingIn);
-  googleSignInButton.querySelector("span:last-child").textContent = signingIn ? "Signing you in..." : "Continue with Google";
+  googleSignInButton.hidden = Boolean(signedIn) || state === "unavailable";
+  googleSignInButton.setAttribute("aria-busy", String(signingIn));
+  googleSignInButton.classList.toggle("is-unavailable", state === "unavailable");
   accountMenuToggle.hidden = !signedIn;
   accountMenuToggle.disabled = signingOut;
   signOutButton.disabled = signingOut;
@@ -151,20 +150,20 @@ async function handleGoogleCredential(response) {
   }
 }
 
-function promptGoogleSignIn() {
-  if (!googleIdentityInitialized || authState !== "signed-out") return;
-  signInStatus.textContent = "Choose a Google account to continue.";
-  window.google.accounts.id.prompt();
-}
-
 function finishGoogleInitialization() {
   googleIdentityInitialized = true;
+  window.google.accounts.id.renderButton(googleSignInButton, {
+    theme: "outline",
+    size: "medium",
+    shape: "pill",
+    text: "continue_with",
+    width: 200
+  });
   if (authState === "initializing") renderAuthWidget("signed-out");
 }
 
 function initializeGoogleSignIn() {
   if (!authConfig || typeof authConfig.googleClientId !== "string" || !authConfig.googleClientId.trim()) {
-    googleSignInButton.title = "Google sign-in requires a configured Google client ID.";
     renderAuthWidget("unavailable", null, "Google sign-in requires configuration.");
     return;
   }
@@ -192,7 +191,6 @@ function initializeGoogleSignIn() {
     finishGoogleInitialization();
   };
   googleScript.onerror = () => {
-    googleSignInButton.title = "Google sign-in is currently unavailable.";
     renderAuthWidget("unavailable", null, "Google sign-in is currently unavailable.");
   };
   document.head.appendChild(googleScript);
@@ -212,8 +210,6 @@ colorModeToggle.addEventListener("click", () => {
 });
 
 updateColorModeToggle();
-
-googleSignInButton.addEventListener("click", promptGoogleSignIn);
 
 accountMenuToggle.addEventListener("click", () => {
   if (authState !== "signed-in") return;
