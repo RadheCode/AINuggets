@@ -133,13 +133,13 @@ button, input { font: inherit; }
 }
 
 .site-header {
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   padding: 0 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.64);
   box-shadow: 0 8px 24px rgba(79, 78, 150, 0.06);
 }
 
-.brand { display: flex; width: max-content; align-items: center; gap: 11px; }
+.brand { display: flex; width: max-content; align-items: center; justify-self: start; gap: 11px; }
 
 .brand-mark,
 .dialog-mark {
@@ -162,7 +162,7 @@ button, input { font: inherit; }
 .nav-tabs a:hover { color: var(--blue-deep); background: rgba(255, 255, 255, 0.72); transform: translateY(-2px); }
 .nav-tabs .active { color: #fff; background: linear-gradient(145deg, #6d87eb, #4355bd); box-shadow: 0 5px 0 rgba(84, 82, 180, 0.14), 0 10px 20px rgba(69, 78, 177, 0.24), inset 0 1px rgba(255, 255, 255, 0.45); }
 .current-date { justify-self: end; }
-.header-actions { display: flex; flex: 0 0 auto; align-items: center; justify-self: end; gap: 12px; }
+.header-actions { display: flex; flex: 0 0 auto; min-width: 0; align-items: center; justify-self: end; gap: 12px; }
 .streak-pill { display: inline-flex; min-height: 34px; align-items: center; gap: 5px; padding: 6px 11px 6px 8px; border: 1px solid rgba(235, 121, 47, 0.42); border-radius: 999px; color: #8e3714; background: linear-gradient(145deg, rgba(255, 249, 224, 0.92), rgba(255, 205, 142, 0.82)); box-shadow: 0 5px 0 rgba(203, 92, 32, 0.15), 0 11px 20px rgba(180, 75, 25, 0.16), inset 0 1px rgba(255, 255, 255, 0.76); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.02em; line-height: 1; white-space: nowrap; }
 .streak-pill[hidden] { display: none; }
 .streak-pill__flame { font-size: 0.95rem; line-height: 1; filter: drop-shadow(0 2px 2px rgba(142, 55, 20, 0.2)); }
@@ -772,7 +772,7 @@ main::before { display: none; }
 @media (max-width: 860px) and (min-width: 761px) {
   .site-frame { grid-template-rows: 66px minmax(0, 1fr) 38px; }
   .brand-copy small, .current-date { display: none; }
-  .site-header { grid-template-columns: auto minmax(0, 1fr) auto; padding: 0 16px; }
+  .site-header { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding: 0 16px; }
   .briefing-intro { grid-template-columns: 1fr 1fr; gap: 20px; }
   .briefing-copy > p { font-size: 0.8rem; line-height: 1.45; }
   .story-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
