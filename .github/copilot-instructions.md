@@ -64,6 +64,7 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Use fluid dimensions, CSS Grid or Flexbox, `minmax(0, 1fr)`, and `100dvh` where appropriate.
 - Never solve overflow by clipping essential text or controls. Condense secondary copy at constrained breakpoints while retaining every story title and action.
 - Treat responsive placement as a strict requirement: every visible element must remain deliberately anchored and fluid across resizing. Keep related controls in an explicit Grid or Flex group with a defined anchor; never position them from viewport-relative, absolute, or incidental free space in a way that lets them detach, drift, or float. Never permit implicit grid tracks, overlap, overflow, clipped essential controls, or detached/floating controls; resize through and validate representative desktop, laptop, tablet, mobile portrait, and mobile landscape resolutions.
+- This is a strict, non-negotiable UI rule: every visible UI element and interaction target must remain present, anchored, fluid, and visually consistent across supported desktop, laptop, tablet, mobile portrait, mobile landscape, window-resize, zoom, and input-device environments. Do not hide an essential control to resolve a responsive defect; use a deliberate responsive layout that preserves it. Validate each affected state, including changes in authenticated, loading, error, and expanded-control content.
 
 ## Color modes
 
@@ -103,4 +104,4 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Make focused changes and avoid unrelated formatting or restructuring.
 - Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Every new or materially changed user-facing feature must also update `docs/AI_NUGGETS_FEATURE_SUMMARY.md`. Create the relevant documentation when none exists, and keep root documentation links current.
 - Update `docs/THEME_RULEBOOK.md` and this instruction file when the theme contract changes.
-- Before completing changes, verify JavaScript syntax, theme asset paths, keyboard interactions, reduced-motion behavior, and no-scroll viewport fit at representative breakpoints.
+- Before completing changes, verify JavaScript syntax, theme asset paths, keyboard interactions, reduced-motion behavior, and no-scroll viewport fit at representative breakpoints. For UI changes, also verify that every affected visible element remains anchored, present, and usable during window resizing and every state that changes its surrounding content.

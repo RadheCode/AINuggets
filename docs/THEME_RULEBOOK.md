@@ -79,9 +79,10 @@ The article-summary dialog is the canonical dialog shell. Every new dialog, pane
 6. Prefer `100dvh` for viewport layouts and account for browser chrome on mobile.
 7. Test narrow mobile widths down to 320px and short laptop heights down to 600px.
 8. Treat responsive placement as mandatory: every visible element must remain deliberately anchored and fluid while resizing. Controls that belong together (such as header actions) must be in an explicit Grid or Flex group with a defined anchor; they must never use viewport-relative, absolute, or incidental free space to appear detached, drift, or float. Do not allow implicit grid tracks, overlap, clipping of essential controls, overflow, or detached/floating controls.
-9. Keep elevation semantics consistent between light and dark modes: a raised, inset, selected, or disabled component must retain that same depth meaning in both themes.
-10. Use the established accent color for selected controls. Selected controls should retain a raised treatment unless an intentionally pressed interaction state is being represented.
-11. Every standalone widget and control must conform to every applicable rule in this document and the active theme's established surface, elevation, glass, motion, responsive, color-mode, and accessibility language. New dialogs must reuse the canonical article-summary dialog shell; do not reproduce or override its shell styling per feature. In themes that use neumorphism, use corresponding raised or inset shadow pairs; when a widget uses glass, retain a translucent background and an opaque-enough fallback for browsers without backdrop filtering.
+9. This is a strict, non-negotiable UI rule: every visible UI element and interaction target must remain present, anchored, fluid, and visually consistent across supported desktop, laptop, tablet, mobile portrait, mobile landscape, window-resize, zoom, and input-device environments. Do not hide an essential control to resolve a responsive defect; use a deliberate responsive layout that preserves it. Validate each affected state, including changes in authenticated, loading, error, and expanded-control content.
+10. Keep elevation semantics consistent between light and dark modes: a raised, inset, selected, or disabled component must retain that same depth meaning in both themes.
+11. Use the established accent color for selected controls. Selected controls should retain a raised treatment unless an intentionally pressed interaction state is being represented.
+12. Every standalone widget and control must conform to every applicable rule in this document and the active theme's established surface, elevation, glass, motion, responsive, color-mode, and accessibility language. New dialogs must reuse the canonical article-summary dialog shell; do not reproduce or override its shell styling per feature. In themes that use neumorphism, use corresponding raised or inset shadow pairs; when a widget uses glass, retain a translucent background and an opaque-enough fallback for browsers without backdrop filtering.
 
 ## Accessibility rules
 
@@ -114,6 +115,6 @@ Before accepting a theme:
 
 1. Select it through `theme.config.js` and confirm its stylesheet loads without console errors.
 2. Confirm all five cards, header, intro, and footer fit without page scrolling.
-3. Check multiple representative desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights; resize through each breakpoint and confirm every control remains in its declared group and anchor, without drifting, detaching, overlapping, or becoming unreachable.
+3. Check multiple representative desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights; resize through each breakpoint and confirm every control remains in its declared group and anchor, without drifting, detaching, overlapping, becoming hidden, or becoming unreachable. Repeat for every state that changes the surrounding content, including authenticated, loading, error, and expanded-control states.
 4. Verify the light/dark switcher, persistence, keyboard focus, all dialogs against the canonical article-summary shell, readable contrast in both modes, reduced motion, and identical element geometry before and after a mode change.
 5. Confirm missing or invalid theme configuration fails visibly instead of silently loading a fallback.
