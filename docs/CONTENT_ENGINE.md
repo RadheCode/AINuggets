@@ -76,7 +76,7 @@ An optional HTTPS JSON candidate endpoint can replace the built-in collector. Fe
 
 ### 4. Summarization and selection
 
-An OpenAI-compatible summary provider receives the ranked candidates and returns a structured edition containing four or five stories. Each story has a Quick take, Full context, and Deep dive summary rather than stored raw source article text. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
+An OpenAI-compatible summary provider receives the ranked candidates and returns a structured edition containing four or five stories. Each story has a Quick take, Overview, and Deep dive summary rather than stored raw source article text. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
 
 ### 5. Validation
 
@@ -134,7 +134,7 @@ The beta Worker accepts browser requests only from `https://beta-ai-nuggets.page
 2. It requests `/api/editions/latest` or the date-specific route from the Worker URL in `product/config.js`.
 3. It verifies the returned briefing and four-to-five-story payload before exposing it as `window.ProductContentReady`.
 4. `content-engine/render.js` creates one accessible button per story and assigns deterministic slot classes such as `story-card--slot-1` through `story-card--slot-5`.
-5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the Full context summary. Readers can switch to Quick take or Deep dive using the accessible in-dialog controls; all three persisted layers are already in the API response, so switching does not make another request.
+5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the Overview summary. Readers can switch to Quick take or Deep dive using the accessible in-dialog controls; all three persisted layers are already in the API response, so switching does not make another request.
 
 The rendering layer is intentionally theme-independent, so a theme switch can restyle the same content without changing its data contract or interaction behavior.
 
@@ -156,7 +156,7 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 |---|---|---|
 | `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 12 * * *` runs at 12:00 UTC. | Worker deployment applies the new trigger. |
 | `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
-| `summaries.defaultContext` | Default popup summary layer. The default is `standard` (Full context). | Browser and Worker deployments use the configured contract. |
+| `summaries.defaultContext` | Default popup summary layer. The default is `standard` (Overview). | Browser and Worker deployments use the configured contract. |
 | `summaries.contexts` | Labels plus minimum and maximum character limits for `compact`, `standard`, and `detailed` summaries. The defaults are 100-180, 240-420, and 500-900 respectively. | Worker deployment applies the generated-summary limits. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 

@@ -29,7 +29,7 @@ test("requests a structured edition from a compatible endpoint", async () => {
     generationInstruction: "Create a factual daily science-news edition only from the supplied candidate metadata.",
     summaryContexts: {
       compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 },
-      standard: { label: "Full context", minCharacters: 240, maxCharacters: 420 },
+      standard: { label: "Overview", minCharacters: 240, maxCharacters: 420 },
       detailed: { label: "Deep dive", minCharacters: 500, maxCharacters: 900 }
     },
     async fetchImpl(url, options) {

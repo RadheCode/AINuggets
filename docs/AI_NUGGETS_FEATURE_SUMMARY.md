@@ -11,7 +11,7 @@ The website is a responsive daily briefing experience. Its current identity and 
 | Daily briefing | Presents a focused daily briefing of four or five selected stories, designed to reduce the need to follow an endless news feed. |
 | Responsive story grid | Displays stories as fixed, visually distinct tiles with lead and wide layouts. The layout adapts across desktop and mobile breakpoints. |
 | Story detail dialog | Selecting a story opens an accessible modal with its category, title, summary, source link, and previous/next story navigation. |
-| Three summary levels | Each story offers Quick take, Full context, and Deep dive summaries. Full context is the default view, and readers can switch detail levels without another API request. |
+| Three summary levels | Each story offers Quick take, Overview, and Deep dive summaries. Overview is the default view, and readers can switch detail levels without another API request. |
 | Source attribution | Each story detail view provides a safe external link to the original source, opening in a new tab with appropriate security attributes. |
 | Edition preview by date | Supports a `?date=YYYY-MM-DD` URL parameter so a reader or editor can load the appropriate published edition for a specified date, or the latest available edition. |
 | Entity artwork matching | Recognizes configured entity references in story text and associates them with local artwork; unmatched stories remain image-free. |

@@ -255,12 +255,12 @@ test("rejects summaries that exceed their configured character bounds", async ()
   );
 });
 
-test("rejects Full context summaries that are not bullet points", async () => {
+test("rejects Overview summaries that are not bullet points", async () => {
   const repository = createMemoryEditionRepository();
   const summaryProvider = {
     async generateEdition() {
       const invalid = edition();
-      invalid.stories[0].summaries.standard = "This Full context summary has sufficient length but is intentionally written as a paragraph instead of the required bullet list. It describes why the development matters and what readers should monitor next so that it remains inside the configured character range.";
+      invalid.stories[0].summaries.standard = "This Overview summary has sufficient length but is intentionally written as a paragraph instead of the required bullet list. It describes why the development matters and what readers should monitor next so that it remains inside the configured character range.";
       return invalid;
     }
   };

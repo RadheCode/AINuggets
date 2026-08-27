@@ -42,7 +42,7 @@ test("uses the centralized product editorial configuration", () => {
   assert.equal(CONTENT_ENGINE_CONFIG.schedule.cron, "0 12 * * *");
   assert.equal("timezone" in CONTENT_ENGINE_CONFIG.schedule, false);
   assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180 });
-  assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.standard, { label: "Full context", minCharacters: 240, maxCharacters: 420 });
+  assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.standard, { label: "Overview", minCharacters: 240, maxCharacters: 420 });
   assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.detailed, { label: "Deep dive", minCharacters: 500, maxCharacters: 900 });
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
 });
