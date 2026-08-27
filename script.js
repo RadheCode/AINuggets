@@ -159,7 +159,7 @@ function finishGoogleInitialization() {
     size: "medium",
     shape: "pill",
     text: "continue_with",
-    width: 200
+    width: Math.round(googleSignInButton.getBoundingClientRect().width)
   });
   if (authState === "initializing") renderAuthWidget("signed-out");
 }
