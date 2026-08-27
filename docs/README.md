@@ -30,7 +30,13 @@ Deployment providers live under `infra/<provider>/`, with the active provider se
 
 ## Google sign-in
 
-The site supports Google-only OAuth/OpenID Connect sign-in through [Google Identity Services](https://developers.google.com/identity/gsi/web/guides/overview). Create a **Web application** OAuth client in Google Cloud, add each deployed site URL and local development URL to its authorized JavaScript origins, then set its public client ID in `product/config.js`:
+The site supports Google-only OAuth/OpenID Connect sign-in through [Google Identity Services](https://developers.google.com/identity/gsi/web/guides/overview). Create a **Web application** OAuth client in Google Cloud, then add these exact values under **Authorized JavaScript origins** before testing sign-in:
+
+- `https://beta-ai-nuggets.pages.dev`
+- `https://ai-nuggets.pages.dev`
+- `http://localhost:4173` when using the repository preview server
+
+Google rejects the account chooser with an authorization-policy error until the origin serving the page is present on that OAuth client. Set its public client ID in `product/config.js`:
 
 ```js
 window.ProductConfig = Object.freeze({

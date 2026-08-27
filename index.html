@@ -38,7 +38,11 @@
           <span class="streak-pill__label" id="streakPillLabel">day streaks</span>
         </output>
         <div class="sign-in-control">
-          <div class="google-sign-in-button" id="googleSignInButton" aria-live="polite"></div>
+          <div class="google-sign-in-button" id="googleSignInButton" aria-hidden="true">
+            <span class="google-sign-in-button__mark" aria-hidden="true">G</span>
+            <span>Continue with Google</span>
+          </div>
+          <div class="google-sign-in-target" id="googleSignInTarget"></div>
           <button class="account-menu-toggle" id="accountMenuToggle" type="button" aria-expanded="false" aria-controls="accountMenu" hidden>
             <span class="account-avatar" id="accountAvatar" aria-hidden="true"></span>
             <span class="account-name" id="accountName"></span>

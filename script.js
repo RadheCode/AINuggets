@@ -1,5 +1,6 @@
 const colorModeToggle = document.querySelector("#colorModeToggle");
 const googleSignInButton = document.querySelector("#googleSignInButton");
+const googleSignInTarget = document.querySelector("#googleSignInTarget");
 const accountMenuToggle = document.querySelector("#accountMenuToggle");
 const accountMenu = document.querySelector("#accountMenu");
 const accountAvatar = document.querySelector("#accountAvatar");
@@ -80,8 +81,9 @@ function renderAuthWidget(state, user = null, message = "") {
   const signingIn = state === "signing-in";
   const signingOut = state === "signing-out";
 
-  googleSignInButton.hidden = Boolean(signedIn) || state === "unavailable";
-  googleSignInButton.setAttribute("aria-busy", String(signingIn));
+  const signInUnavailable = Boolean(signedIn) || state === "unavailable";
+  googleSignInButton.hidden = signInUnavailable;
+  googleSignInTarget.hidden = signInUnavailable;
   googleSignInButton.classList.toggle("is-unavailable", state === "unavailable");
   accountMenuToggle.hidden = !signedIn;
   accountMenuToggle.disabled = signingOut;
@@ -152,7 +154,7 @@ async function handleGoogleCredential(response) {
 
 function finishGoogleInitialization() {
   googleIdentityInitialized = true;
-  window.google.accounts.id.renderButton(googleSignInButton, {
+  window.google.accounts.id.renderButton(googleSignInTarget, {
     theme: "outline",
     size: "medium",
     shape: "pill",
