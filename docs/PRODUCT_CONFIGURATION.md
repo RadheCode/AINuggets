@@ -8,7 +8,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | Product identity, user-facing framing copy, browser storage namespace, public beta/production content API endpoints, and the public OAuth client ID. |
+| `product/config.js` | Product identity, user-facing framing copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific company/entity artwork matching used by the shared story renderer. Replace or remove this mapping when it no longer matches the new topic. |
 | `product/editorial-config.mjs` | Product-specific approved sources and the generation instruction used by the portable daily-edition workflow. |
@@ -20,7 +20,23 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 3. Update `runtime.sites` and `runtime.contentApiUrls` for the new public frontend and content API hosts.
 4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different entity matching.
 5. Update approved sources and the generation instruction in `product/editorial-config.mjs`.
-6. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
+6. Update `summaryFeatures` in `product/config.js` when the product offers a different set of summary views or generated detail levels.
+7. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
+
+## Summary feature capabilities
+
+`ProductConfig.summaryFeatures` is the common product-level feature switch for story summary variants. It intentionally belongs in `product/config.js`, rather than editorial configuration, because it controls product behavior rather than the content of an individual edition.
+
+| Setting | Purpose |
+|---|---|
+| `ui` | Ordered summary context keys that the browser may offer in the story dialog. The renderer creates controls from this array; it does not require static controls in `index.html`. |
+| `generation` | Summary context keys generated, validated, and persisted for each new story. A generated context is stored only in its matching D1 column. |
+| `defaultContext` | Initial dialog view. It must occur in `ui`; if a story does not include it, the first available UI context is used. |
+| `contexts` | Labels, length limits, and the structured format expected for each supported key. |
+
+The default enables `compact` (Quick take), `standard` (Overview), and `detailed` (Deep dive) for both UI and generation. To offer two views, remove one key from `ui`; the dialog immediately renders two controls on the next browser deployment. To store only Deep dive for future editions, set `generation` to `['detailed']`. Existing editions are preserved, while future editions generate and persist only that context. If a UI-enabled context is absent from an edition, the browser omits it instead of showing an empty control.
+
+Both browser code and the portable generation runtime consume the same feature vocabulary. `product/summary-features.mjs` exposes and validates the browser configuration for the runtime without introducing provider dependencies into the product contract.
 
 The public OAuth client ID is intentionally browser-visible. Do not add a client secret to this repository. The Cloudflare Worker deployment reads this value from `product/config.js` when it renders its provider-specific manifest, so do not duplicate it in an infrastructure file.
 

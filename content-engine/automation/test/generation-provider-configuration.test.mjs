@@ -7,6 +7,7 @@ import {
 import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
 import { validateContentEngineConfig } from "../../validate-content-engine-config.mjs";
+import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
 
 test("uses the built-in blog collector when no source URL is supplied", () => {
   const dependencies = createGenerationProviderDependencies({});
@@ -41,8 +42,9 @@ test("uses the centralized product editorial configuration", () => {
   assert.ok(PRODUCT_EDITORIAL_CONFIG.feeds.length > 0);
   assert.equal(CONTENT_ENGINE_CONFIG.schedule.cron, "0 12 * * *");
   assert.equal("timezone" in CONTENT_ENGINE_CONFIG.schedule, false);
-  assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180 });
-  assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.standard, { label: "Overview", minCharacters: 240, maxCharacters: 420 });
-  assert.deepEqual(CONTENT_ENGINE_CONFIG.summaries.contexts.detailed, { label: "Deep dive", minCharacters: 500, maxCharacters: 900 });
+  assert.ok(SUMMARY_FEATURE_CONFIG.ui.length > 0);
+  assert.ok(SUMMARY_FEATURE_CONFIG.generation.length > 0);
+  assert.deepEqual(SUMMARY_FEATURE_CONFIG.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180, format: "paragraph" });
+  assert.doesNotThrow(() => validateSummaryFeatureConfig(SUMMARY_FEATURE_CONFIG));
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
 });

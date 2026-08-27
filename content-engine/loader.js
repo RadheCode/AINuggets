@@ -19,7 +19,9 @@
 
   async function loadEdition() {
     const runtime = window.ProductConfig?.runtime;
+    const summaryFeatures = window.ProductConfig?.summaryFeatures;
     if (!runtime?.contentApiUrls || !runtime?.sites?.production) throw new Error("The content API is not configured.");
+    if (!summaryFeatures?.ui?.length || !summaryFeatures.contexts) throw new Error("Summary features are not configured.");
 
     const requestedDate = new URLSearchParams(window.location.search).get("date");
     if (requestedDate && !isValidDate(requestedDate)) {
@@ -37,8 +39,8 @@
 
     for (const story of content.stories) {
       const summaries = story?.summaries;
-      if (!summaries || ["compact", "standard", "detailed"].some((key) => typeof summaries[key] !== "string" || !summaries[key].trim())) {
-        throw new Error("The content API returned a story without all summary contexts.");
+      if (!summaries || !Object.values(summaries).some((value) => typeof value === "string" && value.trim())) {
+        throw new Error("The content API returned a story without a summary.");
       }
     }
 

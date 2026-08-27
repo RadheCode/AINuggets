@@ -1,5 +1,4 @@
 const CRON_FIELD_COUNT = 5;
-const SUMMARY_CONTEXT_KEYS = ["compact", "standard", "detailed"];
 
 function requireString(value, label) {
   if (typeof value !== "string" || !value.trim()) throw new Error(`${label} must be a non-empty string.`);
@@ -20,7 +19,7 @@ function requirePublicHttpsUrl(value, label) {
 
 export function validateContentEngineConfig(config) {
   if (!config || typeof config !== "object") throw new Error("Content engine configuration must be an object.");
-  const { schedule, publication, summaries, feeds } = config;
+  const { schedule, publication, feeds } = config;
   if (!schedule || typeof schedule !== "object") throw new Error("schedule must be an object.");
   requireString(schedule.cron, "schedule.cron");
   if (schedule.cron.trim().split(/\s+/).length !== CRON_FIELD_COUNT) {
@@ -28,26 +27,6 @@ export function validateContentEngineConfig(config) {
   }
   if (!publication || typeof publication !== "object" || typeof publication.automaticallyPublish !== "boolean") {
     throw new Error("publication.automaticallyPublish must be a boolean.");
-  }
-  if (!summaries || typeof summaries !== "object" || !SUMMARY_CONTEXT_KEYS.includes(summaries.defaultContext)) {
-    throw new Error("summaries.defaultContext must name a supported summary context.");
-  }
-  if (!summaries.contexts || typeof summaries.contexts !== "object") {
-    throw new Error("summaries.contexts must be an object.");
-  }
-  for (const key of SUMMARY_CONTEXT_KEYS) {
-    const context = summaries.contexts[key];
-    if (!context || typeof context !== "object") throw new Error(`summaries.contexts.${key} must be an object.`);
-    requireString(context.label, `summaries.contexts.${key}.label`);
-    if (!Number.isInteger(context.minCharacters) || context.minCharacters < 1) {
-      throw new Error(`summaries.contexts.${key}.minCharacters must be a positive integer.`);
-    }
-    if (!Number.isInteger(context.maxCharacters) || context.maxCharacters < 1) {
-      throw new Error(`summaries.contexts.${key}.maxCharacters must be a positive integer.`);
-    }
-    if (context.minCharacters > context.maxCharacters) {
-      throw new Error(`summaries.contexts.${key}.minCharacters must not exceed maxCharacters.`);
-    }
   }
   if (!Array.isArray(feeds) || !feeds.length) throw new Error("feeds must contain at least one source.");
 

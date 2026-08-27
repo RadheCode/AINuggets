@@ -1,10 +1,7 @@
-import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
-
 const SUPPORTED_LAYOUTS = new Set([undefined, null, "lead", "wide"]);
 const SUPPORTED_ARTWORK = new Set(["models", "agents", "research", "product", "business"]);
 const MAX_BRIEFING_TITLE_LENGTH = 44;
 const MAX_BRIEFING_EMPHASIS_LENGTH = 50;
-const SUMMARY_CONTEXT_KEYS = ["compact", "standard", "detailed"];
 
 function requireText(value, field) {
   if (typeof value !== "string" || !value.trim()) {
@@ -47,7 +44,7 @@ function requireHttpsUrl(value, field) {
   }
 }
 
-export function validateEdition(edition, targetDate) {
+export function validateEdition(edition, targetDate, summaryContexts) {
   if (!edition || typeof edition !== "object") throw new Error("The summary provider returned no edition.");
   if (edition.date !== targetDate) throw new Error(`Edition date must be ${targetDate}.`);
 
@@ -73,14 +70,16 @@ export function validateEdition(edition, targetDate) {
     if (!story.summaries || typeof story.summaries !== "object") {
       throw new Error(`Edition field "stories[${index}].summaries" must be an object.`);
     }
-    for (const key of SUMMARY_CONTEXT_KEYS) {
+    const summaryContextKeys = Object.keys(summaryContexts || {});
+    if (!summaryContextKeys.length) throw new Error("At least one summary context is required.");
+    for (const key of summaryContextKeys) {
       requireText(story.summaries[key], `stories[${index}].summaries.${key}`);
     }
-    if (new Set(SUMMARY_CONTEXT_KEYS.map((key) => story.summaries[key].trim())).size !== SUMMARY_CONTEXT_KEYS.length) {
+    if (new Set(summaryContextKeys.map((key) => story.summaries[key].trim())).size !== summaryContextKeys.length) {
       throw new Error(`Edition field "stories[${index}].summaries" must contain distinct summary contexts.`);
     }
-    for (const key of SUMMARY_CONTEXT_KEYS) {
-      const context = CONTENT_ENGINE_CONFIG.summaries.contexts[key];
+    for (const key of summaryContextKeys) {
+      const context = summaryContexts[key];
       requireLength(
         story.summaries[key],
         context.minCharacters,
@@ -88,8 +87,11 @@ export function validateEdition(edition, targetDate) {
         `stories[${index}].summaries.${key}`
       );
     }
-    requireBulletPoints(story.summaries.standard, `stories[${index}].summaries.standard`);
-    requireParagraphs(story.summaries.detailed, `stories[${index}].summaries.detailed`);
+    for (const key of summaryContextKeys) {
+      const field = `stories[${index}].summaries.${key}`;
+      if (summaryContexts[key].format === "bullets") requireBulletPoints(story.summaries[key], field);
+      if (summaryContexts[key].format === "paragraphs") requireParagraphs(story.summaries[key], field);
+    }
     requireHttpsUrl(story.href, `stories[${index}].href`);
     requireText(story.art, `stories[${index}].art`);
     if (!SUPPORTED_ARTWORK.has(story.art)) {

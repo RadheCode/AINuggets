@@ -1,5 +1,6 @@
 import { isValidEditorialDate } from "../domain/editorial-date.mjs";
 import { validateEdition } from "../domain/validate-edition.mjs";
+import { SUMMARY_FEATURE_CONFIG } from "../../../product/summary-features.mjs";
 
 const SKIP_EXISTING = "Edition already exists.";
 const SKIP_NO_CONTENT_SOURCE = "No content source is configured; no edition was generated.";
@@ -20,6 +21,7 @@ export async function generateDailyEdition({
   editionRepository,
   contentSources = [],
   summaryProvider,
+  summaryContexts = Object.fromEntries(SUMMARY_FEATURE_CONFIG.generation.map((key) => [key, SUMMARY_FEATURE_CONFIG.contexts[key]])),
   automaticallyPublish = false,
   logger = console
 }) {
@@ -50,8 +52,12 @@ export async function generateDailyEdition({
     const candidates = uniqueCandidates(batches.flat());
     const edition = validateEdition(
       await summaryProvider.generateEdition({ targetDate, candidates }),
-      targetDate
+      targetDate,
+      summaryContexts
     );
+    for (const story of edition.stories) {
+      story.summaries = Object.fromEntries(Object.keys(summaryContexts).map((key) => [key, story.summaries[key]]));
+    }
 
     await editionRepository.saveEdition(edition, { status: automaticallyPublish ? "published" : "draft" });
     await editionRepository.recordRun({

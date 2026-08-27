@@ -2,7 +2,7 @@ import { createHttpJsonContentSource } from "../adapters/http-json-content-sourc
 import { createOpenAiCompatibleSummaryProvider } from "../adapters/openai-compatible-summary-provider.mjs";
 import { createRssBlogContentSource } from "../adapters/rss-blog-content-source.mjs";
 import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
-import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
+import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
 
 export const GENERATION_PROVIDER_CONFIGURATION = Object.freeze({
   contentSourceUrl: "CONTENT_SOURCE_URL",
@@ -36,12 +36,14 @@ function requireCompleteSummaryProvider(values) {
  */
 export function createGenerationProviderDependencies(values, { fetchImpl } = {}) {
   requireCompleteSummaryProvider(values);
+  validateSummaryFeatureConfig();
 
   const sourceUrl = configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.contentSourceUrl);
   const summaryProviderUrl = configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl);
   const options = fetchImpl ? { fetchImpl } : {};
 
   return {
+    summaryContexts: Object.fromEntries(SUMMARY_FEATURE_CONFIG.generation.map((key) => [key, SUMMARY_FEATURE_CONFIG.contexts[key]])),
     contentSources: sourceUrl
       ? [createHttpJsonContentSource({
         url: sourceUrl,
@@ -54,7 +56,7 @@ export function createGenerationProviderDependencies(values, { fetchImpl } = {})
         baseUrl: summaryProviderUrl,
         apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey),
         model: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
-        summaryContexts: CONTENT_ENGINE_CONFIG.summaries.contexts,
+        summaryContexts: Object.fromEntries(SUMMARY_FEATURE_CONFIG.generation.map((key) => [key, SUMMARY_FEATURE_CONFIG.contexts[key]])),
         generationInstruction: PRODUCT_EDITORIAL_CONFIG.generationInstruction,
         ...options
       })

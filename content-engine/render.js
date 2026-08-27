@@ -8,14 +8,16 @@
   const storyDialogSource = document.querySelector("#storyDialogSource");
   const storyDialogPrevious = document.querySelector("#storyDialogPrevious");
   const storyDialogNext = document.querySelector("#storyDialogNext");
-  const summaryContextButtons = [...document.querySelectorAll("[data-summary-context]")];
-  const summaryContexts = summaryContextButtons.map((button) => button.dataset.summaryContext);
+  const summaryContextContainer = document.querySelector(".story-summary-contexts");
+  const summaryFeatures = window.ProductConfig?.summaryFeatures;
+  let summaryContextButtons = [];
+  let summaryContexts = [];
   let activeStory;
   let activeStoryIndex;
   let stories = [];
   let activeSummaryContext = "standard";
 
-  if (!window.ProductContentReady || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !storyDialogSummary || !storyDialogSource || !storyDialogPrevious || !storyDialogNext) {
+  if (!window.ProductContentReady || !summaryFeatures?.ui?.length || !summaryFeatures.contexts || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !summaryContextContainer || !storyDialogSummary || !storyDialogSource || !storyDialogPrevious || !storyDialogNext) {
     throw new Error("The content engine could not find its loader or rendering targets.");
   }
 
@@ -76,7 +78,21 @@
       button.classList.toggle("is-selected", isSelected);
       button.setAttribute("aria-pressed", String(isSelected));
     }
+  }
 
+  function configureSummaryContexts(story) {
+    summaryContexts = summaryFeatures.ui.filter((key) => typeof story.summaries[key] === "string" && story.summaries[key].trim());
+    if (!summaryContexts.length) throw new Error("This story has no enabled summary contexts.");
+    summaryContextButtons = summaryContexts.map((key) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.summaryContext = key;
+      button.textContent = summaryFeatures.contexts[key].label;
+      button.addEventListener("click", () => selectSummaryContext(key));
+      return button;
+    });
+    summaryContextContainer.replaceChildren(...summaryContextButtons);
+    summaryContextContainer.hidden = summaryContexts.length === 1;
   }
 
   function createSummaryContent(summary, context) {
@@ -99,22 +115,19 @@
   function updateStoryDialog(index) {
     activeStoryIndex = index;
     activeStory = stories[index];
+    configureSummaryContexts(activeStory);
     storyDialogCategory.textContent = activeStory.category;
     storyDialogTitle.textContent = activeStory.title;
     storyDialogSource.href = activeStory.href;
     storyDialogPrevious.disabled = index === 0;
     storyDialogNext.disabled = index === stories.length - 1;
-    selectSummaryContext(activeSummaryContext);
+    selectSummaryContext(summaryContexts.includes(activeSummaryContext) ? activeSummaryContext : summaryContexts[0]);
   }
 
   function showStoryDialog(index) {
-    activeSummaryContext = "standard";
+    activeSummaryContext = summaryFeatures.defaultContext;
     updateStoryDialog(index);
     storyDialog.showModal();
-  }
-
-  for (const button of summaryContextButtons) {
-    button.addEventListener("click", () => selectSummaryContext(button.dataset.summaryContext));
   }
 
   storyDialogPrevious.addEventListener("click", () => {

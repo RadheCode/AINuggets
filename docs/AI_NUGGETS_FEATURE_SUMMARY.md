@@ -11,7 +11,7 @@ The website is a responsive daily briefing experience. Its current identity and 
 | Daily briefing | Presents a focused daily briefing of four or five selected stories, designed to reduce the need to follow an endless news feed. |
 | Responsive story grid | Displays stories as fixed, visually distinct tiles with lead and wide layouts. The layout adapts across desktop and mobile breakpoints. |
 | Story detail dialog | Selecting a story opens an accessible modal with its category, title, summary, source link, and previous/next story navigation. |
-| Three summary levels | Each story offers Quick take, Overview, and Deep dive summaries. Overview is the default view, and readers can switch detail levels without another API request. |
+| Configurable summary levels | The common product configuration enables Quick take, Overview, and Deep dive by default. Its UI and generation switches are independently configurable: the dialog dynamically renders only available enabled views, while future editions generate and persist only configured summary variants. |
 | Source attribution | Each story detail view provides a safe external link to the original source, opening in a new tab with appropriate security attributes. |
 | Edition preview by date | Supports a `?date=YYYY-MM-DD` URL parameter so a reader or editor can load the appropriate published edition for a specified date, or the latest available edition. |
 | Entity artwork matching | Recognizes configured entity references in story text and associates them with local artwork; unmatched stories remain image-free. |
@@ -33,7 +33,7 @@ The website is a responsive daily briefing experience. Its current identity and 
 | Daily scheduled generation | Runs a scheduler-neutral job on a UTC schedule. It can be invoked by Cloudflare Cron, GitHub Actions, container schedulers, or operating-system cron. |
 | RSS/Atom source collection | Collects recent articles from an editable approved feed list, with a custom HTTPS JSON candidate source available as an optional replacement. |
 | Candidate selection | Normalizes URLs, removes duplicates, ranks candidates by configured source priority and freshness, and prefers category diversity when selecting stories. |
-| Provider-powered summarization | Uses an OpenAI-compatible Chat Completions provider to produce structured original summaries for the three available detail levels. |
+| Provider-powered summarization | Uses an OpenAI-compatible Chat Completions provider to produce structured original summaries for the product-configured generated detail levels. |
 | Content validation | Rejects invalid editions before storage by enforcing date, story count, unique IDs and positions, required fields, supported layouts and artwork, summary lengths, and HTTPS URLs. |
 | Publishing workflow | Publishes valid editions automatically by default, with a configuration option to save future editions as drafts for editorial review before publication. |
 | Idempotency and audits | Prevents duplicate editions for a date and records each generation attempt as started, skipped, succeeded, or failed. |

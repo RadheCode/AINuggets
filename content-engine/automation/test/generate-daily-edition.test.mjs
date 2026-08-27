@@ -4,6 +4,7 @@ import { createMemoryEditionRepository } from "../adapters/memory-edition-reposi
 import { editorialDate } from "../domain/editorial-date.mjs";
 import { generateDailyEdition } from "../jobs/generate-daily-edition.mjs";
 import { runScheduledEdition } from "../jobs/run-scheduled-edition.mjs";
+import { SUMMARY_FEATURE_CONFIG } from "../../../product/summary-features.mjs";
 
 const targetDate = "2026-08-24";
 
@@ -111,6 +112,20 @@ test("publishes a validated edition when automatic publication is enabled", asyn
     summaryProvider: { async generateEdition() { return edition(); } },
     automaticallyPublish: true,
     logger: {}
+  });
+
+  test("stores only configured generated summary contexts", async () => {
+    const repository = createMemoryEditionRepository();
+    await generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+      summaryProvider: { async generateEdition() { return edition(); } },
+      summaryContexts: { detailed: SUMMARY_FEATURE_CONFIG.contexts.detailed },
+      logger: {}
+    });
+
+    assert.deepEqual(Object.keys(repository.editions.get(targetDate).stories[0].summaries), ["detailed"]);
   });
 
   assert.equal(result.publicationStatus, "published");

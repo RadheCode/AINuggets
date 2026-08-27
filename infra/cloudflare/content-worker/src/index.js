@@ -3,6 +3,7 @@ import { generateDailyEdition } from "../../../../content-engine/automation/jobs
 import { runScheduledEdition } from "../../../../content-engine/automation/jobs/run-scheduled-edition.mjs";
 import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
+import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../../product/summary-features.mjs";
 import { createD1EditionRepository } from "./d1-edition-repository.js";
 import { createSessionToken, hashToken, verifyGoogleCredential } from "./google-auth.js";
 
@@ -194,6 +195,7 @@ async function submitFeedback(request, env, cors) {
 }
 
 function createAutomationDependencies(env) {
+  validateSummaryFeatureConfig();
   return {
     editionRepository: createD1EditionRepository(env.CONTENT_DB),
     ...createGenerationProviderDependencies(env),
@@ -263,11 +265,10 @@ async function getEdition(db, requestedDate) {
       ...(story.layout ? { type: story.layout } : {}),
       category: story.category,
       title: story.title,
-      summaries: {
-        compact: story.summary_compact || story.summary,
-        standard: story.summary,
-        detailed: story.summary_detailed || story.summary
-      },
+      summaries: Object.fromEntries(Object.keys(SUMMARY_FEATURE_CONFIG.contexts).flatMap((key) => {
+        const columns = { compact: story.summary_compact, standard: story.summary, detailed: story.summary_detailed };
+        return typeof columns[key] === "string" && columns[key].trim() ? [[key, columns[key]]] : [];
+      })),
       href: story.destination_url,
       art: story.artwork_key,
       sourceUrl: story.source_url,

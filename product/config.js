@@ -1,4 +1,4 @@
-window.ProductConfig = Object.freeze({
+globalThis.ProductConfig = Object.freeze({
   identity: Object.freeze({
     name: "AI Nuggets",
     mark: "AI",
@@ -28,5 +28,16 @@ window.ProductConfig = Object.freeze({
   }),
   authentication: Object.freeze({
     googleClientId: "119476209987-a7plo7e675cl200cjnk78msq7ol06umr.apps.googleusercontent.com"
+  }),
+  summaryFeatures: Object.freeze({
+    // UI and generated variants are independently configurable product capabilities.
+    ui: Object.freeze(["standard", "detailed"]),
+    generation: Object.freeze(["compact", "standard", "detailed"]),
+    defaultContext: "standard",
+    contexts: Object.freeze({
+      compact: Object.freeze({ label: "Quick take", minCharacters: 100, maxCharacters: 180, format: "paragraph" }),
+      standard: Object.freeze({ label: "Overview", minCharacters: 240, maxCharacters: 420, format: "bullets" }),
+      detailed: Object.freeze({ label: "Deep dive", minCharacters: 500, maxCharacters: 900, format: "paragraphs" })
+    })
   })
 });

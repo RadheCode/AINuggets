@@ -53,12 +53,13 @@ export async function testProviderConfig(configPath = resolve(readArgument("conf
     throw error;
   }
 
-  const { summaryProvider } = createGenerationProviderDependencies(values);
+  const { summaryProvider, summaryContexts } = createGenerationProviderDependencies(values);
   if (!summaryProvider) throw new Error("SUMMARY_PROVIDER_URL, SUMMARY_PROVIDER_API_KEY, and SUMMARY_PROVIDER_MODEL are required.");
 
   return validateEdition(
     await summaryProvider.generateEdition({ targetDate: TEST_DATE, candidates: testCandidates() }),
-    TEST_DATE
+    TEST_DATE,
+    summaryContexts
   );
 }
 
