@@ -69,6 +69,13 @@ The article-summary dialog is the canonical dialog shell. Every new dialog, pane
 - Switching modes must preserve the exact geometry and alignment of every page element. Color modes may change styling only; they must not move, resize, or reflow tiles or other content.
 - Do not implement a separate dark-theme directory when the layout and visual identity are otherwise the same theme.
 
+## Cross-page visual consistency
+
+1. A semantic accent must use one shared theme token and treatment across every page and component that represents the same meaning. Do not introduce a near-match or page-specific variation of an established color such as the orange briefing eyebrow.
+2. Reuse the same semantic CSS selector or component class for equivalent visual elements across pages. The homepage and About-page briefing eyebrows both use `.eyebrow`; the product mark uses `.brand-mark` everywhere it appears.
+3. Reuse established icons rather than recreating them per page. Equivalent icons must retain the same glyph or asset, dimensions, shape, color treatment, hover/focus behavior, and motion at each responsive breakpoint.
+4. If an intentional visual exception is needed, revise this shared contract and every affected page together; do not add a page-specific override to solve it.
+
 ## Layout rules
 
 1. Keep the homepage within one viewport without document scrolling at supported sizes.
@@ -117,4 +124,5 @@ Before accepting a theme:
 2. Confirm all five cards, header, intro, and footer fit without page scrolling.
 3. Check multiple representative desktop, laptop, tablet, mobile portrait, and mobile landscape widths and heights; resize through each breakpoint and confirm every control remains in its declared group and anchor, without drifting, detaching, overlapping, becoming hidden, or becoming unreachable. Repeat for every state that changes the surrounding content, including authenticated, loading, error, and expanded-control states.
 4. Verify the light/dark switcher, persistence, keyboard focus, all dialogs against the canonical article-summary shell, readable contrast in both modes, reduced motion, and identical element geometry before and after a mode change.
-5. Confirm missing or invalid theme configuration fails visibly instead of silently loading a fallback.
+5. Compare equivalent accents and icons across every affected page to confirm their shared selector, token, dimensions, shape, interaction behavior, and motion remain identical.
+6. Confirm missing or invalid theme configuration fails visibly instead of silently loading a fallback.

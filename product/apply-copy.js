@@ -18,16 +18,15 @@
     updateCadenceLabel: copy.updateCadenceLabel,
     footer: copy.footer,
     aboutLabel: copy.about.label,
-    aboutCloseLabel: copy.about.closeLabel,
     aboutEyebrow: copy.about.eyebrow,
-    aboutTitle: copy.about.title,
     aboutDescription: copy.about.description,
     aboutPromise: copy.about.promise
   };
 
   for (const [id, text] of Object.entries(textTargets)) {
-    const target = document.querySelector(`[data-product-copy="${id}"]`);
-    if (target) target.textContent = text;
+    document.querySelectorAll(`[data-product-copy="${id}"]`).forEach((target) => {
+      target.textContent = text;
+    });
   }
 
   const brand = document.querySelector("[data-product-home]");
@@ -39,5 +38,10 @@
   const headline = document.querySelector("[data-product-headline]");
   if (headline) {
     headline.replaceChildren(document.createTextNode(copy.headline.lead), Object.assign(document.createElement("em"), { textContent: copy.headline.emphasis }));
+  }
+
+  const aboutTitle = document.querySelector("[data-product-about-headline]");
+  if (aboutTitle) {
+    aboutTitle.replaceChildren(Object.assign(document.createElement("em"), { textContent: copy.about.title.emphasis }), document.createTextNode(copy.about.title.lead));
   }
 }());

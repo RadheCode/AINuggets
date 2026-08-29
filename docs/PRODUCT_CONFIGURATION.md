@@ -8,7 +8,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | Product identity, user-facing framing and About-dialog copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
+| `product/config.js` | Product identity, user-facing framing and About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific source and entity artwork matching used by the shared story renderer. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 | `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |
@@ -24,6 +24,10 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 7. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
 
 ## Summary feature capabilities
+
+## About-page copy
+
+`ProductConfig.copy.about.title` stores its emphasized phrase separately from the remaining headline so the shared product-copy renderer can preserve the active theme's two-tone heading treatment without embedding product wording in `about.html`.
 
 `ProductConfig.summaryFeatures` is the common product-level feature switch for story summary variants. It intentionally belongs in `product/config.js`, rather than editorial configuration, because it controls product behavior rather than the content of an individual edition.
 

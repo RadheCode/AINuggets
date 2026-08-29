@@ -26,7 +26,7 @@
 
       <nav class="nav-tabs" aria-label="Main navigation">
         <a class="active" href="#today" aria-current="page">Today</a>
-        <button id="aboutButton" type="button" aria-haspopup="dialog" aria-controls="aboutDialog" data-product-copy="aboutLabel"></button>
+        <a href="about.html" data-product-copy="aboutLabel"></a>
       </nav>
 
       <div class="header-actions">
@@ -123,15 +123,6 @@
       <button class="feedback-submit" id="feedbackSubmit" type="submit">Send feedback</button>
       <output class="feedback-message" id="feedbackMessageStatus" aria-live="polite"></output>
     </form>
-  </dialog>
-
-  <dialog class="about-dialog" id="aboutDialog" aria-labelledby="aboutTitle" aria-describedby="aboutDescription">
-    <button class="dialog-close" id="aboutDialogClose" type="button" data-product-copy="aboutCloseLabel">Close</button>
-    <span class="dialog-mark about-dialog-mark" aria-hidden="true">AI</span>
-    <p class="about-dialog-eyebrow" data-product-copy="aboutEyebrow"></p>
-    <h2 id="aboutTitle" data-product-copy="aboutTitle"></h2>
-    <p id="aboutDescription" data-product-copy="aboutDescription"></p>
-    <p class="about-dialog-promise" data-product-copy="aboutPromise"></p>
   </dialog>
 
   <dialog class="story-dialog" id="storyDialog" aria-labelledby="storyDialogTitle">

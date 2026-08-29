@@ -80,6 +80,12 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Keep elevation semantics identical between color modes: raised, inset, selected, and disabled surfaces must mean the same thing in light and dark mode. Retain the established accent color for selected controls and use a raised treatment unless representing an explicitly pressed state.
 - Do not create separate theme folders solely for light and dark variants of one visual design.
 
+## Cross-page visual consistency
+
+- A semantic accent must use one shared theme token and treatment everywhere it has the same meaning. Do not introduce page-specific near-matches for established colors such as the orange briefing eyebrow.
+- Equivalent visual elements across pages must reuse their established semantic selector or component class. Reuse `.eyebrow` for briefing eyebrows and `.brand-mark` for the product mark rather than recreating their presentation per page.
+- Equivalent icons must retain the same glyph or asset, dimensions, shape, color treatment, hover/focus behavior, and motion at every responsive breakpoint. Do not create page-specific icon variants without revising the shared theme contract.
+
 ## Accessibility and interaction
 
 - Preserve semantic landmarks, heading hierarchy, labels, accessible names, and keyboard operation.
