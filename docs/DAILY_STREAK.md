@@ -41,7 +41,7 @@ The Worker inserts the activity row and conditionally updates the profile in one
 
 ## Querying streak information
 
-Run these read-only queries in the Cloudflare D1 dashboard or through Wrangler. Replace `reader@example.com` with the user's email.
+Run these read-only queries in the Cloudflare D1 dashboard or through Wrangler. Replace `reader@example.com` with the user's email. D1 stores date-times in UTC; each displayed date-time below is converted to explicitly labeled IST. `activity_date` and `streak_last_active_date` remain UTC calendar-date values, not timestamps.
 
 ### Current streak for one user
 
@@ -52,8 +52,8 @@ SELECT
   current_streak,
   longest_streak,
   streak_last_active_date,
-  last_logged_in_at,
-  last_refreshed_at
+  datetime(last_logged_in_at, '+5 hours', '+30 minutes') || ' IST' AS last_logged_in_at_ist,
+  datetime(last_refreshed_at, '+5 hours', '+30 minutes') || ' IST' AS last_refreshed_at_ist
 FROM user_profiles
 WHERE email = 'reader@example.com';
 ```
@@ -64,7 +64,7 @@ WHERE email = 'reader@example.com';
 SELECT
   profile.email,
   activity.activity_date,
-  activity.recorded_at
+  datetime(activity.recorded_at, '+5 hours', '+30 minutes') || ' IST' AS recorded_at_ist
 FROM user_daily_activity AS activity
 JOIN user_profiles AS profile ON profile.id = activity.user_id
 WHERE profile.email = 'reader@example.com'
@@ -97,7 +97,7 @@ $workerConfig = Join-Path (Resolve-Path ".\infra\cloudflare\content-worker") "wr
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT email, display_name, current_streak, longest_streak, streak_last_active_date, last_logged_in_at, last_refreshed_at FROM user_profiles WHERE email = 'reader@example.com';"
+  --command "SELECT email, display_name, current_streak, longest_streak, streak_last_active_date, datetime(last_logged_in_at, '+5 hours', '+30 minutes') || ' IST' AS last_logged_in_at_ist, datetime(last_refreshed_at, '+5 hours', '+30 minutes') || ' IST' AS last_refreshed_at_ist FROM user_profiles WHERE email = 'reader@example.com';"
 ```
 
 Omit `--remote` only when intentionally querying the local Wrangler D1 database. The streak schema must be deployed with the Worker migration before production queries can use these columns. Remove the generated file when finished with `Remove-Item $workerConfig`.

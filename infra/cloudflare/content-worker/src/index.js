@@ -94,7 +94,13 @@ function isAutomationRequestAuthorized(request, env) {
 
 async function getGenerationRun(db, runId) {
   const run = await db.prepare(`
-    SELECT run_id, target_date, status, details, started_at, finished_at
+    SELECT
+      run_id,
+      target_date,
+      status,
+      details,
+      datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist,
+      datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist
     FROM generation_runs
     WHERE run_id = ?
     LIMIT 1
@@ -102,7 +108,14 @@ async function getGenerationRun(db, runId) {
   if (!run) return null;
 
   const { results: events } = await db.prepare(`
-    SELECT sequence, stage, event_name, outcome, duration_ms, metadata_json, created_at
+    SELECT
+      sequence,
+      stage,
+      event_name,
+      metadata_json,
+      outcome,
+      duration_ms,
+      datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS created_at_ist
     FROM generation_run_events
     WHERE run_id = ?
     ORDER BY sequence ASC
@@ -114,8 +127,8 @@ async function getGenerationRun(db, runId) {
       targetDate: run.target_date,
       status: run.status,
       details: run.details,
-      startedAt: run.started_at,
-      finishedAt: run.finished_at
+      startedAtIst: run.started_at_ist,
+      finishedAtIst: run.finished_at_ist
     },
     events: events.map((event) => ({
       sequence: event.sequence,
@@ -123,7 +136,7 @@ async function getGenerationRun(db, runId) {
       event: event.event_name,
       outcome: event.outcome,
       durationMs: event.duration_ms,
-      occurredAt: event.created_at,
+      occurredAtIst: event.created_at_ist,
       details: JSON.parse(event.metadata_json)
     }))
   };

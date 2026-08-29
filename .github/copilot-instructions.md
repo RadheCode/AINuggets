@@ -17,6 +17,7 @@ These instructions are mandatory for AI-assisted changes in this repository.
 - Access public content only through the content Worker API configured in `product/config.js`; do not hard-code stories in `index.html` or theme files.
 - Change the D1 schema only through ordered SQL migrations. Never edit an already-applied migration.
 - Whenever a D1 table, column, constraint, index, relationship, retention policy, or table access behavior changes, update `docs/D1_SCHEMA_REFERENCE.md` in the same change. Keep its table inventory, what/why/where/how explanations, privacy boundaries, and relationship diagram aligned with the schema and Worker behavior.
+- D1 timestamps are stored in UTC. Every query documented, rendered, or shown in the repository that includes a date-time must display it as explicitly labeled Indian Standard Time (`IST`, UTC+05:30); retain raw UTC only for filtering or ordering and never present an unlabeled UTC timestamp as reader-facing output.
 - Keep draft editions out of public API responses; only `published` editions may be rendered publicly.
 - Keep `content-engine/render.js` theme-agnostic and preserve the stable shared selectors it emits.
 - Publish exactly four or five stories. Each story must have a unique ID, category, concise title, summary, destination, and supported artwork key.

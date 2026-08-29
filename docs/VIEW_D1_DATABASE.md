@@ -12,10 +12,23 @@ For the authoritative table-by-table **what, why, where, and how** reference, in
 4. Open the **Console** tab.
 5. Enter a read-only query and select **Execute**.
 
+All D1 timestamps are stored in UTC. The read-only output queries in this guide convert each displayed date-time to explicitly labeled Indian Standard Time (`IST`, UTC+05:30); raw UTC columns remain only in filtering and ordering expressions.
+
 List editions:
 
 ```sql
-SELECT *
+SELECT
+  id,
+  edition_date,
+  status,
+  eyebrow,
+  title,
+  emphasis,
+  summary,
+  meta_json,
+  datetime(published_at, '+5 hours', '+30 minutes') || ' IST' AS published_at_ist,
+  datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS created_at_ist,
+  datetime(updated_at, '+5 hours', '+30 minutes') || ' IST' AS updated_at_ist
 FROM editions
 ORDER BY edition_date DESC;
 ```
@@ -39,14 +52,20 @@ ORDER BY e.edition_date DESC, s.position;
 Inspect daily Cron activity:
 
 ```sql
-SELECT *
+SELECT
+  run_id,
+  target_date,
+  status,
+  details,
+  datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist,
+  datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist
 FROM generation_runs
 ORDER BY started_at DESC;
 ```
 
 ## User login and page-refresh activity
 
-Each signed-in Google user has one `user_profiles` record. Completing Google sign-in updates both `last_logged_in_at` and `last_refreshed_at`, because sign-in counts as a page refresh. `last_refreshed_at` is also updated when that user's authenticated browser requests a published edition. Both timestamps are UTC.
+Each signed-in Google user has one `user_profiles` record. Completing Google sign-in updates both `last_logged_in_at` and `last_refreshed_at`, because sign-in counts as a page refresh. `last_refreshed_at` is also updated when that user's authenticated browser requests a published edition. D1 stores both timestamps in UTC; the queries below display them as labeled IST.
 
 The Worker records qualifying activity in `user_daily_activity`, with one row per user and UTC calendar date. It stores the resulting active streak in `current_streak`, the historical best in `longest_streak`, and the last qualifying UTC date in `streak_last_active_date` on `user_profiles`. Duplicate requests on the same date do not change a streak.
 
@@ -56,8 +75,8 @@ View all user activity, most recently refreshed first:
 SELECT
   email,
   display_name,
-  last_logged_in_at,
-  last_refreshed_at,
+  datetime(last_logged_in_at, '+5 hours', '+30 minutes') || ' IST' AS last_logged_in_at_ist,
+  datetime(last_refreshed_at, '+5 hours', '+30 minutes') || ' IST' AS last_refreshed_at_ist,
   current_streak,
   longest_streak,
   streak_last_active_date
@@ -71,8 +90,8 @@ View activity for one user by email:
 SELECT
   email,
   display_name,
-  last_logged_in_at,
-  last_refreshed_at,
+  datetime(last_logged_in_at, '+5 hours', '+30 minutes') || ' IST' AS last_logged_in_at_ist,
+  datetime(last_refreshed_at, '+5 hours', '+30 minutes') || ' IST' AS last_refreshed_at_ist,
   current_streak,
   longest_streak,
   streak_last_active_date
@@ -112,7 +131,7 @@ View editions:
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT * FROM editions ORDER BY edition_date DESC;"
+  --command "SELECT id, edition_date, status, eyebrow, title, emphasis, summary, meta_json, datetime(published_at, '+5 hours', '+30 minutes') || ' IST' AS published_at_ist, datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS created_at_ist, datetime(updated_at, '+5 hours', '+30 minutes') || ' IST' AS updated_at_ist FROM editions ORDER BY edition_date DESC;"
 ```
 
 View stories:
@@ -132,7 +151,7 @@ Every generation attempt creates a UUID in `generation_runs.run_id`. List recent
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT run_id, target_date, status, details, started_at, finished_at FROM generation_runs ORDER BY started_at DESC LIMIT 20;"
+  --command "SELECT run_id, target_date, status, details, datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist, datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist FROM generation_runs ORDER BY started_at DESC LIMIT 20;"
 ```
 
 To find attempts for one editorial date, replace `<YYYY-MM-DD>`:
@@ -141,7 +160,7 @@ To find attempts for one editorial date, replace `<YYYY-MM-DD>`:
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT run_id, target_date, status, details, started_at, finished_at FROM generation_runs WHERE target_date = '<YYYY-MM-DD>' ORDER BY started_at DESC;"
+  --command "SELECT run_id, target_date, status, details, datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist, datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist FROM generation_runs WHERE target_date = '<YYYY-MM-DD>' ORDER BY started_at DESC;"
 ```
 
 The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. On beta only, an authorized caller may send `{ "targetDate": "YYYY-MM-DD", "dryRun": true }` to exercise collection, generation, and validation for an existing edition without changing `editions` or `stories`. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
@@ -154,10 +173,10 @@ Copy a `run_id` from the recent-run query, then replace `<runId>` below. This si
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT r.run_id, r.target_date, r.status AS run_status, r.details AS run_details, r.started_at, r.finished_at, e.sequence, e.stage, e.event_name, e.outcome, e.duration_ms, e.created_at AS event_created_at, e.metadata_json FROM generation_runs r LEFT JOIN generation_run_events e ON e.run_id = r.run_id WHERE r.run_id = '<runId>' ORDER BY e.sequence ASC;"
+  --command "SELECT e.sequence, e.stage, e.event_name, e.metadata_json, r.run_id, r.target_date, r.status AS run_status, r.details AS run_details, datetime(r.started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist, datetime(r.finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist, e.outcome, e.duration_ms, datetime(e.created_at, '+5 hours', '+30 minutes') || ' IST' AS event_created_at_ist FROM generation_runs AS r LEFT JOIN generation_run_events AS e ON e.run_id = r.run_id WHERE r.run_id = '<runId>' ORDER BY e.sequence ASC;"
 ```
 
-The protected Worker endpoint returns the same information in a clearer nested JSON response:
+The protected Worker endpoint returns the same information in a clearer nested JSON response. It exposes `run.startedAtIst`, `run.finishedAtIst`, and each event's `occurredAtIst` as explicitly labeled IST values:
 
 ```powershell
 $headers = @{ Authorization = "Bearer $env:AUTOMATION_TRIGGER_TOKEN" }
@@ -168,10 +187,12 @@ Generation-run data is retained for three days. Each new generation attempt purg
 
 ### Inspect the latest run automatically
 
-Use the repository-local [Generation Run Investigation skill](../.github/skills/generation-run-investigation/SKILL.md) when you want the newest retained beta or production run without first finding its `runId`. It resolves the latest UUID run, executes the unified event query, and presents every ordered stage and its safe inner metadata. The underlying read-only command is:
+Use the repository-local [Generation Run Investigation skill](../.github/skills/generation-run-investigation/SKILL.md) when you want the newest retained beta or production run without first finding its `runId`. It resolves the latest UUID run, executes the exact unified query in [Unified detailed view for one generation run](#unified-detailed-view-for-one-generation-run), prints every returned row as a SQL-result table with all selected columns, and then presents a readable stage grouping of the same rows. Add a new `.md` `OutputPath` to save that exact report for offline viewing; the inspector creates its parent directory when needed and refuses to overwrite an existing file. The underlying read-only command is:
 
 ```powershell
-.\infra\cloudflare\content-worker\investigate-latest-generation-run.ps1 -Environment Beta
+.\infra\cloudflare\content-worker\investigate-latest-generation-run.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-latest-beta-run.md"
 ```
 
 Replace `Beta` with `Production` only when you intend to inspect production. The command selects the correct database from `infra/cloudflare/config.json`, creates a temporary manifest, uses only remote `SELECT` queries, and deletes the temporary manifest after completion.
@@ -184,7 +205,7 @@ View user login and refresh activity:
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT email, display_name, last_logged_in_at, last_refreshed_at, current_streak, longest_streak, streak_last_active_date FROM user_profiles ORDER BY last_refreshed_at DESC, last_logged_in_at DESC;"
+  --command "SELECT email, display_name, datetime(last_logged_in_at, '+5 hours', '+30 minutes') || ' IST' AS last_logged_in_at_ist, datetime(last_refreshed_at, '+5 hours', '+30 minutes') || ' IST' AS last_refreshed_at_ist, current_streak, longest_streak, streak_last_active_date FROM user_profiles ORDER BY last_refreshed_at DESC, last_logged_in_at DESC;"
 ```
 
 ## Production versus local data

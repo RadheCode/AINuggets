@@ -4,6 +4,8 @@ This document is the authoritative reference for every application table in the 
 
 > **Maintenance rule:** Any change to D1 tables, columns, constraints, indexes, relationships, retention, or table access behavior must include an update to this document in the same change. Apply schema changes only through a new ordered migration in `infra/cloudflare/content-worker/migrations/`; never edit an applied migration.
 
+> **Query timestamp rule:** D1 stores timestamps in UTC. Every repository-documented query and every rendered query result that includes a date-time must convert it to explicitly labeled Indian Standard Time (`IST`, UTC+05:30) for readability. Keep raw UTC values only where they are needed for filtering or ordering; never present an unlabeled UTC timestamp as reader-facing output.
+
 ## Scope and access boundary
 
 D1 is the system of record for published editorial data, authenticated-reader data, reader feedback, and content-generation operations. The Cloudflare content Worker accesses it through the `CONTENT_DB` binding. Browser code never connects to D1 directly. Beta and production use separate databases, so any query or migration affects only the selected environment.

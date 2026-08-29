@@ -150,7 +150,13 @@ Draft and archived editions are never returned. Responses are cacheable at Cloud
 The generation response includes `runId` for a manual `POST /internal/generate` request. For a scheduled run, list recent attempts from D1 and copy the ID for the target date or status:
 
 ```sql
-SELECT run_id, target_date, status, details, started_at, finished_at
+SELECT
+  run_id,
+  target_date,
+  status,
+  details,
+  datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist,
+  datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist
 FROM generation_runs
 ORDER BY started_at DESC
 LIMIT 20;
@@ -165,7 +171,7 @@ $headers = @{ Authorization = "Bearer $env:AUTOMATION_TRIGGER_TOKEN" }
 Invoke-RestMethod "https://<content-worker>/internal/generation-runs/<runId>" -Headers $headers
 ```
 
-The response contains `run` (identity, target date, status, timestamps, and terminal details) and `events` in deterministic `sequence` order. Every event has `step`, `event`, `outcome`, `durationMs`, `occurredAt`, and a `details` object, so all decisions made inside each stage remain visible in one view.
+The response contains `run` (identity, target date, status, IST timestamps, and terminal details) and `events` in deterministic `sequence` order. `run.startedAtIst`, `run.finishedAtIst`, and each event's `occurredAtIst` are explicitly labeled Indian Standard Time values; D1's raw UTC values remain internal for ordering and retention. Every event has `step`, `event`, `outcome`, `durationMs`, `occurredAtIst`, and a `details` object, so all decisions made inside each stage remain visible in one view.
 
 The frontend endpoint is committed in `product/config.js`. The public Worker URL and D1 identifiers are not secrets. OAuth tokens and provider API keys must never be committed.
 
