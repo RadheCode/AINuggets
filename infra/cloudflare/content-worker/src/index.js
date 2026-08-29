@@ -208,8 +208,7 @@ async function handleAutomationRequest(request, env) {
   if (!env.AUTOMATION_TRIGGER_TOKEN) {
     return json({ error: "Automation trigger is not configured." }, 503);
   }
-
-  if (request.headers.get("authorization") !== `Bearer ${env.AUTOMATION_TRIGGER_TOKEN}`) {
+  if (!isAutomationRequestAuthorized(request, env)) {
     return json({ error: "Unauthorized." }, 401);
   }
 
@@ -218,6 +217,54 @@ async function handleAutomationRequest(request, env) {
     body = await request.json();
   } catch {
     return json({ error: "Request body must be valid JSON." }, 400);
+  }
+
+  function isAutomationRequestAuthorized(request, env) {
+    return Boolean(env.AUTOMATION_TRIGGER_TOKEN)
+      && request.headers.get("authorization") === `Bearer ${env.AUTOMATION_TRIGGER_TOKEN}`;
+  }
+
+  async function getGenerationRun(db, runId) {
+    const run = await db.prepare(`
+      SELECT run_id, target_date, status, details, started_at, finished_at
+      FROM generation_runs
+      WHERE run_id = ?
+      LIMIT 1
+    `).bind(runId).first();
+    if (!run) return null;
+
+    const { results: events } = await db.prepare(`
+      SELECT sequence, stage, event_name, outcome, duration_ms, metadata_json, created_at
+      FROM generation_run_events
+      WHERE run_id = ?
+      ORDER BY sequence ASC
+    `).bind(runId).all();
+
+    return {
+      run: {
+        id: run.run_id,
+        targetDate: run.target_date,
+        status: run.status,
+        details: run.details,
+        startedAt: run.started_at,
+        finishedAt: run.finished_at
+      },
+      events: events.map((event) => ({
+        sequence: event.sequence,
+        step: event.stage,
+        event: event.event_name,
+        outcome: event.outcome,
+        durationMs: event.duration_ms,
+        occurredAt: event.created_at,
+        details: JSON.parse(event.metadata_json)
+      }))
+    };
+  }
+
+  async function handleGenerationRunRequest(request, env, runId) {
+    if (!isAutomationRequestAuthorized(request, env)) return json({ error: "Unauthorized." }, 401);
+    const result = await getGenerationRun(env.CONTENT_DB, runId);
+    return result ? json(result) : json({ error: "Generation run not found." }, 404);
   }
 
   const targetDate = body.targetDate || editorialDate();
@@ -284,6 +331,11 @@ async function handleRequest(request, env) {
 
   if (request.method === "POST" && url.pathname === "/internal/generate") {
     return handleAutomationRequest(request, env);
+  }
+
+  const generationRunMatch = url.pathname.match(/^\/internal\/generation-runs\/([0-9a-f-]{36})$/i);
+  if (request.method === "GET" && generationRunMatch) {
+    return handleGenerationRunRequest(request, env, generationRunMatch[1]);
   }
 
   if (request.method === "OPTIONS") {

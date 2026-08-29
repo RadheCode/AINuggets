@@ -115,7 +115,7 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
   const endpoint = `${requireUrl(baseUrl, "Summary provider URL")}/chat/completions`;
 
   return {
-    async generateEdition({ targetDate, candidates }) {
+    async generateEdition({ targetDate, candidates, eventLogger } = {}) {
       const response = await fetchImpl(endpoint, {
         method: "POST",
         headers: {
@@ -133,15 +133,17 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
         signal: AbortSignal.timeout(45_000)
       });
       if (!response.ok) {
-        const details = (await response.text()).trim();
-        throw new Error(
-          `Summary provider request failed (${response.status})${details ? `: ${details}` : "."}`
-        );
+        throw new Error(`Summary provider request failed (${response.status}).`);
       }
 
       const body = await response.json();
       const content = body.choices?.[0]?.message?.content;
       if (typeof content !== "string") throw new Error("Summary provider returned no structured edition.");
+      await eventLogger?.record("generation", "summary-provider-response-received", {
+        candidateCount: candidates.length,
+        responseCharacterCount: content.length,
+        model
+      }, { outcome: "succeeded" });
       try {
         return JSON.parse(content);
       } catch {

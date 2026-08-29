@@ -1,6 +1,8 @@
 # Viewing the Cloudflare D1 Database
 
-AI Nuggets stores its editions and stories in the Cloudflare D1 database named `ai-nuggets-content`. You can inspect it through the Cloudflare dashboard or Wrangler CLI.
+AI Nuggets stores editorial content, generation investigations, authenticated-reader data, and reader feedback in the Cloudflare D1 database named `ai-nuggets-content`. You can inspect it through the Cloudflare dashboard or Wrangler CLI.
+
+For the authoritative table-by-table **what, why, where, and how** reference, including relationships, privacy boundaries, retention, and the maintenance rule, see [D1 Schema Reference](D1_SCHEMA_REFERENCE.md). This guide contains safe operational inspection commands.
 
 ## Cloudflare dashboard
 
@@ -120,14 +122,47 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --command "SELECT e.edition_date, s.position, s.category, s.title, s.summary FROM stories s JOIN editions e ON e.id = s.edition_id ORDER BY e.edition_date DESC, s.position;"
 ```
 
-View recent generation runs:
+### Find a `runId` before investigating a run
+
+Every generation attempt creates a UUID in `generation_runs.run_id`. List recent attempts first, then copy the `run_id` for the date or status you want to investigate:
 
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT * FROM generation_runs ORDER BY started_at DESC LIMIT 20;"
+  --command "SELECT run_id, target_date, status, details, started_at, finished_at FROM generation_runs ORDER BY started_at DESC LIMIT 20;"
 ```
+
+To find attempts for one editorial date, replace `<YYYY-MM-DD>`:
+
+```powershell
+npx --yes wrangler@latest d1 execute ai-nuggets-content `
+  --remote `
+  --config $workerConfig `
+  --command "SELECT run_id, target_date, status, details, started_at, finished_at FROM generation_runs WHERE target_date = '<YYYY-MM-DD>' ORDER BY started_at DESC;"
+```
+
+The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
+
+### Unified detailed view for one generation run
+
+Copy a `run_id` from the recent-run query, then replace `<runId>` below. This single query returns the parent-run details alongside every ordered stage event and its safe decision metadata:
+
+```powershell
+npx --yes wrangler@latest d1 execute ai-nuggets-content `
+  --remote `
+  --config $workerConfig `
+  --command "SELECT r.run_id, r.target_date, r.status AS run_status, r.details AS run_details, r.started_at, r.finished_at, e.sequence, e.stage, e.event_name, e.outcome, e.duration_ms, e.created_at AS event_created_at, e.metadata_json FROM generation_runs r LEFT JOIN generation_run_events e ON e.run_id = r.run_id WHERE r.run_id = '<runId>' ORDER BY e.sequence ASC;"
+```
+
+The protected Worker endpoint returns the same information in a clearer nested JSON response:
+
+```powershell
+$headers = @{ Authorization = "Bearer $env:AUTOMATION_TRIGGER_TOKEN" }
+Invoke-RestMethod "https://<content-worker>/internal/generation-runs/<runId>" -Headers $headers
+```
+
+Generation-run data is retained for three days. Each new generation attempt purges completed expired child events before their parent run rows. The logs deliberately exclude credentials, request headers, raw article/feed content, complete prompts, and raw model responses.
 
 View user login and refresh activity:
 

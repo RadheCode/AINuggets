@@ -6,11 +6,61 @@ export function createD1EditionRepository(db) {
       ).bind(date).first());
     },
 
-    async recordRun({ targetDate, status, details = null }) {
+    async createGenerationRun({ runId, targetDate }) {
       await db.prepare(`
-        INSERT INTO generation_runs (target_date, status, details, finished_at)
-        VALUES (?, ?, ?, CASE WHEN ? = 'started' THEN NULL ELSE CURRENT_TIMESTAMP END)
-      `).bind(targetDate, status, details, status).run();
+        INSERT INTO generation_runs (run_id, target_date, status)
+        VALUES (?, ?, 'started')
+      `).bind(runId, targetDate).run();
+    },
+
+    async finishGenerationRun({ runId, status, details = null }) {
+      await db.prepare(`
+        UPDATE generation_runs
+        SET status = ?, details = ?, finished_at = CURRENT_TIMESTAMP
+        WHERE run_id = ?
+      `).bind(status, details, runId).run();
+    },
+
+    async recordRunEvent({ runId, stage, event, outcome, durationMs, metadata }) {
+      await db.prepare(`
+        INSERT INTO generation_run_events (
+          run_id, sequence, stage, event_name, outcome, duration_ms, metadata_json
+        ) VALUES (?, (
+          SELECT COALESCE(MAX(sequence), 0) + 1
+          FROM generation_run_events
+          WHERE run_id = ?
+        ), ?, ?, ?, ?, ?)
+      `).bind(
+        runId,
+        runId,
+        stage,
+        event,
+        outcome,
+        durationMs ?? null,
+        JSON.stringify(metadata)
+      ).run();
+    },
+
+    async purgeGenerationRuns({ retainedDays = 3 } = {}) {
+      if (!Number.isInteger(retainedDays) || retainedDays < 1) {
+        throw new Error("Generation run retention must be a positive whole number of days.");
+      }
+      const threshold = `-${retainedDays} days`;
+      await db.batch([
+        db.prepare(`
+          DELETE FROM generation_run_events
+          WHERE run_id IN (
+            SELECT run_id FROM generation_runs
+            WHERE finished_at IS NOT NULL
+              AND finished_at < datetime('now', ?)
+          )
+        `).bind(threshold),
+        db.prepare(`
+          DELETE FROM generation_runs
+          WHERE finished_at IS NOT NULL
+            AND finished_at < datetime('now', ?)
+        `).bind(threshold)
+      ]);
     },
 
     async saveEdition(edition, { status = "draft" } = {}) {

@@ -24,6 +24,11 @@ content-engine/automation/
 ├── config/create-generation-provider-dependencies.mjs
 ├── jobs/generate-daily-edition.mjs
 ├── jobs/run-scheduled-edition.mjs
+├── pipeline/
+│   ├── run-eligibility.mjs
+│   ├── collect-candidates.mjs
+│   ├── prepare-edition.mjs
+│   └── persist-edition.mjs
 └── domain/
 ```
 
@@ -48,7 +53,8 @@ content-worker/
 | Built-in blog collector | Complete | Fetches up to three recent RSS/Atom posts from each editable source, then deduplicates, ranks, and category-diversifies five candidates. |
 | Generic JSON content source | Complete | Requests an HTTPS endpoint with `?date=YYYY-MM-DD`; accepts an array or `{ "candidates": [...] }`. |
 | OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON for the product-configured generated summary variants from Chat Completions. |
-| D1 repository | Complete | Checks idempotency, records runs, and saves a draft or directly published edition plus stories in one D1 batch. |
+| D1 repository | Complete | Checks idempotency, records one correlated run plus ordered detailed event records, and saves a draft or directly published edition plus stories in one D1 batch. |
+| Detailed run investigation | Complete | Assigns each attempt a UUID `runId`, records clear structured events for every pipeline decision, and exposes a protected unified per-run view. |
 | Auditing and safe failure | Complete | Records `started`, `skipped`, `succeeded`, or `failed`; failures do not alter existing editions. |
 | Public content delivery | Complete | The Worker exposes published editions only; drafts are excluded. |
 | Provider configuration | Complete | `content-engine` defines the setting names, validates complete model settings, and creates portable source/model dependencies from runtime values. |
@@ -61,8 +67,71 @@ content-worker/
 | `editions` | One dated briefing with draft, published, or archived status |
 | `stories` | Four or five ordered stories belonging to an edition |
 | `generation_runs` | Audit records for scheduled attempts, skips, and failures |
+| `generation_run_events` | Ordered, structured stage and decision events belonging to one generation run |
 
 Each story can retain source name, source URL, and source publication time. Public API responses include source metadata when present.
+
+## How story summaries are produced
+
+> **Maintenance rule:** Any change to content-generation logic must update this document in the same change. Keep the written workflow, code-ownership descriptions, and twelve-stage implementation map accurate for scheduling, source collection, candidate selection, model generation, summary formats, validation, persistence, publication, public delivery, and browser rendering.
+
+Each daily edition follows this sequence:
+
+1. **Start and protect the existing edition.** The scheduler derives the UTC editorial date. If an edition already exists for that date, the job records a skipped run and leaves it unchanged.
+2. **Collect source metadata.** The built-in collector reads the approved RSS/Atom feeds in `product/editorial-config.mjs`, retaining up to three recent posts per source. A configured HTTPS JSON candidate source can replace the built-in collector.
+3. **Choose candidates.** URLs are normalized to remove tracking parameters and duplicates. Remaining items are ranked by configured source priority and freshness; the collector takes one item per category where possible, then fills the remaining places by rank until it has up to five candidates.
+4. **Generate a structured edition.** Candidate metadata--such as the title, excerpt, source, publication time, and URL--is sent to the configured OpenAI-compatible provider. Candidate text is explicitly treated as untrusted data, not instructions. The provider receives a strict JSON schema and is instructed to use only facts supported by those candidates.
+5. **Create distinct summary layers.** For every selected story, the provider generates all contexts configured by `summaryFeatures.generation` in `product/config.js`. The current contexts are:
+
+   | Layer | Reader label | Required form |
+   |---|---|---|
+   | `compact` | Quick take | One paragraph, 100-180 characters |
+   | `standard` | Overview | Exactly 3-4 bullet points, 240-420 characters |
+   | `detailed` | Deep dive | 2-4 short paragraphs, 500-900 characters |
+
+   The layers must be original and distinct; one may not simply copy or truncate another.
+6. **Validate before saving.** The shared domain validation rejects an edition unless it has exactly four or five stories, unique IDs, valid HTTPS destinations, supported artwork and layouts, exactly one lead story, and every configured summary layer within its required length and format.
+7. **Persist, publish, and present.** The edition and its stories are stored together in D1 as `published` by default, or as `draft` when automatic publication is disabled. The public API exposes only published editions. The current browser UI presents the default `standard` Overview first and lets readers switch to `detailed` Deep dive; `compact` is generated and retained but is not currently enabled in the story dialog.
+8. **Record the outcome safely.** Every run is recorded as `started`, `skipped`, `succeeded`, or `failed`. Failed collection, generation, or validation never creates a partial edition and does not replace the most recent published edition.
+
+### Detailed generation-run logging
+
+Every attempt receives a UUID `runId` before any eligibility check. The parent `generation_runs` record retains the date, terminal status, start/end timestamps, and concise terminal outcome. Its `generation_run_events` records provide the chronological detail: event sequence, pipeline step, event name, outcome, duration when applicable, timestamp, and safe JSON decision metadata.
+
+The event stream records run start and eligibility, each source fetch, RSS parsing and candidate limits, source failures, candidate de-duplication, ranking and selected-category metadata, model request/response metadata, edition validation, per-story summary character counts and layout decisions, persistence, and terminal failure. It does **not** record credentials, authorization headers, API keys, raw feed bodies, article bodies, complete prompts, or raw model responses.
+
+The Cloudflare adapter emits the same safe structured events to Workers Logs using `console.info`, with the `runId` as the correlation field. Workers Free keeps those logs for three days. D1 is the durable investigation store and applies the same three-day retention policy at the start of each generation attempt: completed child event rows are deleted before their parent run rows. A running attempt is never purged.
+
+### Code ownership by workflow stage
+
+The workflow is organized by responsibility rather than creating a file for every individual line of the sequence. The scheduler is in `jobs/run-scheduled-edition.mjs`; `jobs/generate-daily-edition.mjs` composes the pipeline without provider-specific code. The focused pipeline modules own run eligibility and skip auditing, cross-source candidate collection and deduplication, model generation plus edition preparation, and persistence plus success/failure auditing. RSS parsing/ranking remains in `adapters/rss-blog-content-source.mjs`, model request/schema construction in `adapters/openai-compatible-summary-provider.mjs`, content constraints in `domain/validate-edition.mjs`, and D1 persistence in the Cloudflare adapter. This keeps each stage independently testable while avoiding artificial modules for operations that must remain atomic.
+
+### Twelve-stage implementation map
+
+```mermaid
+flowchart TD
+    S1["1. Trigger scheduled run\n`infra/cloudflare/content-worker/src/index.js`\n`content-engine/automation/jobs/run-scheduled-edition.mjs`"]
+    S2["2. Derive UTC editorial date\n`content-engine/automation/domain/editorial-date.mjs`"]
+    S3["3. Assemble runtime dependencies\n`infra/cloudflare/content-worker/src/index.js`\n`content-engine/automation/config/create-generation-provider-dependencies.mjs`"]
+    S4["4. Check eligibility and skip safely\n`content-engine/automation/pipeline/run-eligibility.mjs`"]
+    S5["5. Record generation start\n`content-engine/automation/jobs/generate-daily-edition.mjs`\n`infra/cloudflare/content-worker/src/d1-edition-repository.js`"]
+    S6["6. Fetch and parse approved sources\n`content-engine/automation/adapters/rss-blog-content-source.mjs`\n`product/editorial-config.mjs`"]
+    S7["7. Rank, diversify, aggregate, and deduplicate candidates\n`content-engine/automation/adapters/rss-blog-content-source.mjs`\n`content-engine/automation/pipeline/collect-candidates.mjs`"]
+    S8["8. Request schema-constrained model output\n`content-engine/automation/adapters/openai-compatible-summary-provider.mjs`\n`product/config.js`"]
+    S9["9. Prepare summary layers and validate the edition\n`content-engine/automation/pipeline/prepare-edition.mjs`\n`content-engine/automation/domain/validate-edition.mjs`"]
+    S10["10. Save draft or published edition and audit outcome\n`content-engine/automation/pipeline/persist-edition.mjs`\n`infra/cloudflare/content-worker/src/d1-edition-repository.js`"]
+    S11["11. Serve published editions through the public API\n`infra/cloudflare/content-worker/src/index.js`"]
+    S12["12. Load and present enabled summary layers in the browser\n`content-engine/loader.js`\n`content-engine/render.js`\n`product/config.js`"]
+
+    S1 --> S2 --> S3 --> S4
+    S4 -->|ready| S5 --> S6 --> S7 --> S8 --> S9 --> S10 --> S11 --> S12
+    S4 -->|skipped| X["Audit skip\n`pipeline/run-eligibility.mjs`\n`d1-edition-repository.js`"]
+    S6 -->|all sources fail| F["Audit failure; preserve previous edition\n`pipeline/persist-edition.mjs`\n`d1-edition-repository.js`"]
+    S8 -->|provider failure| F
+    S9 -->|validation failure| F
+```
+
+Steps 1-10 are the generation pipeline. Steps 11-12 are the separate public delivery and browser-rendering path that readers use after an edition is published. The generic JSON candidate-source alternative is implemented in `content-engine/automation/adapters/http-json-content-source.mjs` and replaces the RSS adapter at stages 6-7 when `CONTENT_SOURCE_URL` is configured.
 
 ## Public API
 
@@ -71,8 +140,31 @@ Each story can retain source name, source URL, and source publication time. Publ
 | `GET /health` | Reports Worker availability |
 | `GET /api/editions/latest` | Returns the newest published edition up to today's editorial date |
 | `GET /api/editions/YYYY-MM-DD` | Returns the newest published edition on or before the requested date |
+| `GET /internal/generation-runs/:runId` | Protected unified run details, including the parent run and every ordered event |
 
-Draft and archived editions are never returned. Responses are cacheable at Cloudflare's edge. Browser access is restricted to origins configured in `ALLOWED_ORIGINS`.
+Draft and archived editions are never returned. Responses are cacheable at Cloudflare's edge. Browser access is restricted to origins configured in `ALLOWED_ORIGINS`. The internal generation-run endpoint is not a browser API: it requires `Authorization: Bearer <AUTOMATION_TRIGGER_TOKEN>` and returns `401` when unavailable or unauthorized.
+
+### Finding and investigating one run
+
+The generation response includes `runId` for a manual `POST /internal/generate` request. For a scheduled run, list recent attempts from D1 and copy the ID for the target date or status:
+
+```sql
+SELECT run_id, target_date, status, details, started_at, finished_at
+FROM generation_runs
+ORDER BY started_at DESC
+LIMIT 20;
+```
+
+To find a specific editorial date, add `WHERE target_date = '<YYYY-MM-DD>'` before the `ORDER BY`. `runId` values are retained for three days after a run completes. The full Wrangler commands are in [Viewing the Cloudflare D1 Database](VIEW_D1_DATABASE.md#find-a-runid-before-investigating-a-run).
+
+After obtaining the ID, request its complete, unified timeline with the internal endpoint:
+
+```powershell
+$headers = @{ Authorization = "Bearer $env:AUTOMATION_TRIGGER_TOKEN" }
+Invoke-RestMethod "https://<content-worker>/internal/generation-runs/<runId>" -Headers $headers
+```
+
+The response contains `run` (identity, target date, status, timestamps, and terminal details) and `events` in deterministic `sequence` order. Every event has `step`, `event`, `outcome`, `durationMs`, `occurredAt`, and a `details` object, so all decisions made inside each stage remain visible in one view.
 
 The frontend endpoint is committed in `product/config.js`. The public Worker URL and D1 identifiers are not secrets. OAuth tokens and provider API keys must never be committed.
 

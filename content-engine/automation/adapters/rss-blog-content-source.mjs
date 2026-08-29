@@ -77,15 +77,49 @@ export function selectDiversifiedCandidates(candidates, { now = Date.now(), coun
 export function createRssBlogContentSource({ sources, fetchImpl = fetch, now = () => Date.now() }) {
   if (!Array.isArray(sources) || !sources.length) throw new Error("At least one blog source is required.");
   return {
-    async fetchCandidates() {
-      const results = await Promise.allSettled(sources.map(async (source) => {
+    async fetchCandidates({ eventLogger } = {}) {
+      const results = await Promise.allSettled(sources.map(async (source, sourceIndex) => {
+        const startedAt = Date.now();
+        await eventLogger?.record("source-processing", "feed-request-started", {
+          sourceIndex: sourceIndex + 1,
+          sourceName: source.name,
+          category: source.category
+        });
         const response = await fetchImpl(source.feedUrl, { signal: AbortSignal.timeout(15_000) });
         if (!response.ok) throw new Error(`Blog feed request failed for ${source.name} (${response.status}).`);
-        return parseBlogFeed(await response.text(), source).sort((left, right) => right.publishedTimestamp - left.publishedTimestamp).slice(0, POSTS_PER_SOURCE);
+        const parsed = parseBlogFeed(await response.text(), source);
+        const selected = parsed.sort((left, right) => right.publishedTimestamp - left.publishedTimestamp).slice(0, POSTS_PER_SOURCE);
+        await eventLogger?.record("source-processing", "feed-processed", {
+          sourceIndex: sourceIndex + 1,
+          sourceName: source.name,
+          parsedCandidateCount: parsed.length,
+          retainedCandidateCount: selected.length,
+          discardedCandidateCount: parsed.length - selected.length
+        }, { outcome: "succeeded", durationMs: Date.now() - startedAt });
+        return selected;
       }));
+      for (const [sourceIndex, result] of results.entries()) {
+        if (result.status === "rejected") {
+          await eventLogger?.failure("source-processing", "feed-request-failed", result.reason, {
+            sourceIndex: sourceIndex + 1,
+            sourceName: sources[sourceIndex].name
+          });
+        }
+      }
       const batches = results.filter((result) => result.status === "fulfilled").map((result) => result.value);
       if (!batches.length) throw new Error("All configured blog feeds failed to respond.");
-      return selectDiversifiedCandidates(batches.flat(), { now: now() });
+      const collected = batches.flat();
+      const selected = selectDiversifiedCandidates(collected, { now: now() });
+      await eventLogger?.record("candidate-selection", "ranked-candidates-selected", {
+        collectedCandidateCount: collected.length,
+        selectedCandidateCount: selected.length,
+        selected: selected.map((candidate) => ({
+          category: candidate.category,
+          sourceName: candidate.sourceName,
+          rankingScore: candidate.rankingScore
+        }))
+      }, { outcome: "succeeded" });
+      return selected;
     }
   };
 }

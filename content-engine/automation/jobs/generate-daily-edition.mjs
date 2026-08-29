@@ -1,20 +1,10 @@
 import { isValidEditorialDate } from "../domain/editorial-date.mjs";
-import { validateEdition } from "../domain/validate-edition.mjs";
 import { SUMMARY_FEATURE_CONFIG } from "../../../product/summary-features.mjs";
-
-const SKIP_EXISTING = "Edition already exists.";
-const SKIP_NO_CONTENT_SOURCE = "No content source is configured; no edition was generated.";
-const SKIP_NO_SUMMARY_PROVIDER = "No summary provider is configured; no edition was generated.";
-
-function uniqueCandidates(candidates) {
-  const seen = new Set();
-  return candidates.filter((candidate) => {
-    const key = candidate.canonicalUrl || candidate.url;
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
+import { collectCandidates } from "../pipeline/collect-candidates.mjs";
+import { persistEdition, recordFailedRun } from "../pipeline/persist-edition.mjs";
+import { prepareEdition } from "../pipeline/prepare-edition.mjs";
+import { evaluateRunEligibility, recordSkippedRun } from "../pipeline/run-eligibility.mjs";
+import { createGenerationEventLogger, newGenerationRunId } from "../pipeline/generation-event-logger.mjs";
 
 export async function generateDailyEdition({
   targetDate,
@@ -28,52 +18,24 @@ export async function generateDailyEdition({
   if (!isValidEditorialDate(targetDate)) throw new Error(`Invalid target date: ${targetDate}.`);
   if (!editionRepository) throw new Error("An edition repository is required.");
 
-  if (await editionRepository.hasEdition(targetDate)) {
-    await editionRepository.recordRun({ targetDate, status: "skipped", details: SKIP_EXISTING });
-    return { targetDate, status: "skipped", reason: SKIP_EXISTING };
-  }
+  if (editionRepository.purgeGenerationRuns) await editionRepository.purgeGenerationRuns({ retainedDays: 3 });
+  const runId = newGenerationRunId();
+  await editionRepository.createGenerationRun({ runId, targetDate });
+  const eventLogger = createGenerationEventLogger({ runId, editionRepository, logger });
+  await eventLogger.record("run", "generation-run-started", { targetDate, sourceCount: contentSources.length });
 
-  if (!contentSources.length) {
-    await editionRepository.recordRun({ targetDate, status: "skipped", details: SKIP_NO_CONTENT_SOURCE });
-    return { targetDate, status: "skipped", reason: SKIP_NO_CONTENT_SOURCE };
+  const eligibility = await evaluateRunEligibility({ targetDate, editionRepository, contentSources, summaryProvider });
+  if (eligibility.status === "skipped") {
+    return recordSkippedRun({ editionRepository, targetDate, runId, reason: eligibility.reason, eventLogger });
   }
-
-  if (!summaryProvider) {
-    await editionRepository.recordRun({ targetDate, status: "skipped", details: SKIP_NO_SUMMARY_PROVIDER });
-    return { targetDate, status: "skipped", reason: SKIP_NO_SUMMARY_PROVIDER };
-  }
-
-  await editionRepository.recordRun({ targetDate, status: "started" });
+  await eventLogger.record("eligibility", "run-eligible", { targetDate }, { outcome: "succeeded" });
 
   try {
-    const batches = await Promise.all(
-      contentSources.map((source) => source.fetchCandidates({ targetDate }))
-    );
-    const candidates = uniqueCandidates(batches.flat());
-    const edition = validateEdition(
-      await summaryProvider.generateEdition({ targetDate, candidates }),
-      targetDate,
-      summaryContexts
-    );
-    for (const story of edition.stories) {
-      story.summaries = Object.fromEntries(Object.keys(summaryContexts).map((key) => [key, story.summaries[key]]));
-    }
-
-    await editionRepository.saveEdition(edition, { status: automaticallyPublish ? "published" : "draft" });
-    await editionRepository.recordRun({
-      targetDate,
-      status: "succeeded",
-      details: `Created ${automaticallyPublish ? "published" : "draft"} edition with ${edition.stories.length} stories.`
-    });
-    logger.info?.(`Created ${automaticallyPublish ? "published" : "draft"} edition for ${targetDate}.`);
-    return { targetDate, status: "succeeded", storyCount: edition.stories.length, publicationStatus: automaticallyPublish ? "published" : "draft" };
+    const candidates = await collectCandidates(contentSources, targetDate, eventLogger);
+    const edition = await prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger });
+    return persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, logger, eventLogger });
   } catch (error) {
-    await editionRepository.recordRun({
-      targetDate,
-      status: "failed",
-      details: error instanceof Error ? error.message : String(error)
-    });
-    logger.error?.(`Daily edition generation failed for ${targetDate}.`, error);
+    await recordFailedRun({ editionRepository, targetDate, runId, error, logger, eventLogger });
     throw error;
   }
 }

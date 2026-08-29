@@ -10,7 +10,7 @@ export function createHttpJsonContentSource({ url, apiKey, fetchImpl = fetch }) 
   const endpoint = requireUrl(url, "Content source URL");
 
   return {
-    async fetchCandidates({ targetDate }) {
+    async fetchCandidates({ targetDate, eventLogger } = {}) {
       const requestUrl = new URL(endpoint);
       requestUrl.searchParams.set("date", targetDate);
       const response = await fetchImpl(requestUrl, {
@@ -22,7 +22,13 @@ export function createHttpJsonContentSource({ url, apiKey, fetchImpl = fetch }) 
       const body = await response.json();
       const candidates = Array.isArray(body) ? body : body.candidates;
       if (!Array.isArray(candidates)) throw new Error("Content source response must be an array or an object with a candidates array.");
-      return candidates.filter((candidate) => candidate && typeof candidate === "object");
+      const validCandidates = candidates.filter((candidate) => candidate && typeof candidate === "object");
+      await eventLogger?.record("source-processing", "json-source-processed", {
+        receivedCandidateCount: candidates.length,
+        retainedCandidateCount: validCandidates.length,
+        discardedCandidateCount: candidates.length - validCandidates.length
+      }, { outcome: "succeeded" });
+      return validCandidates;
     }
   };
 }

@@ -16,10 +16,12 @@ These instructions are mandatory for AI-assisted changes in this repository.
 - Keep daily-edition orchestration runtime-neutral under `content-engine/automation/`. Cloud provider triggers and persistence implementations must be adapters that inject dependencies into the portable job.
 - Access public content only through the content Worker API configured in `product/config.js`; do not hard-code stories in `index.html` or theme files.
 - Change the D1 schema only through ordered SQL migrations. Never edit an already-applied migration.
+- Whenever a D1 table, column, constraint, index, relationship, retention policy, or table access behavior changes, update `docs/D1_SCHEMA_REFERENCE.md` in the same change. Keep its table inventory, what/why/where/how explanations, privacy boundaries, and relationship diagram aligned with the schema and Worker behavior.
 - Keep draft editions out of public API responses; only `published` editions may be rendered publicly.
 - Keep `content-engine/render.js` theme-agnostic and preserve the stable shared selectors it emits.
 - Publish exactly four or five stories. Each story must have a unique ID, category, concise title, summary, destination, and supported artwork key.
 - Keep content trustworthy and concise. Verify news against primary sources before publishing and avoid unsupported hype.
+- Whenever content-generation logic changes--including scheduling, source collection, candidate selection, prompting, summary formats, validation, persistence, publication, public delivery, or browser rendering--update `docs/DAILY_CONTENT_AUTOMATION.md` in the same change. Keep its written workflow, code-ownership map, and twelve-stage implementation diagram aligned with the implementation.
 
 ## Product externalization
 

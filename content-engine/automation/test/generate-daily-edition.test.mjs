@@ -100,7 +100,12 @@ test("deduplicates candidates and saves a validated edition", async () => {
   assert.equal(result.status, "succeeded");
   assert.equal(repository.editions.size, 1);
   assert.equal(repository.editions.get(targetDate).status, "draft");
-  assert.deepEqual(repository.runs.map((run) => run.status), ["started", "succeeded"]);
+  assert.deepEqual(repository.runs.map((run) => run.status), ["succeeded"]);
+  assert.match(result.runId, /^[0-9a-f-]{36}$/);
+  assert.ok(repository.events.every((event) => event.runId === result.runId));
+  assert.deepEqual(repository.events.map((event) => event.sequence), Array.from({ length: repository.events.length }, (_, index) => index + 1));
+  assert.ok(repository.events.some((event) => event.event === "candidate-deduplication-complete"));
+  assert.ok(repository.events.some((event) => event.event === "story-summary-validated"));
 });
 
 test("publishes a validated edition when automatic publication is enabled", async () => {
@@ -154,8 +159,9 @@ test("records a failed run when validation rejects an edition", async () => {
     }),
     /four or five stories/
   );
-  assert.deepEqual(repository.runs.map((run) => run.status), ["started", "failed"]);
+  assert.deepEqual(repository.runs.map((run) => run.status), ["failed"]);
   assert.equal(repository.editions.size, 0);
+  assert.ok(repository.events.some((event) => event.event === "edition-validation-failed" && event.outcome === "failed"));
 });
 
 test("rejects editions with unsupported artwork or multiple wide stories", async () => {

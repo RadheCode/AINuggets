@@ -36,6 +36,7 @@ The website is a responsive daily briefing experience. Its current identity and 
 | Provider-powered summarization | Uses an OpenAI-compatible Chat Completions provider to produce structured original summaries for the product-configured generated detail levels. |
 | Content validation | Rejects invalid editions before storage by enforcing date, story count, unique IDs and positions, required fields, supported layouts and artwork, summary lengths, and HTTPS URLs. |
 | Publishing workflow | Publishes valid editions automatically by default, with a configuration option to save future editions as drafts for editorial review before publication. |
+| Detailed generation-run investigations | Gives each attempt a correlated UUID and records ordered, safe source, selection, generation, validation, persistence, and terminal decision events. A protected internal endpoint and unified D1 query show the complete timeline for one run; completed run data is retained for three days. |
 | Idempotency and audits | Prevents duplicate editions for a date and records each generation attempt as started, skipped, succeeded, or failed. |
 | Failure protection | Keeps the most recent valid published edition available if content collection, generation, validation, or persistence fails; incomplete or fabricated editions are not published. |
 | Portable architecture | Separates the generation core from Cloudflare-specific code so source, model, scheduler, and infrastructure adapters can be replaced without rewriting the core workflow. |
