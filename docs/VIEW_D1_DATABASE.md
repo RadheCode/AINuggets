@@ -163,7 +163,7 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --command "SELECT run_id, target_date, status, details, datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist, datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist FROM generation_runs WHERE target_date = '<YYYY-MM-DD>' ORDER BY started_at DESC;"
 ```
 
-The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. On beta only, an authorized caller may send `{ "targetDate": "YYYY-MM-DD", "dryRun": true }` to exercise collection, generation, and validation for an existing edition without changing `editions` or `stories`. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
+The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. On beta only, an authorized caller may send `{ "targetDate": "YYYY-MM-DD", "dryRun": true }` to exercise collection, generation, and validation for an existing edition without changing `editions` or `stories`. To intentionally replace an existing beta edition after validation, send `{ "targetDate": "YYYY-MM-DD", "forceReplace": true }`; it atomically deletes the existing parent and cascades its stories before saving the replacement. `dryRun` and `forceReplace` cannot be combined, and neither option is accepted in production. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
 
 ### Unified detailed view for one generation run
 

@@ -1,19 +1,19 @@
-export async function persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, logger, eventLogger }) {
+export async function persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, forceReplace = false, logger, eventLogger }) {
   const publicationStatus = automaticallyPublish ? "published" : "draft";
   const startedAt = Date.now();
-  await eventLogger.record("persistence", "edition-save-started", { publicationStatus, storyCount: edition.stories.length });
-  await editionRepository.saveEdition(edition, { status: publicationStatus });
-  await eventLogger.record("persistence", "edition-save-succeeded", { publicationStatus, storyCount: edition.stories.length }, {
+  await eventLogger.record("persistence", "edition-save-started", { publicationStatus, storyCount: edition.stories.length, forceReplace });
+  await editionRepository.saveEdition(edition, { status: publicationStatus, replaceExisting: forceReplace });
+  await eventLogger.record("persistence", "edition-save-succeeded", { publicationStatus, storyCount: edition.stories.length, forceReplace }, {
     outcome: "succeeded",
     durationMs: Date.now() - startedAt
   });
   await editionRepository.finishGenerationRun({
     runId,
     status: "succeeded",
-    details: `Created ${publicationStatus} edition with ${edition.stories.length} stories.`
+    details: `${forceReplace ? "Replaced" : "Created"} ${publicationStatus} edition with ${edition.stories.length} stories.`
   });
-  logger.info?.(`Created ${publicationStatus} edition for ${targetDate}.`);
-  return { runId, targetDate, status: "succeeded", storyCount: edition.stories.length, publicationStatus };
+  logger.info?.(`${forceReplace ? "Replaced" : "Created"} ${publicationStatus} edition for ${targetDate}.`);
+  return { runId, targetDate, status: "succeeded", storyCount: edition.stories.length, publicationStatus, forceReplace };
 }
 
 export async function completeDryRun({ editionRepository, edition, targetDate, runId, logger, eventLogger }) {

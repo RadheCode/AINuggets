@@ -1,6 +1,10 @@
 import { validateEdition } from "../domain/validate-edition.mjs";
+import { REQUIRED_CANDIDATE_COUNT } from "./candidate-selection.mjs";
 
 export async function prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger }) {
+  if (candidates.length !== REQUIRED_CANDIDATE_COUNT) {
+    throw new Error(`Exactly ${REQUIRED_CANDIDATE_COUNT} candidates are required before requesting a summary.`);
+  }
   const startedAt = Date.now();
   await eventLogger.record("generation", "summary-provider-requested", {
     candidateCount: candidates.length,

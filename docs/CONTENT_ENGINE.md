@@ -22,8 +22,8 @@ flowchart TD
 
     C -- "Yes" --> D["⏭️ Record skipped run\nNo duplicate is created"]
     C -- "No" --> E["📰 Candidate collection\nApproved RSS/Atom feeds or custom JSON source"]
-    E --> F["🧹 Normalize URLs and deduplicate"]
-    F --> G["📊 Rank by source priority and freshness\nDiversify categories"]
+    E --> F["🧹 Normalize URLs, deduplicate, and exclude prior-ten-day published stories"]
+    F --> G["📊 Apply configured candidate order\nPriority/freshness or random; diversify exactly five"]
     G --> H["🤖 Summary provider\nProduces 4–5 concise stories"]
     H --> I["✅ Domain validation\nRequired fields, safe URLs, IDs, layouts, artwork"]
 
@@ -46,7 +46,7 @@ flowchart TD
 | Browser loader | `content-engine/loader.js` | Validates an optional preview date, requests an edition, and rejects malformed API payloads. |
 | Browser renderer | `content-engine/render.js` | Creates semantic tile buttons, stable slot classes, and the summary dialog behavior. |
 | Engine configuration | `content-engine/content-engine.config.mjs` | Human-editable UTC schedule and publication mode. |
-| Product editorial configuration | `product/editorial-config.mjs` | Product-approved feeds and generation instruction. |
+| Product editorial configuration | `product/editorial-config.mjs` | Product-approved feeds, candidate-selection mode, and generation instruction. |
 | Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, idempotency, and audit orchestration. |
 | Worker adapter | `infra/cloudflare/content-worker/src/` | Connects the portable automation to Cron, D1, secrets, and public HTTP routes. |
 | Content database | Cloudflare D1 `ai-nuggets-content` | Source of truth for editions, stories, and generation audit records. |
@@ -68,15 +68,19 @@ By default, the built-in collector reads the editable product-approved feed list
 
 1. Fetch up to three recent posts from each RSS or Atom feed.
 2. Remove tracking parameters and normalize candidate URLs.
-3. Drop duplicate links.
-4. Rank candidates using configured source priority and recency.
-5. Prefer category diversity, then fill the remaining positions by rank.
+3. Drop duplicate canonical links and exclude a canonical URL already used by a `published` edition in the prior ten editorial days. Draft and archived editions do not participate.
+4. Apply the configured candidate-selection mode: rank by source priority and recency in `priority` mode, or shuffle in `random` mode.
+5. Prefer category diversity, then fill the remaining positions until exactly five candidates are selected. If fewer than five survive, fail before calling the summary provider.
 
 An optional HTTPS JSON candidate endpoint can replace the built-in collector. Feed and custom-source requests are bounded by timeouts. A single unavailable feed does not cancel the run; a run fails only if no usable source candidates remain.
 
+The built-in collector's selection mode is product configuration. The current `random` setting ignores retained numeric feed priorities and recency for that run, shuffles eligible candidates, and preserves category diversity. Set it to `priority` to use those retained values for ranking. Custom JSON sources control their own ordering.
+
+For the full canonicalization, ten-day published-history, priority-score, random-shuffle, diversity, and exact-five failure algorithm, see [Detailed candidate-selection algorithm](DAILY_CONTENT_AUTOMATION.md#detailed-candidate-selection-algorithm).
+
 ### 4. Summarization and selection
 
-An OpenAI-compatible summary provider receives the ranked candidates and returns a structured edition containing four or five stories. The product-level `summaryFeatures.generation` configuration selects which summary variants are generated and stored for each new story; the default is Quick take, Overview, and Deep dive. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
+An OpenAI-compatible summary provider receives exactly five eligible candidates and returns a structured edition containing four or five stories. The product-level `summaryFeatures.generation` configuration selects which summary variants are generated and stored for each new story; the default is Quick take, Overview, and Deep dive. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
 
 ### 5. Validation
 

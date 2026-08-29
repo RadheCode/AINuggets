@@ -26,7 +26,7 @@ The boundary provides these guarantees:
 |---|---|---|
 | `product/config.js` | Product name, document metadata, visible framing copy, accessibility labels, browser storage namespace, public site/API hosts, and public OAuth client ID | Yes |
 | `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell | Only when the shared copy contract changes |
-| `product/editorial-config.mjs` | Approved feeds, categories, generation instruction, and product-specific automation fallback configuration | Yes |
+| `product/editorial-config.mjs` | Approved feeds, categories, candidate-selection mode, and generation instruction | Yes |
 | `product/company-images.js` | Entity matching for story artwork | Yes, if the topic uses different entities |
 | `product/company-images/` | Product-owned artwork assets | Yes, if artwork changes |
 
@@ -68,7 +68,7 @@ Use this decision order before adding or editing configuration or copy:
 
 ### A normal product update
 
-Use `product/` when changing the name, message, topic, feeds, entity artwork, public OAuth client ID, local browser storage namespace, or the public hosts the browser calls. This is the common case.
+Use `product/` when changing the name, message, topic, feeds, candidate-selection policy, entity artwork, public OAuth client ID, local browser storage namespace, or the public hosts the browser calls. This is the common case.
 
 ### A product retargeting or rebrand
 

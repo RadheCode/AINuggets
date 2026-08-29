@@ -1,6 +1,7 @@
 import { createHttpJsonContentSource } from "../adapters/http-json-content-source.mjs";
 import { createOpenAiCompatibleSummaryProvider } from "../adapters/openai-compatible-summary-provider.mjs";
 import { createRssBlogContentSource } from "../adapters/rss-blog-content-source.mjs";
+import { validateCandidateSelectionMode } from "../pipeline/candidate-selection.mjs";
 import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
 import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
 
@@ -37,6 +38,7 @@ function requireCompleteSummaryProvider(values) {
 export function createGenerationProviderDependencies(values, { fetchImpl } = {}) {
   requireCompleteSummaryProvider(values);
   validateSummaryFeatureConfig();
+  validateCandidateSelectionMode(PRODUCT_EDITORIAL_CONFIG.candidateSelection?.mode);
 
   const sourceUrl = configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.contentSourceUrl);
   const summaryProviderUrl = configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl);
@@ -44,13 +46,17 @@ export function createGenerationProviderDependencies(values, { fetchImpl } = {})
 
   return {
     summaryContexts: Object.fromEntries(SUMMARY_FEATURE_CONFIG.generation.map((key) => [key, SUMMARY_FEATURE_CONFIG.contexts[key]])),
+    candidateSelection: { mode: PRODUCT_EDITORIAL_CONFIG.candidateSelection.mode },
     contentSources: sourceUrl
       ? [createHttpJsonContentSource({
         url: sourceUrl,
         apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.contentSourceApiKey),
         ...options
       })]
-      : [createRssBlogContentSource({ sources: PRODUCT_EDITORIAL_CONFIG.feeds, ...options })],
+      : [createRssBlogContentSource({
+        sources: PRODUCT_EDITORIAL_CONFIG.feeds,
+        ...options
+      })],
     summaryProvider: summaryProviderUrl
       ? createOpenAiCompatibleSummaryProvider({
         baseUrl: summaryProviderUrl,

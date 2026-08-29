@@ -11,7 +11,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 | `product/config.js` | Product identity, user-facing framing copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific company/entity artwork matching used by the shared story renderer. Replace or remove this mapping when it no longer matches the new topic. |
-| `product/editorial-config.mjs` | Product-specific approved sources and the generation instruction used by the portable daily-edition workflow. |
+| `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |
 
 ## Rebranding workflow
 
@@ -19,7 +19,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 2. Change `storageNamespace` if the rebranded site must not reuse existing reader color preferences or opaque session tokens.
 3. Update `runtime.sites` and `runtime.contentApiUrls` for the new public frontend and content API hosts.
 4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different entity matching.
-5. Update approved sources and the generation instruction in `product/editorial-config.mjs`.
+5. Update approved sources, candidate-selection mode, and the generation instruction in `product/editorial-config.mjs`.
 6. Update `summaryFeatures` in `product/config.js` when the product offers a different set of summary views or generated detail levels.
 7. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
 
@@ -38,6 +38,17 @@ The default enables `compact` (Quick take), `standard` (Overview), and `detailed
 
 Both browser code and the portable generation runtime consume the same feature vocabulary. `product/summary-features.mjs` exposes and validates the browser configuration for the runtime without introducing provider dependencies into the product contract.
 
+## Editorial candidate selection
+
+`PRODUCT_EDITORIAL_CONFIG.candidateSelection.mode` controls how the built-in RSS/Atom collector orders eligible candidates before it selects up to five category-diverse stories. The setting is product-owned because it defines editorial policy, while the collector implementation remains portable.
+
+| Mode | Behavior |
+|---|---|
+| `priority` | Sorts candidates by their retained feed `priority` and recency score, then selects one candidate per category before filling remaining places by score. |
+| `random` | Current setting. Ignores feed priority and recency for selection order, shuffles eligible candidates, then still selects one candidate per category before filling remaining places from that shuffled order. |
+
+Retain a numeric `priority` on every feed even when `random` is active so switching back to `priority` needs no feed migration. The mode applies only to the built-in RSS/Atom collector; a custom `CONTENT_SOURCE_URL` controls its own candidate ordering.
+
 The public OAuth client ID is intentionally browser-visible. Do not add a client secret to this repository. The Cloudflare Worker deployment reads this value from `product/config.js` when it renders its provider-specific manifest, so do not duplicate it in an infrastructure file.
 
 ## Ownership boundaries
@@ -54,3 +65,4 @@ The public OAuth client ID is intentionally browser-visible. Do not add a client
 - Provider resource names, account identifiers, database IDs, and deployment URLs in `infra/<provider>/`, because providers require provider-specific manifests. Cloudflare's checked-in manifests are templates, not second copies of those identifiers.
 - Applied SQL migrations under `infra/<provider>/.../migrations/`, because migration history is immutable. Publish a new edition or add a new ordered migration for a new topic; never rewrite history.
 - Generic provider-protocol adapters, fixtures, and operational documentation, which are not product-facing runtime copy. Concrete resource names in operational documents describe the currently deployed environment.
+- The CLI's `CONTENT_AUTOMATION_URL`, which is intentionally an explicit environment variable so a local trigger cannot silently target a stale beta or production endpoint.

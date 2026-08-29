@@ -285,13 +285,20 @@ async function handleAutomationRequest(request, env) {
   if (body.dryRun !== undefined && typeof body.dryRun !== "boolean") {
     return json({ error: "dryRun must be a boolean when provided." }, 400);
   }
-  if (body.dryRun && env.DEPLOYMENT_ENVIRONMENT !== "beta") {
-    return json({ error: "Dry runs are available only in beta." }, 403);
+  if (body.forceReplace !== undefined && typeof body.forceReplace !== "boolean") {
+    return json({ error: "forceReplace must be a boolean when provided." }, 400);
+  }
+  if ((body.dryRun || body.forceReplace) && env.DEPLOYMENT_ENVIRONMENT !== "beta") {
+    return json({ error: "Dry runs and forced replacement are available only in beta." }, 403);
+  }
+  if (body.dryRun && body.forceReplace) {
+    return json({ error: "dryRun and forceReplace cannot both be true." }, 400);
   }
 
   const result = await generateDailyEdition({
     targetDate,
     dryRun: body.dryRun === true,
+    forceReplace: body.forceReplace === true,
     ...createAutomationDependencies(env)
   });
   return json(result, 200);

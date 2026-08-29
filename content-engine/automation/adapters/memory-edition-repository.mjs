@@ -10,8 +10,15 @@ export function createMemoryEditionRepository(initialEditions = []) {
     async hasEdition(date) {
       return editions.has(date);
     },
-    async saveEdition(edition, { status = "draft" } = {}) {
-      if (editions.has(edition.date)) throw new Error(`Edition ${edition.date} already exists.`);
+    async listPublishedStoryUrls({ startDate, endDate }) {
+      return [...editions.values()]
+        .filter((edition) => edition.status === "published" && edition.date >= startDate && edition.date < endDate)
+        .flatMap((edition) => edition.stories || [])
+        .map((story) => story.href)
+        .filter(Boolean);
+    },
+    async saveEdition(edition, { status = "draft", replaceExisting = false } = {}) {
+      if (editions.has(edition.date) && !replaceExisting) throw new Error(`Edition ${edition.date} already exists.`);
       editions.set(edition.date, { ...structuredClone(edition), status });
     },
     async createGenerationRun(run) {

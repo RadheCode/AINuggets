@@ -33,7 +33,7 @@ Read `docs/PRODUCT_EXTERNALIZATION_ARCHITECTURE.md` and `docs/PRODUCT_CONFIGURAT
 | Ownership | Paths | Rebranding action |
 |---|---|---|
 | Product identity and public runtime settings | `product/config.js` | Update all product copy, metadata, namespace, public hosts if supplied, and public OAuth ID only if supplied. |
-| Product editorial domain | `product/editorial-config.mjs` | Replace sources, categories, prompt, and product automation fallback only when a new host is supplied. |
+| Product editorial domain | `product/editorial-config.mjs` | Replace sources, categories, candidate-selection mode, and prompt. Keep local trigger endpoints in explicit environment variables, never as product fallback configuration. |
 | Product entity artwork | `product/company-images.js`, `product/company-images/` | Replace with relevant assets/matching, or remove mappings cleanly when artwork is not wanted. |
 | Shared shell and behavior | `index.html`, `script.js`, `content-engine/`, `themes/` | Do not add product-specific copy, data, or conditions. Change only to support a genuinely new, reusable product contract. |
 | Provider deployment details | `infra/<provider>/` | Do not relocate into `product/`. Update only if the user requests resource/domain changes or the product config requires a provider handoff. For Cloudflare, change Worker and D1 identities in `infra/cloudflare/config.json`; the provider renderer keeps temporary Wrangler manifests synchronized. |
@@ -44,7 +44,7 @@ Read `docs/PRODUCT_EXTERNALIZATION_ARCHITECTURE.md` and `docs/PRODUCT_CONFIGURAT
 1. Inspect `product/`, the architecture document, the product configuration document, `index.html`, shared loaders/renderers, `infra/config.json`, and the active provider's deployment path.
 2. Write a short internal inventory of the current product-owned settings and every required target setting.
 3. Update `product/config.js` coherently. Keep public values public; never add secrets.
-4. Update `product/editorial-config.mjs` with credible, topic-appropriate primary sources and a concise instruction that requires factual, source-grounded stories. Preserve the requirement for exactly four or five stories.
+4. Update `product/editorial-config.mjs` with credible, topic-appropriate primary sources, the intended `priority` or `random` candidate-selection mode, and a concise instruction that requires factual, source-grounded stories. Preserve the requirement for exactly four or five stories.
 5. Update artwork mapping/assets if the new product needs them. Do not leave AI-company matching active for an unrelated topic.
 6. Keep `index.html`, `script.js`, `content-engine/`, and themes generic. If their contract must change, externalize the new product values and document the contract change.
 7. If hosts or OAuth settings changed, follow the existing deployment handoff: `product/config.js` owns the public OAuth ID, while the provider renderer combines it with the selected provider environment's Worker/D1 names, IDs, and CORS origins in a temporary Worker manifest. Do not duplicate any of those values in a checked-in provider manifest.

@@ -12,8 +12,8 @@ D1 is the system of record for published editorial data, authenticated-reader da
 
 | Table | What it stores | Why it exists | Primary access path | Retention / sensitivity |
 |---|---|---|---|---|
-| `editions` | One dated briefing and publication state | Durable parent of a daily briefing; prevents duplicate edition dates | Generation repository writes; public Worker API reads published rows | Editorial data; retained until deliberately changed or removed |
-| `stories` | Four or five ordered stories for an edition | Separates reader-ready stories and attribution from shared briefing copy | Generation repository writes; public Worker API reads through `editions` | Editorial; public only with a published parent |
+| `editions` | One dated briefing and publication state | Durable parent of a daily briefing; prevents duplicate edition dates | Generation repository writes; public Worker API reads published rows; generation history lookup reads published dates | Editorial data; retained until deliberately changed or removed |
+| `stories` | Four or five ordered stories for an edition | Separates reader-ready stories and attribution from shared briefing copy | Generation repository writes; public Worker API reads through `editions`; generation history lookup reads destination URLs from published parents | Editorial; public only with a published parent |
 | `generation_runs` | One parent record per generation attempt | Provides lifecycle status, target date, and a stable investigation `runId` | Automation writes; protected internal API and operators read | Completed rows purged after three days |
 | `generation_run_events` | Ordered safe decision events within one run | Gives a detailed stage-by-stage investigation timeline | Automation writes; protected internal API and operators read | Purged with its completed parent after three days |
 | `user_profiles` | Verified Google identity and reader activity/streak state | Provides durable identity and server-authoritative streaks | Authentication and authenticated edition requests write | Private personal data |
@@ -44,7 +44,7 @@ erDiagram
 
 **Where:** `content-engine/automation/` creates the portable edition object; `infra/cloudflare/content-worker/src/d1-edition-repository.js` persists it. `infra/cloudflare/content-worker/src/index.js` reads it for `GET /api/editions/latest` and `GET /api/editions/YYYY-MM-DD`.
 
-**How:** A successful run inserts the edition and its stories in one D1 batch. The repository sets `published_at` only when automatic publication is configured; otherwise it saves a draft. The API selects the latest published edition on or before the requested date. Deleting an edition cascades to its stories. A `(status, edition_date DESC)` index supports the public lookup.
+**How:** A successful run inserts the edition and its stories in one D1 batch. The repository sets `published_at` only when automatic publication is configured; otherwise it saves a draft. The API selects the latest published edition on or before the requested date. Before a new run selects candidates, the repository uses the `(status, edition_date DESC)` index to find `published` editions in the ten editorial days before the target date; drafts and archived editions are excluded. Deleting an edition cascades to its stories.
 
 ### `stories`
 
@@ -54,7 +54,7 @@ erDiagram
 
 **Where:** Rows belong to `editions.id` through `edition_id`. The D1 repository writes validated generation output; the Worker retrieves ordered rows only after selecting a published parent edition.
 
-**How:** The content engine validates exactly four or five stories before persistence. D1 enforces unique `(edition_id, story_key)` and `(edition_id, position)` values. The Worker reads in ascending position order. `position` is constrained to 1–5; the `(edition_id, position)` index supports retrieval; a parent deletion cascades to child rows.
+**How:** The content engine validates exactly four or five stories before persistence. D1 enforces unique `(edition_id, story_key)` and `(edition_id, position)` values. The Worker reads in ascending position order. For candidate repeat avoidance, the generation repository reads only `destination_url` values joined to `published` parent editions in the prior ten editorial days; portable code canonicalizes those URLs before comparison and receives no reader or operational data. `position` is constrained to 1–5; the `(edition_id, position)` index supports retrieval; a parent deletion cascades to child rows.
 
 ## Generation investigation tables
 
@@ -64,7 +64,7 @@ erDiagram
 
 **Why:** It supplies a stable correlation key and explains skipped, failed, and successful runs. A run is recorded even when an edition already exists or required automation configuration is absent.
 
-**Where:** The portable generation job uses a repository contract; the D1 adapter creates and finalizes the row. Manual `POST /internal/generate` returns its `runId`; beta-only `dryRun: true` requests can create a successful investigation row without changing editorial tables. Protected `GET /internal/generation-runs/:runId` returns the parent run with its detailed events. It is never returned from public reader endpoints.
+**Where:** The portable generation job uses a repository contract; the D1 adapter creates and finalizes the row. Manual `POST /internal/generate` returns its `runId`; beta-only `dryRun: true` requests can create a successful investigation row without changing editorial tables, while beta-only `forceReplace: true` requests can replace an existing edition after validation. Protected `GET /internal/generation-runs/:runId` returns the parent run with its detailed events. It is never returned from public reader endpoints.
 
 **How:** Each attempt first removes expired completed investigation data, creates one `started` row, then updates that same row with terminal status and `finished_at`. `run_id` has a unique partial index. Historical runs created before migration `0011` may have a `NULL` `run_id` and cannot be investigated through the new UUID timeline.
 

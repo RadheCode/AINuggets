@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createRssBlogContentSource,
-  parseBlogFeed,
-  selectDiversifiedCandidates
+  parseBlogFeed
 } from "../adapters/rss-blog-content-source.mjs";
+import { selectDiversifiedCandidates } from "../pipeline/candidate-selection.mjs";
 
 const source = {
   name: "Example",
@@ -79,4 +79,31 @@ test("deduplicates before selecting diverse categories and ranked fallbacks", ()
     "https://example.test/d",
     "https://example.test/e"
   ]);
+});
+
+test("random selection mode preserves category diversity without using feed priorities", () => {
+  const selected = selectDiversifiedCandidates([
+    { canonicalUrl: "https://example.test/a", category: "Models", priority: 100, publishedTimestamp: 0 },
+    { canonicalUrl: "https://example.test/b", category: "Models", priority: 1, publishedTimestamp: 0 },
+    { canonicalUrl: "https://example.test/c", category: "Research", priority: 90, publishedTimestamp: 0 },
+    { canonicalUrl: "https://example.test/d", category: "Business", priority: 80, publishedTimestamp: 0 }
+  ], {
+    count: 3,
+    selectionMode: "random",
+    random: () => 0
+  });
+
+  assert.deepEqual(selected.map((candidate) => candidate.canonicalUrl), [
+    "https://example.test/b",
+    "https://example.test/c",
+    "https://example.test/d"
+  ]);
+  assert.ok(selected.every((candidate) => candidate.rankingScore === null));
+});
+
+test("rejects an unsupported candidate selection mode", () => {
+  assert.throws(
+    () => selectDiversifiedCandidates([], { selectionMode: "unsupported" }),
+    /unsupported candidate selection mode/i
+  );
 });

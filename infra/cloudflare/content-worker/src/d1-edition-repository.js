@@ -6,6 +6,18 @@ export function createD1EditionRepository(db) {
       ).bind(date).first());
     },
 
+    async listPublishedStoryUrls({ startDate, endDate }) {
+      const { results } = await db.prepare(`
+        SELECT stories.destination_url
+        FROM stories
+        JOIN editions ON editions.id = stories.edition_id
+        WHERE editions.status = 'published'
+          AND editions.edition_date >= ?
+          AND editions.edition_date < ?
+      `).bind(startDate, endDate).all();
+      return results.map((story) => story.destination_url);
+    },
+
     async createGenerationRun({ runId, targetDate }) {
       await db.prepare(`
         INSERT INTO generation_runs (run_id, target_date, status)
@@ -63,9 +75,10 @@ export function createD1EditionRepository(db) {
       ]);
     },
 
-    async saveEdition(edition, { status = "draft" } = {}) {
+    async saveEdition(edition, { status = "draft", replaceExisting = false } = {}) {
       if (!["draft", "published"].includes(status)) throw new Error(`Unsupported edition status: ${status}.`);
       const statements = [
+        ...(replaceExisting ? [db.prepare("DELETE FROM editions WHERE edition_date = ?").bind(edition.date)] : []),
         db.prepare(`
           INSERT INTO editions (
             edition_date, status, eyebrow, title, emphasis, summary, meta_json, published_at
