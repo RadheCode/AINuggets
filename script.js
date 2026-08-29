@@ -14,6 +14,9 @@ const streakPillLabel = document.querySelector("#streakPillLabel");
 const signOutButton = document.querySelector("#signOutButton");
 const signInStatus = document.querySelector("#signInStatus");
 const feedbackTab = document.querySelector("#feedbackTab");
+const aboutButton = document.querySelector("#aboutButton");
+const aboutDialog = document.querySelector("#aboutDialog");
+const aboutDialogClose = document.querySelector("#aboutDialogClose");
 const feedbackDialog = document.querySelector("#feedbackDialog");
 const feedbackDialogClose = document.querySelector("#feedbackDialogClose");
 const feedbackForm = document.querySelector("#feedbackForm");
@@ -286,6 +289,37 @@ feedbackDialog.addEventListener("click", (event) => {
 
 feedbackDialog.addEventListener("close", () => {
   feedbackTab.focus();
+});
+
+function setActiveNavigation(activeControl) {
+  document.querySelectorAll(".nav-tabs > *").forEach((control) => {
+    const active = control === activeControl;
+    control.classList.toggle("active", active);
+    if (active) {
+      control.setAttribute("aria-current", "page");
+    } else {
+      control.removeAttribute("aria-current");
+    }
+  });
+}
+
+aboutButton.addEventListener("click", () => {
+  setActiveNavigation(aboutButton);
+  aboutDialog.showModal();
+  aboutDialogClose.focus();
+});
+
+aboutDialogClose.addEventListener("click", () => {
+  aboutDialog.close();
+});
+
+aboutDialog.addEventListener("click", (event) => {
+  if (event.target === aboutDialog) aboutDialog.close();
+});
+
+aboutDialog.addEventListener("close", () => {
+  setActiveNavigation(document.querySelector('.nav-tabs a[href="#today"]'));
+  aboutButton.focus();
 });
 
 feedbackRating.addEventListener("change", updateFeedbackRating);

@@ -16,7 +16,13 @@
     briefingDescription: copy.briefingDescription,
     storyCountLabel: copy.storyCountLabel,
     updateCadenceLabel: copy.updateCadenceLabel,
-    footer: copy.footer
+    footer: copy.footer,
+    aboutLabel: copy.about.label,
+    aboutCloseLabel: copy.about.closeLabel,
+    aboutEyebrow: copy.about.eyebrow,
+    aboutTitle: copy.about.title,
+    aboutDescription: copy.about.description,
+    aboutPromise: copy.about.promise
   };
 
   for (const [id, text] of Object.entries(textTargets)) {

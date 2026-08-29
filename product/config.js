@@ -15,7 +15,15 @@ globalThis.ProductConfig = Object.freeze({
     storyCountLabel: "Five stories",
     updateCadenceLabel: "Updated daily",
     storyGridLabel: "Today's AI stories",
-    footer: "One useful briefing, every day"
+    footer: "One useful briefing, every day",
+    about: Object.freeze({
+      label: "About",
+      closeLabel: "Close about AI Nuggets",
+      eyebrow: "The daily AI briefing",
+      title: "Stay current. Without the catch-up.",
+      description: "AI Nuggets is for busy professionals, students, and curious minds who want to keep up with AI without spending hours in an endless feed.",
+      promise: "Each daily edition has just five essential updates: clear, concise summaries of what matters and why it matters. No crowded feed. No extra pages. Just enough to read in under two minutes and move forward informed."
+    })
   }),
   runtime: Object.freeze({
     sites: Object.freeze({

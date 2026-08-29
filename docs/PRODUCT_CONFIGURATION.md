@@ -8,7 +8,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | Product identity, user-facing framing copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
+| `product/config.js` | Product identity, user-facing framing and About-dialog copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific source and entity artwork matching used by the shared story renderer. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 | `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |

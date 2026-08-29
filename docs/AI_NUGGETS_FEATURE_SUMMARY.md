@@ -9,6 +9,7 @@ The website is a responsive daily briefing experience. Its current identity and 
 | Feature | What it provides |
 |---|---|
 | Daily briefing | Presents a focused daily briefing of four or five selected stories, designed to reduce the need to follow an endless news feed. |
+| About dialog | The header's About control opens an accessible, keyboard-operable modal that explains the product's focused five-story, under-two-minute daily briefing for busy readers. It uses the same dialog surface, motion, close behavior, and responsive sizing as the story and feedback dialogs. |
 | Responsive story grid | Displays stories as fixed, visually distinct tiles with lead and wide layouts. The layout adapts across desktop and mobile breakpoints. |
 | Story detail dialog | Selecting a story opens an accessible modal with its category, title, summary, source link, and previous/next story navigation. |
 | Configurable summary levels | The common product configuration enables Quick take, Overview, and Deep dive by default. Its UI and generation switches are independently configurable: the dialog dynamically renders only available enabled views, while future editions generate and persist only configured summary variants. |
