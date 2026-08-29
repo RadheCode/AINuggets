@@ -4,6 +4,7 @@ export const PRODUCT_EDITORIAL_CONFIG = Object.freeze({
     // "priority" ranks by feed priority and freshness; "random" shuffles candidates before preserving category diversity.
     mode: "random"
   }),
+  // Keep each feed's name aligned with product/company-images.js sourceArtwork. The coverage test requires a valid artwork asset for every feed.
   feeds: Object.freeze([
     { name: "OpenAI", feedUrl: "https://openai.com/news/rss.xml", category: "Models", priority: 100 },
     { name: "VentureBeat AI", feedUrl: "https://venturebeat.com/category/ai/feed/", category: "Business", priority: 85 },

@@ -1,4 +1,42 @@
 (function initializeCompanyImages() {
+  const sourceArtwork = Object.freeze({
+    "OpenAI": "openai",
+    "VentureBeat AI": "business",
+    "Google AI": "google",
+    "TechCrunch AI": "business",
+    "MIT Technology Review AI": "research",
+    "Hugging Face": "hugging-face",
+    "The Verge AI": "business",
+    "IEEE Spectrum AI": "research",
+    "NVIDIA AI": "nvidia",
+    "AWS Machine Learning": "amazon",
+    "The Gradient": "research",
+    "GitHub": "github",
+    "MarkTechPost": "models",
+    "Towards Data Science": "developer-tools",
+    "HackerNoon AI": "creative-ai",
+    "Google DeepMind": "google",
+    "PyTorch": "open-source",
+    "Weights & Biases": "developer-tools",
+    "MLCommons": "infrastructure",
+    "Apple Machine Learning Research": "apple",
+    "Microsoft Semantic Kernel": "microsoft",
+    "Microsoft Research": "microsoft",
+    "Google Research": "google",
+    "MIT News AI": "research",
+    "AI Business": "business",
+    "NVIDIA Technical Blog": "nvidia",
+    "TensorFlow": "google",
+    "fast.ai": "developer-tools",
+    "Oracle AI and Data Science": "oracle",
+    "MIT CSAIL": "research",
+    "Mozilla AI": "research",
+    "ScienceDaily AI": "research",
+    "KDnuggets": "developer-tools",
+    "Berkeley Engineering": "research",
+    "Machine Learning Mastery": "developer-tools"
+  });
+
   const companies = Object.freeze([
     { id: "openai", terms: ["openai", "chatgpt", "gpt-4", "gpt-5", "sora"] },
     { id: "microsoft", terms: ["microsoft", "azure", "copilot", "github copilot"] },
@@ -33,6 +71,11 @@
   }
 
   function findCompanyImage(story) {
+    const sourceArtworkId = sourceArtwork[story.sourceName];
+    if (sourceArtworkId) {
+      const extension = ["business", "creative-ai", "developer-tools", "infrastructure", "models", "open-source", "research"].includes(sourceArtworkId) ? "svg" : "jpg";
+      return { id: sourceArtworkId, image: `product/company-images/${sourceArtworkId}.${extension}` };
+    }
     const text = [story.title, ...Object.values(story.summaries || {})]
       .filter((value) => typeof value === "string")
       .join(" ");
@@ -40,5 +83,5 @@
     return company ? { ...company, image: `product/company-images/${company.id}.jpg` } : null;
   }
 
-  window.ProductCompanyImages = Object.freeze({ findCompanyImage });
+  window.ProductCompanyImages = Object.freeze({ findCompanyImage, sourceArtwork });
 }());

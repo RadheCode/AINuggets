@@ -10,7 +10,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 |---|---|
 | `product/config.js` | Product identity, user-facing framing copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
-| `product/company-images.js` | Product-specific company/entity artwork matching used by the shared story renderer. Replace or remove this mapping when it no longer matches the new topic. |
+| `product/company-images.js` | Product-specific source and entity artwork matching used by the shared story renderer. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 | `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |
 
 ## Rebranding workflow
@@ -18,8 +18,8 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 1. Update identity and copy values in `product/config.js`.
 2. Change `storageNamespace` if the rebranded site must not reuse existing reader color preferences or opaque session tokens.
 3. Update `runtime.sites` and `runtime.contentApiUrls` for the new public frontend and content API hosts.
-4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different entity matching.
-5. Update approved sources, candidate-selection mode, and the generation instruction in `product/editorial-config.mjs`.
+4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different source or entity matching.
+5. Update approved sources, candidate-selection mode, and the generation instruction in `product/editorial-config.mjs`. Add, rename, or remove the matching source artwork entry and asset in the same change; the automation configuration test rejects incomplete coverage.
 6. Update `summaryFeatures` in `product/config.js` when the product offers a different set of summary views or generated detail levels.
 7. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
 
@@ -48,6 +48,12 @@ Both browser code and the portable generation runtime consume the same feature v
 | `random` | Current setting. Ignores feed priority and recency for selection order, shuffles eligible candidates, then still selects one candidate per category before filling remaining places from that shuffled order. |
 
 Retain a numeric `priority` on every feed even when `random` is active so switching back to `priority` needs no feed migration. The mode applies only to the built-in RSS/Atom collector; a custom `CONTENT_SOURCE_URL` controls its own candidate ordering.
+
+## Feed artwork coverage
+
+`product/company-images.js` maps every `PRODUCT_EDITORIAL_CONFIG.feeds[].name` to a local source-artwork asset. The renderer resolves this source mapping before inspecting story text, so selected stories from every approved feed consistently receive their publisher or editorial-category artwork. It uses title and summary entity matching only when no configured source is available.
+
+Treat a feed-list change as an artwork change: add, rename, or remove the corresponding `sourceArtwork` entry and local `.jpg` or `.svg` asset in the same pull request. `generation-provider-configuration.test.mjs` checks that the mapping names exactly equal the configured feed names and that every referenced asset exists.
 
 The public OAuth client ID is intentionally browser-visible. Do not add a client secret to this repository. The Cloudflare Worker deployment reads this value from `product/config.js` when it renders its provider-specific manifest, so do not duplicate it in an infrastructure file.
 

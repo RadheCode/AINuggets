@@ -1,5 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import vm from "node:vm";
 import {
   GENERATION_PROVIDER_CONFIGURATION,
   createGenerationProviderDependencies
@@ -48,4 +52,25 @@ test("uses the centralized product editorial configuration", () => {
   assert.deepEqual(SUMMARY_FEATURE_CONFIG.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180, format: "paragraph" });
   assert.doesNotThrow(() => validateSummaryFeatureConfig(SUMMARY_FEATURE_CONFIG));
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
+});
+
+test("requires every configured feed to have a valid product artwork mapping", () => {
+  const productDirectory = new URL("../../../product/", import.meta.url);
+  const artworkDirectory = fileURLToPath(new URL("company-images/", productDirectory));
+  const script = fs.readFileSync(new URL("company-images.js", productDirectory), "utf8");
+  const context = { window: {} };
+  vm.runInNewContext(script, context, { filename: "product/company-images.js" });
+  const sourceArtwork = context.window.ProductCompanyImages.sourceArtwork;
+
+  assert.deepEqual(
+    Object.keys(sourceArtwork).sort(),
+    PRODUCT_EDITORIAL_CONFIG.feeds.map((feed) => feed.name).sort(),
+    "Feed names and artwork mappings must change together."
+  );
+
+  for (const [sourceName, artworkId] of Object.entries(sourceArtwork)) {
+    const imagePath = path.join(artworkDirectory, `${artworkId}.jpg`);
+    const vectorPath = path.join(artworkDirectory, `${artworkId}.svg`);
+    assert.ok(fs.existsSync(imagePath) || fs.existsSync(vectorPath), `${sourceName} maps to a missing artwork asset: ${artworkId}`);
+  }
 });
