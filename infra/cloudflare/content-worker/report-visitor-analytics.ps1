@@ -24,7 +24,8 @@ if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
 
 function Invoke-D1ReadQuery {
   param([string]$DatabaseName, [string]$WorkerConfig, [string]$Query)
-  $output = & npx --yes wrangler@latest d1 execute $DatabaseName --remote --config $WorkerConfig --json --command $Query 2>&1 | Out-String
+  $singleLineQuery = (($Query -replace "[\r\n]+", " ") -replace "\s{2,}", " ").Trim()
+  $output = & npx --yes wrangler@latest d1 execute $DatabaseName --remote --config $WorkerConfig --json --command $singleLineQuery 2>&1 | Out-String
   if ($LASTEXITCODE -ne 0) { throw "The D1 read-only query failed: $output" }
   $response = $output | ConvertFrom-Json
   if (-not $response[0].success) { throw "D1 did not report a successful query." }
@@ -62,7 +63,7 @@ try {
   $analyticsTable = Invoke-D1ReadQuery -DatabaseName $databaseName -WorkerConfig $temporaryConfig -Query "SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'visitor_visits';"
   if ($analyticsTable.Count -eq 0) { throw "The $Environment database does not have the visitor analytics schema. Apply migration 0012_add_visitor_analytics.sql to $Environment before running this report." }
 
-  $analyticsQuery = @"
+  $analyticsQuery = @'
 WITH current_ist AS (
   SELECT datetime('now', '+5 hours', '+30 minutes') AS value
 ), periods AS (
@@ -78,9 +79,9 @@ FROM periods AS p
 LEFT JOIN visitor_visits AS v ON v.occurred_at >= datetime(p.start_date, '-5 hours', '-30 minutes') AND v.occurred_at < datetime(p.end_date, '-5 hours', '-30 minutes')
 GROUP BY p.period, p.start_date, p.end_date
 ORDER BY CASE p.period WHEN 'Day' THEN 1 WHEN 'Week' THEN 2 ELSE 3 END;
-"@
+'@
   [object[]]$analytics = @(Invoke-D1ReadQuery -DatabaseName $databaseName -WorkerConfig $temporaryConfig -Query $analyticsQuery)
-  $countryQuery = @"
+  $countryQuery = @'
 WITH current_ist AS (
   SELECT datetime('now', '+5 hours', '+30 minutes') AS value
 ), periods AS (
@@ -95,7 +96,7 @@ JOIN visitor_visits AS v ON v.occurred_at >= datetime(p.start_date, '-5 hours', 
 WHERE v.country_code <> 'unknown'
 GROUP BY p.period, v.country_code, v.country_name
 ORDER BY CASE p.period WHEN 'Day' THEN 1 WHEN 'Week' THEN 2 ELSE 3 END, page_visits DESC, country ASC;
-"@
+'@
   [object[]]$countries = @(Invoke-D1ReadQuery -DatabaseName $databaseName -WorkerConfig $temporaryConfig -Query $countryQuery)
   Write-Output "# Visitor analytics: $Environment"
   Write-Output ""
