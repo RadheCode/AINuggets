@@ -87,6 +87,54 @@ function bearerToken(request) {
   return authorization.startsWith("Bearer ") ? authorization.slice(7) : null;
 }
 
+function isAutomationRequestAuthorized(request, env) {
+  return Boolean(env.AUTOMATION_TRIGGER_TOKEN)
+    && request.headers.get("authorization") === `Bearer ${env.AUTOMATION_TRIGGER_TOKEN}`;
+}
+
+async function getGenerationRun(db, runId) {
+  const run = await db.prepare(`
+    SELECT run_id, target_date, status, details, started_at, finished_at
+    FROM generation_runs
+    WHERE run_id = ?
+    LIMIT 1
+  `).bind(runId).first();
+  if (!run) return null;
+
+  const { results: events } = await db.prepare(`
+    SELECT sequence, stage, event_name, outcome, duration_ms, metadata_json, created_at
+    FROM generation_run_events
+    WHERE run_id = ?
+    ORDER BY sequence ASC
+  `).bind(runId).all();
+
+  return {
+    run: {
+      id: run.run_id,
+      targetDate: run.target_date,
+      status: run.status,
+      details: run.details,
+      startedAt: run.started_at,
+      finishedAt: run.finished_at
+    },
+    events: events.map((event) => ({
+      sequence: event.sequence,
+      step: event.stage,
+      event: event.event_name,
+      outcome: event.outcome,
+      durationMs: event.duration_ms,
+      occurredAt: event.created_at,
+      details: JSON.parse(event.metadata_json)
+    }))
+  };
+}
+
+async function handleGenerationRunRequest(request, env, runId) {
+  if (!isAutomationRequestAuthorized(request, env)) return json({ error: "Unauthorized." }, 401);
+  const result = await getGenerationRun(env.CONTENT_DB, runId);
+  return result ? json(result) : json({ error: "Generation run not found." }, 404);
+}
+
 async function sessionUser(request, env) {
   const token = bearerToken(request);
   if (!token || token.length > 512) return null;
@@ -219,59 +267,18 @@ async function handleAutomationRequest(request, env) {
     return json({ error: "Request body must be valid JSON." }, 400);
   }
 
-  function isAutomationRequestAuthorized(request, env) {
-    return Boolean(env.AUTOMATION_TRIGGER_TOKEN)
-      && request.headers.get("authorization") === `Bearer ${env.AUTOMATION_TRIGGER_TOKEN}`;
-  }
-
-  async function getGenerationRun(db, runId) {
-    const run = await db.prepare(`
-      SELECT run_id, target_date, status, details, started_at, finished_at
-      FROM generation_runs
-      WHERE run_id = ?
-      LIMIT 1
-    `).bind(runId).first();
-    if (!run) return null;
-
-    const { results: events } = await db.prepare(`
-      SELECT sequence, stage, event_name, outcome, duration_ms, metadata_json, created_at
-      FROM generation_run_events
-      WHERE run_id = ?
-      ORDER BY sequence ASC
-    `).bind(runId).all();
-
-    return {
-      run: {
-        id: run.run_id,
-        targetDate: run.target_date,
-        status: run.status,
-        details: run.details,
-        startedAt: run.started_at,
-        finishedAt: run.finished_at
-      },
-      events: events.map((event) => ({
-        sequence: event.sequence,
-        step: event.stage,
-        event: event.event_name,
-        outcome: event.outcome,
-        durationMs: event.duration_ms,
-        occurredAt: event.created_at,
-        details: JSON.parse(event.metadata_json)
-      }))
-    };
-  }
-
-  async function handleGenerationRunRequest(request, env, runId) {
-    if (!isAutomationRequestAuthorized(request, env)) return json({ error: "Unauthorized." }, 401);
-    const result = await getGenerationRun(env.CONTENT_DB, runId);
-    return result ? json(result) : json({ error: "Generation run not found." }, 404);
-  }
-
   const targetDate = body.targetDate || editorialDate();
   if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid target date." }, 400);
+  if (body.dryRun !== undefined && typeof body.dryRun !== "boolean") {
+    return json({ error: "dryRun must be a boolean when provided." }, 400);
+  }
+  if (body.dryRun && env.DEPLOYMENT_ENVIRONMENT !== "beta") {
+    return json({ error: "Dry runs are available only in beta." }, 403);
+  }
 
   const result = await generateDailyEdition({
     targetDate,
+    dryRun: body.dryRun === true,
     ...createAutomationDependencies(env)
   });
   return json(result, 200);

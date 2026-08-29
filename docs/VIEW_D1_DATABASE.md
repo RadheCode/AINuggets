@@ -142,7 +142,7 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --command "SELECT run_id, target_date, status, details, started_at, finished_at FROM generation_runs WHERE target_date = '<YYYY-MM-DD>' ORDER BY started_at DESC;"
 ```
 
-The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
+The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. On beta only, an authorized caller may send `{ "targetDate": "YYYY-MM-DD", "dryRun": true }` to exercise collection, generation, and validation for an existing edition without changing `editions` or `stories`. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
 
 ### Unified detailed view for one generation run
 

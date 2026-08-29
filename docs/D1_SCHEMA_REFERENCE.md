@@ -62,7 +62,7 @@ erDiagram
 
 **Why:** It supplies a stable correlation key and explains skipped, failed, and successful runs. A run is recorded even when an edition already exists or required automation configuration is absent.
 
-**Where:** The portable generation job uses a repository contract; the D1 adapter creates and finalizes the row. Manual `POST /internal/generate` returns its `runId`; protected `GET /internal/generation-runs/:runId` returns the parent run with its detailed events. It is never returned from public reader endpoints.
+**Where:** The portable generation job uses a repository contract; the D1 adapter creates and finalizes the row. Manual `POST /internal/generate` returns its `runId`; beta-only `dryRun: true` requests can create a successful investigation row without changing editorial tables. Protected `GET /internal/generation-runs/:runId` returns the parent run with its detailed events. It is never returned from public reader endpoints.
 
 **How:** Each attempt first removes expired completed investigation data, creates one `started` row, then updates that same row with terminal status and `finished_at`. `run_id` has a unique partial index. Historical runs created before migration `0011` may have a `NULL` `run_id` and cannot be investigated through the new UUID timeline.
 
@@ -72,7 +72,7 @@ erDiagram
 
 **What:** An ordered safe event inside a `run_id`: `sequence`, `stage`, `event_name`, `outcome` (`info`, `succeeded`, `skipped`, or `failed`), optional `duration_ms`, JSON metadata, and timestamp.
 
-**Why:** It provides precise evidence of eligibility, source collection, candidate selection, summary-provider metadata, validation, persistence, and terminal decisions instead of only a final status.
+**Why:** It provides precise evidence of eligibility, source collection, candidate selection, summary-provider metadata, validation, persistence, and terminal decisions instead of only a final status. A beta dry run records its explicit existing-edition bypass and persistence suppression, so it cannot be mistaken for a saved edition.
 
 **Where:** Events originate in the injected portable logger at `content-engine/automation/pipeline/generation-event-logger.mjs`; `d1-edition-repository.js` stores them. Operators read them through the protected internal endpoint or the unified query in [Viewing the D1 Database](VIEW_D1_DATABASE.md#unified-detailed-view-for-one-generation-run).
 

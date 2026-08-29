@@ -50,6 +50,27 @@ test("skips an existing edition", async () => {
   assert.equal(repository.runs[0].status, "skipped");
 });
 
+test("runs a dry run for an existing edition without overwriting it", async () => {
+  const original = edition();
+  const repository = createMemoryEditionRepository([original]);
+  const result = await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [{ async fetchCandidates() { return [{ url: "https://example.com/a" }]; } }],
+    summaryProvider: { async generateEdition() { return edition(); } },
+    dryRun: true,
+    logger: {}
+  });
+
+  assert.equal(result.status, "succeeded");
+  assert.equal(result.dryRun, true);
+  assert.equal(repository.editions.size, 1);
+  assert.strictEqual(repository.editions.get(targetDate), original);
+  assert.equal(repository.runs[0].status, "succeeded");
+  assert.ok(repository.events.some((event) => event.event === "existing-edition-bypassed-for-dry-run"));
+  assert.ok(repository.events.some((event) => event.event === "edition-save-skipped" && event.outcome === "skipped"));
+});
+
 test("skips safely when providers are absent", async () => {
   const repository = createMemoryEditionRepository();
   const result = await generateDailyEdition({ targetDate, editionRepository: repository });

@@ -50,6 +50,7 @@ $replacements = @{
   "__CONTENT_ENGINE_CRON__" = $schedule.cron
   "__ALLOWED_ORIGINS__" = $allowedOrigins
   "__GOOGLE_CLIENT_ID__" = $googleClientId.Trim()
+  "__DEPLOYMENT_ENVIRONMENT__" = $environmentKey
 }
 
 $workerConfigContent = Get-Content $workerConfig -Raw

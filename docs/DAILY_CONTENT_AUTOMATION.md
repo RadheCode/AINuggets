@@ -140,6 +140,7 @@ Steps 1-10 are the generation pipeline. Steps 11-12 are the separate public deli
 | `GET /health` | Reports Worker availability |
 | `GET /api/editions/latest` | Returns the newest published edition up to today's editorial date |
 | `GET /api/editions/YYYY-MM-DD` | Returns the newest published edition on or before the requested date |
+| `POST /internal/generate` | Protected manual generation. Accepts `targetDate`; beta also accepts `dryRun: true` to execute generation without saving an edition. |
 | `GET /internal/generation-runs/:runId` | Protected unified run details, including the parent run and every ordered event |
 
 Draft and archived editions are never returned. Responses are cacheable at Cloudflare's edge. Browser access is restricted to origins configured in `ALLOWED_ORIGINS`. The internal generation-run endpoint is not a browser API: it requires `Authorization: Bearer <AUTOMATION_TRIGGER_TOKEN>` and returns `401` when unavailable or unauthorized.
@@ -168,11 +169,21 @@ The response contains `run` (identity, target date, status, timestamps, and term
 
 The frontend endpoint is committed in `product/config.js`. The public Worker URL and D1 identifiers are not secrets. OAuth tokens and provider API keys must never be committed.
 
+### Beta dry run for an existing edition
+
+An ordinary run remains idempotent: if an edition already exists for its target date, it records a skipped run and performs no collection or generation. To investigate a complete pipeline safely on beta, the protected manual endpoint additionally accepts `dryRun: true`:
+
+```json
+{ "targetDate": "YYYY-MM-DD", "dryRun": true }
+```
+
+This beta-only option permits an existing edition during eligibility, then executes source collection, candidate selection, provider generation, and validation normally. It records `existing-edition-bypassed-for-dry-run` when applicable and ends with `edition-save-skipped`; it never inserts, updates, publishes, or overwrites `editions` or `stories`. The resulting successful response includes `runId`, which can be used with the unified timeline endpoint or query. Production rejects `dryRun: true`.
+
 ## Daily scheduled algorithm
 
 1. A scheduler invokes the portable runner at the UTC Cron time in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `0 12 * * *` (12:00 UTC).
 2. The runner calculates the target date in UTC. There is no separate editorial timezone setting.
-3. It checks D1 for an existing edition on that date and exits idempotently if one exists.
+3. It checks D1 for an existing edition on that date and exits idempotently if one exists. A protected beta-only dry run may proceed through validation but never persists an edition.
 4. It reads the editable product feed list in `product/editorial-config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.
 5. It removes duplicate candidates using normalized `canonicalUrl` or `url`, ranks remaining posts by source priority and freshness, and selects five candidates. It first takes one per category, then fills any remaining positions by rank.
 6. The summary provider selects four or five stories from those candidates, each supported by source metadata.
