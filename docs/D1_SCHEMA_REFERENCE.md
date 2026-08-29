@@ -20,6 +20,7 @@ D1 is the system of record for published editorial data, authenticated-reader da
 | `user_sessions` | Hashes of opaque session tokens and expiry times | Restores and revokes sign-in without storing usable tokens | Authentication creates; authorization reads; sign-out deletes | Security-sensitive hash; expires after 30 days |
 | `user_daily_activity` | One qualifying UTC activity day per reader | Makes streak calculation idempotent and auditable | Authentication and authenticated edition requests write | Private activity history |
 | `reader_feedback` | Reader email, rating, optional linked profile, and message | Preserves feedback for editorial and product review | Feedback endpoint writes; authorized operators query | Private contact data and free text |
+| `visitor_visits` | One anonymous page-visit event with an edge-derived country code and name | Supplies privacy-minimal visitor, country, and visit counts | Analytics endpoint writes; authorized operators run aggregate reports | Private pseudonymous analytics; raw events retained for 90 days |
 
 ## Relationships
 
@@ -30,6 +31,7 @@ erDiagram
   user_profiles ||--o{ user_daily_activity : records
   user_profiles o|--o{ reader_feedback : optionally_submits
   generation_runs ||--o{ generation_run_events : correlates_by_run_id
+  visitor_visits }o--|| visitor_hash : groups_by_hash
 ```
 
 `stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `reader_feedback.user_id` is optional: anonymous readers may submit feedback, and deleting a profile retains feedback while setting its link to `NULL`. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier.
@@ -129,3 +131,17 @@ erDiagram
 **How:** The Worker normalizes and validates email, accepts whole-star ratings as 2, 4, 6, 8, or 10 half-star units, and accepts 20–4,000 character messages. D1 independently constrains ratings to 1–10 and message length to 20–4,000 characters. `created_at` and `user_id` indexes support review. Profile deletion sets `user_id` to `NULL` while retaining feedback.
 
 **Privacy:** Feedback contains contact data and unstructured reader text. Never expose it publicly, add it to generation logs, or include it in beta editorial syncs.
+
+## Visitor analytics table
+
+### `visitor_visits`
+
+**What:** One page-visit event with a unique random `event_id`, a SHA-256 `visitor_hash` derived from a browser-local random identifier, an ISO 3166-1 alpha-2 `country_code`, its English `country_name`, and `occurred_at`. Unavailable country metadata is represented as `unknown` / `Unknown`.
+
+**Why:** It provides daily, Monday-based weekly, and monthly counts for unique visitors, unique countries, and page visits without storing IP addresses, precise locations, browser fingerprints, user-agent strings, referrers, or authenticated profile links.
+
+**Where:** `script.js` creates and retains one opaque first-party browser identifier and sends one best-effort event when either public page loads. `POST /api/analytics/visits` in `infra/cloudflare/content-worker/src/index.js` validates both random IDs, hashes the visitor ID, obtains the country only from Cloudflare edge request metadata, resolves its English display name server-side, and stores both values. `report-visitor-analytics.ps1` is the private operator reporting path.
+
+**How:** The browser sends a distinct random event ID per page load, and the primary key makes retried events idempotent. The Worker accepts requests only from an allowed configured origin. Three indexes support time-period, unique-visitor, and country aggregation. The reporting script converts current day, week, and month boundaries to explicitly labeled IST, excludes `unknown` from the unique-country metric while retaining those visits in visitor and page-view totals, and lists resolved country names with their codes in an aggregate breakdown.
+
+**Retention and privacy:** On every accepted analytics request, the Worker deletes raw events older than 90 days. `visitor_hash` is pseudonymous private analytics data, not an account identifier: it is never joined to `user_profiles`, returned by a public endpoint, copied by editorial synchronization, or exposed by the aggregate report.

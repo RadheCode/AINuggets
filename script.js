@@ -35,6 +35,24 @@ let googleIdentityInitialized = false;
 let authState = "initializing";
 let currentUser = null;
 
+function createOpaqueId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const value = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+}
+
+function visitorId() {
+  const key = `${storageNamespace}-visitor-id`;
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+  const value = createOpaqueId();
+  localStorage.setItem(key, value);
+  return value;
+}
+
 function displayName(user) {
   return user.name || user.email;
 }
@@ -117,6 +135,15 @@ function authApiUrl(path) {
     ? contentRuntime.contentApiUrls.production
     : contentRuntime.contentApiUrls.beta;
   return `${apiBaseUrl.replace(/\/$/, "")}${path}`;
+}
+
+function recordVisit() {
+  fetch(authApiUrl("/api/analytics/visits"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ eventId: createOpaqueId(), visitorId: visitorId() }),
+    keepalive: true
+  }).catch(() => undefined);
 }
 
 async function authRequest(path, options = {}) {
@@ -266,6 +293,7 @@ async function restoreSession() {
 renderAuthWidget("initializing");
 initializeGoogleSignIn();
 restoreSession();
+recordVisit();
 
 feedbackTab.addEventListener("click", () => {
   feedbackMessageStatus.textContent = "";

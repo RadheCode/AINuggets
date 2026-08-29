@@ -224,6 +224,20 @@ ORDER BY created_at DESC, id DESC;
 
 The report preserves every returned row in that order. It creates a missing destination directory but refuses to overwrite an existing file. If the selected database has not received `0009_add_reader_feedback.sql`, it reports the missing schema without applying a migration.
 
+### Report current visitor analytics
+
+Visitor analytics is private pseudonymous data, not reader-profile data. It records an opaque browser identifier only as a one-way hash, an edge-derived country code with a readable English country name, and a timestamp; it does not store IP addresses, precise locations, referrers, user agents, or browser fingerprints. Use the repository-local report to get current IST daily, Monday-based weekly, and monthly totals for unique visitors, unique countries, and page visits:
+
+```powershell
+.\infra\cloudflare\content-worker\report-visitor-analytics.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-beta-visitor-analytics.md"
+```
+
+The report executes only aggregate `SELECT` queries, displays period boundaries as explicitly labeled IST, excludes `unknown` country codes only from the unique-country total, and includes a readable country-name/code breakdown with aggregate visits and unique visitors. It never displays hashes or individual visit records. It requires migration `0012_add_visitor_analytics.sql` in the selected environment. Raw events expire after 90 days; replace `Beta` with `Production` only when production inspection is explicitly intended.
+
+Use the repository-local [Visitor Analytics Table skill](../.github/skills/visitor-analytics-table/SKILL.md) when you want this report presented directly as neat Markdown tables for **Beta**, **Production**, or **both**. It runs each requested environment independently and keeps their totals separate.
+
 View user login and refresh activity:
 
 ```powershell

@@ -227,6 +227,50 @@ function validFeedbackEmail(email) {
     && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function isOpaqueId(value) {
+  return typeof value === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function analyticsCountry(request) {
+  const country = request.cf?.country;
+  if (typeof country !== "string" || !/^[A-Z]{2}$/.test(country)) {
+    return { code: "unknown", name: "Unknown" };
+  }
+  return {
+    code: country,
+    name: new Intl.DisplayNames(["en"], { type: "region" }).of(country) || country
+  };
+}
+
+async function recordVisit(request, env, cors) {
+  if (!cors["access-control-allow-origin"]) return json({ error: "Origin is not allowed." }, 403);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400, cors);
+  }
+
+  if (!isOpaqueId(body.eventId) || !isOpaqueId(body.visitorId)) {
+    return json({ error: "Visitor event is invalid." }, 400, cors);
+  }
+
+  const visitorHash = await hashToken(body.visitorId);
+  const country = analyticsCountry(request);
+  await env.CONTENT_DB.prepare(`
+    DELETE FROM visitor_visits
+    WHERE occurred_at < datetime('now', '-90 days')
+  `).run();
+  await env.CONTENT_DB.prepare(`
+    INSERT INTO visitor_visits (event_id, visitor_hash, country_code, country_name)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(event_id) DO NOTHING
+  `).bind(body.eventId, visitorHash, country.code, country.name).run();
+  return new Response(null, { status: 204, headers: cors });
+}
+
 async function submitFeedback(request, env, cors) {
   let body;
   try {
@@ -375,6 +419,7 @@ async function handleRequest(request, env) {
   if (request.method === "POST" && url.pathname === "/auth/google") return createSession(request, env, cors);
   if (request.method === "POST" && url.pathname === "/auth/sign-out") return signOut(request, env, cors);
   if (request.method === "POST" && url.pathname === "/api/feedback") return submitFeedback(request, env, cors);
+  if (request.method === "POST" && url.pathname === "/api/analytics/visits") return recordVisit(request, env, cors);
   if (request.method === "GET" && url.pathname === "/auth/session") {
     const user = await sessionUser(request, env);
     return user ? json(userResponse(user), 200, cors) : json({ error: "Unauthenticated." }, 401, cors);
