@@ -18,7 +18,7 @@ The included runtime adapters accept a generic HTTPS JSON candidate endpoint and
 
 The active design is selected in `theme.config.js`. Change `activeTheme` to the key of any registered theme to switch the site-wide presentation.
 
-The current baseline is `glass-bento`, stored in `themes/glass-bento/`. See [Theme rulebook](THEME_RULEBOOK.md) before adding or changing a theme.
+The current baseline is `glass-bento`, stored in `themes/glass-bento/`. See the [Design system](DESIGN_SYSTEM.md) before making any design change, and the [Theme rulebook](THEME_RULEBOOK.md) before adding or changing a theme.
 
 ### UI change checklist
 

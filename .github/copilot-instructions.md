@@ -45,6 +45,7 @@ These instructions are mandatory for AI-assisted changes in this repository.
 - Do not add theme-specific HTML unless the shared page contract is intentionally revised for every theme.
 - Reuse the established shared component shell for every new dialog, panel, or overlay. A new dialog may add feature-specific content and controls, but it must inherit the canonical dialog's surface, elevation, backdrop, animation, spacing, responsive sizing, and scrolling behavior; do not create a visually independent modal unless the shared dialog contract is intentionally revised and documented.
 - Follow the complete contract in `docs/THEME_RULEBOOK.md` whenever creating or editing a theme.
+- Refer to and follow `docs/DESIGN_SYSTEM.md` before making any design, visual, layout, component, interaction, responsive, accessibility, or theme change. Update it with any change to the shared visual language, component contract, token semantics, or design workflow.
 
 ## Stable shared selectors
 
