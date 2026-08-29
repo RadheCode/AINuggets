@@ -15,7 +15,7 @@ globalThis.ProductConfig = Object.freeze({
     storyCountLabel: "Five stories",
     updateCadenceLabel: "Updated daily",
     storyGridLabel: "Today's AI stories",
-    footer: "One useful briefing, every weekday."
+    footer: "One useful briefing, every day"
   }),
   runtime: Object.freeze({
     sites: Object.freeze({

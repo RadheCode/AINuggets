@@ -4,8 +4,8 @@ import { PRODUCT_EDITORIAL_CONFIG } from "../product/editorial-config.mjs";
 // publication mode, or approved RSS/Atom feeds.
 export const CONTENT_ENGINE_CONFIG = Object.freeze({
   schedule: Object.freeze({
-    // Cloudflare Cron and editorial dates use UTC. 12:00 UTC serves all regions consistently.
-    cron: "0 12 * * *"
+    // 05:00 and 17:00 IST, expressed in UTC for Cloudflare Cron.
+    cron: "30 11,23 * * *"
   }),
   publication: Object.freeze({
     // Validated editions publish immediately; set false to require editorial review.

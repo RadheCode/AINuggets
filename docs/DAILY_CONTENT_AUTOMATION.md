@@ -225,7 +225,7 @@ This beta-only option permits an existing edition during eligibility, then execu
 
 ## Daily scheduled algorithm
 
-1. A scheduler invokes the portable runner at the UTC Cron time in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `0 12 * * *` (12:00 UTC).
+1. A scheduler invokes the portable runner at the UTC Cron times in `content-engine/content-engine.config.mjs`. Cloudflare's deployment script derives its trigger from this central setting; the default is `30 11,23 * * *`, which runs at 5:00 AM and 5:00 PM IST (11:30 and 23:30 UTC).
 2. The runner calculates the target date in UTC. There is no separate editorial timezone setting.
 3. It checks D1 for an existing edition on that date and exits idempotently if one exists. A protected beta-only dry run may proceed through validation but never persists an edition.
 4. It reads the editable product feed list in `product/editorial-config.mjs` and fetches up to three recent posts from each RSS/Atom feed. A custom JSON source may replace this collector when configured.

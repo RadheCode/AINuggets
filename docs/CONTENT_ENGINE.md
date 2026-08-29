@@ -158,7 +158,7 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 
 | Setting | Purpose | Change effect |
 |---|---|---|
-| `schedule.cron` | Daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 12 * * *` runs at 12:00 UTC. | Worker deployment applies the new trigger. |
+| `schedule.cron` | Twice-daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `30 11,23 * * *` runs at 5:00 AM and 5:00 PM IST (11:30 and 23:30 UTC). | Worker deployment applies the new trigger. |
 | `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 

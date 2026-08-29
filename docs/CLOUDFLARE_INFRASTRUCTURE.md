@@ -85,7 +85,7 @@ The content backend is defined in `content-worker/`. D1 is the source of truth f
 | Worker URL | `https://beta-ai-nuggets-content.ainuggets123.workers.dev` |
 | D1 database | `beta-ai-nuggets-content` |
 | D1 binding | `CONTENT_DB` |
-| Cron Trigger | `0 12 * * *` (12:00 UTC) |
+| Cron Trigger | `30 11,23 * * *` (5:00 AM and 5:00 PM IST; 11:30 and 23:30 UTC) |
 
 Deploy the backend separately from Pages:
 

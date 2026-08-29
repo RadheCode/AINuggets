@@ -30,7 +30,7 @@ The website is a responsive daily briefing experience. Its current identity and 
 |---|---|
 | Cloudflare D1 content store | Stores dated editions, ordered stories, publication status, source metadata, and generation-run audit records in a dedicated database. |
 | Public content API | Serves only published editions through latest-edition and date-specific endpoints, with health reporting, edge-cacheable responses, and configured browser-origin restrictions. |
-| Daily scheduled generation | Runs a scheduler-neutral job on a UTC schedule. It can be invoked by Cloudflare Cron, GitHub Actions, container schedulers, or operating-system cron. |
+| Twice-daily scheduled generation | Runs a scheduler-neutral job at 5:00 AM and 5:00 PM IST (11:30 and 23:30 UTC). It can be invoked by Cloudflare Cron, GitHub Actions, container schedulers, or operating-system cron. |
 | RSS/Atom source collection | Collects recent articles from an editable approved feed list, with a custom HTTPS JSON candidate source available as an optional replacement. |
 | Candidate selection | Normalizes URLs, removes duplicates, excludes canonical URLs used by published editions in the prior ten editorial days, and prefers category diversity when selecting exactly five candidates. Product editorial configuration switches the built-in collector between priority-and-freshness ranking and randomized candidate ordering without removing per-feed priority values; fewer than five eligible candidates fails before model generation. |
 | Provider-powered summarization | Uses an OpenAI-compatible Chat Completions provider to produce structured original summaries for the product-configured generated detail levels. |
