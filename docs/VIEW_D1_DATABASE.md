@@ -88,14 +88,16 @@ Run commands from the repository root. Authenticate first if needed:
 .\infra\cloudflare\login.ps1
 ```
 
-Render a production manifest from the authoritative Cloudflare configuration, then use it for read-only database commands:
+Render an environment-specific manifest from the authoritative Cloudflare configuration, then use it for read-only database commands. Use `Beta` for the beta database or `Production` for production:
 
 ```powershell
 $workerConfig = Join-Path (Resolve-Path ".\infra\cloudflare\content-worker") "wrangler.inspect.generated.jsonc"
-.\infra\cloudflare\content-worker\render-worker-config.ps1 -Environment Production -OutputPath $workerConfig
+.\infra\cloudflare\content-worker\render-worker-config.ps1 -Environment Beta -OutputPath $workerConfig
 ```
 
-List the tables in the production database:
+The examples below use the production database name. Replace `ai-nuggets-content` with `beta-ai-nuggets-content` when the rendered manifest is for beta.
+
+List the tables in the selected database:
 
 ```powershell
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
@@ -163,6 +165,18 @@ Invoke-RestMethod "https://<content-worker>/internal/generation-runs/<runId>" -H
 ```
 
 Generation-run data is retained for three days. Each new generation attempt purges completed expired child events before their parent run rows. The logs deliberately exclude credentials, request headers, raw article/feed content, complete prompts, and raw model responses.
+
+### Inspect the latest run automatically
+
+Use the repository-local [Generation Run Investigation skill](../.github/skills/generation-run-investigation/SKILL.md) when you want the newest retained beta or production run without first finding its `runId`. It resolves the latest UUID run, executes the unified event query, and presents every ordered stage and its safe inner metadata. The underlying read-only command is:
+
+```powershell
+.\infra\cloudflare\content-worker\investigate-latest-generation-run.ps1 -Environment Beta
+```
+
+Replace `Beta` with `Production` only when you intend to inspect production. The command selects the correct database from `infra/cloudflare/config.json`, creates a temporary manifest, uses only remote `SELECT` queries, and deletes the temporary manifest after completion.
+
+The detailed timeline requires migration `0011_add_generation_run_events.sql` in the selected database. If the selected environment has not received that migration, the command reports the missing timeline schema rather than running incomplete legacy queries. Deploy schema changes to beta first and only change production with explicit approval.
 
 View user login and refresh activity:
 
