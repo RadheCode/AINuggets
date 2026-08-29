@@ -199,6 +199,31 @@ Replace `Beta` with `Production` only when you intend to inspect production. The
 
 The detailed timeline requires migration `0011_add_generation_run_events.sql` in the selected database. If the selected environment has not received that migration, the command reports the missing timeline schema rather than running incomplete legacy queries. Deploy schema changes to beta first and only change production with explicit approval.
 
+### Export all reader feedback
+
+Reader feedback includes contact data and free-text submissions. It has no public API endpoint and must remain within approved operator channels. Use the repository-local [Reader Feedback Table skill](../.github/skills/reader-feedback-table/SKILL.md) to retrieve every submission from one environment as a Markdown table with explicitly labeled IST timestamps:
+
+```powershell
+.\infra\cloudflare\content-worker\export-reader-feedback.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-beta-reader-feedback.md"
+```
+
+Replace `Beta` with `Production` only when production inspection is explicitly intended. The exporter resolves the selected database from `infra/cloudflare/config.json`, creates a temporary manifest, executes only this remote `SELECT` query, and removes the manifest even if it fails:
+
+```sql
+SELECT
+  id,
+  email,
+  rating_halves / 2.0 AS rating,
+  message,
+  datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS submitted_at_ist
+FROM reader_feedback
+ORDER BY created_at DESC, id DESC;
+```
+
+The report preserves every returned row in that order. It creates a missing destination directory but refuses to overwrite an existing file. If the selected database has not received `0009_add_reader_feedback.sql`, it reports the missing schema without applying a migration.
+
 View user login and refresh activity:
 
 ```powershell

@@ -313,6 +313,7 @@ feedbackForm.addEventListener("submit", async (event) => {
     feedbackForm.reset();
     updateFeedbackEmail();
     updateFeedbackRating();
+    feedbackDialog.close();
   } catch (error) {
     feedbackMessageStatus.textContent = error.message;
   } finally {
