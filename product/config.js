@@ -18,7 +18,7 @@ globalThis.ProductConfig = Object.freeze({
     footer: "One useful briefing, every day",
     loginLabel: "Login",
     loginMenuTitle: "Welcome back",
-    loginMenuDescription: "Sign in to save your reading streak and send feedback.",
+    loginMenuDescription: "Sign in to save your reading streak.",
     continueWithGoogleLabel: "Continue with Google",
     about: Object.freeze({
       label: "About",

@@ -184,7 +184,7 @@ button, input { font: inherit; }
 .sign-out-button:not(:disabled):hover { transform: translateY(-2px); }
 .login-menu-toggle:focus-visible,
 .account-menu-toggle:focus-visible,
-.sign-out-button:focus-visible { outline: 3px solid #101326; outline-offset: 2px; }
+.sign-out-button:focus-visible { outline: 3px solid #637cf0; outline-offset: 2px; }
 .login-menu-toggle.is-open { transform: none; }
 .login-menu { position: absolute; z-index: 10; top: calc(100% + 8px); right: 0; width: min(300px, calc(100vw - 28px)); padding: 20px; border: 1px solid #dfe3eb; border-radius: 10px; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16); }
 .login-menu__title { margin: 0; color: #111827; font-size: 1rem; font-weight: 700; }
@@ -194,7 +194,7 @@ button, input { font: inherit; }
 .google-sign-in-target { position: absolute; inset: 0; z-index: 1; opacity: 0.01; }
 .google-sign-in-target > div { height: 100%; }
 .google-sign-in-target [role="button"] { width: 100% !important; height: 100%; }
-.sign-in-control:focus-within .google-sign-in-button { outline: 3px solid #101326; outline-offset: 2px; }
+.sign-in-control:focus-within .google-sign-in-button { outline: 0; }
 .account-menu-toggle { max-width: 180px; min-height: 34px; gap: 7px; padding: 5px 10px 5px 5px; border-radius: 999px; color: #26324f; background: rgba(255, 255, 255, 0.52); backdrop-filter: blur(14px); text-transform: none; }
 .account-avatar { display: grid; width: 23px; flex: 0 0 auto; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #6d87eb, #4355bd); font-size: 0.65rem; font-weight: 800; }
 .account-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.7rem; }
@@ -1105,4 +1105,39 @@ main::before { display: none; }
   color: var(--blue-deep);
   background: var(--surface);
   box-shadow: 5px 5px 10px var(--tile-shadow), -4px -4px 9px var(--tile-highlight);
+}
+
+/* Authentication popovers stay fully opaque so their actions remain distinct from page content. */
+.login-menu,
+.account-menu {
+  border: 0;
+  background: var(--surface);
+  box-shadow: 10px 10px 22px var(--tile-shadow), -7px -7px 16px var(--tile-highlight);
+  backdrop-filter: none;
+}
+
+.login-menu::before,
+.account-menu::before {
+  border: 0;
+  background: var(--surface);
+}
+
+.google-sign-in-button,
+:root[data-color-mode="dark"] .google-sign-in-button {
+  border: 0;
+  color: var(--ink);
+  background: var(--tile-surface);
+  box-shadow: 4px 4px 8px var(--tile-shadow), -3px -3px 7px var(--tile-highlight);
+}
+
+.google-sign-in-button:not(:disabled):hover,
+:root[data-color-mode="dark"] .google-sign-in-button:not(:disabled):hover {
+  color: var(--blue-deep);
+  background: var(--surface);
+  box-shadow: 5px 5px 10px var(--tile-shadow), -4px -4px 9px var(--tile-highlight);
+}
+
+.google-sign-in-button__mark,
+:root[data-color-mode="dark"] .google-sign-in-button__mark {
+  background: var(--surface);
 }
