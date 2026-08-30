@@ -167,8 +167,10 @@ button, input { font: inherit; }
 .streak-pill { display: inline-flex; min-height: 38px; align-items: center; gap: 5px; padding: 6px 11px 6px 8px; border: 1px solid rgba(235, 121, 47, 0.42); border-radius: 999px; color: #8e3714; background: linear-gradient(145deg, rgba(255, 249, 224, 0.92), rgba(255, 205, 142, 0.82)); box-shadow: 0 5px 0 rgba(203, 92, 32, 0.15), 0 11px 20px rgba(180, 75, 25, 0.16), inset 0 1px rgba(255, 255, 255, 0.76); cursor: pointer; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.02em; line-height: 1; white-space: nowrap; }
 .streak-pill[hidden] { display: none; }
 .streak-pill__flame { font-size: 1.425rem; line-height: 1; filter: drop-shadow(0 2px 2px rgba(142, 55, 20, 0.2)); }
+.streak-pill__text { display: inline-flex; align-items: baseline; gap: 0; }
 .streak-pill strong { color: #6e250c; font-size: 0.76rem; }
-.streak-pill__label { color: #9c471e; }
+.streak-pill__label { margin-left: 2px; color: #9c471e; }
+.streak-pill:not(.streak-pill--guest) .streak-pill__label { margin-left: 0; }
 .streak-pill--guest:not(:disabled):hover { transform: translateY(-2px); }
 .streak-pill:disabled { cursor: not-allowed; opacity: 0.65; }
 .streak-pill:focus-visible { outline: 3px solid #637cf0; outline-offset: 2px; }
