@@ -160,10 +160,10 @@ function renderAuthWidget(state, user = null, message = "") {
     accountMenuName.textContent = name;
     accountEmail.textContent = user.email;
     const streak = Number.isInteger(user.currentStreak) && user.currentStreak > 0 ? user.currentStreak : 0;
-    const streakLabel = `day streak${streak === 1 ? "" : "s"}`;
+    const streakLabel = "-day streak";
     streakPillCount.textContent = String(streak);
     streakPillLabel.textContent = streakLabel;
-    streakPill.setAttribute("aria-label", `${streak} ${streakLabel}`);
+    streakPill.setAttribute("aria-label", `${streak}-day streak`);
     accountAvatar.textContent = initial;
     accountMenuAvatar.textContent = initial;
   } else {
