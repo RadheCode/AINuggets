@@ -1,6 +1,6 @@
 # Daily Streak
 
-The Daily Streak feature rewards a signed-in reader for returning on consecutive UTC calendar days. It is entirely server-authoritative: the browser never sends a date, activity record, or streak value.
+The Daily Streak feature rewards a signed-in reader for returning within the configured UTC calendar-day gap. It is entirely server-authoritative: the browser never sends a date, activity record, or streak value. The browser uses the public configured gap only to render supportive guidance.
 
 ## Qualifying activity
 
@@ -16,15 +16,15 @@ The Worker calculates the date from its UTC clock and records at most one activi
 | Previous qualifying date | New `current_streak` |
 |---|---:|
 | No previous activity | 1 |
-| Yesterday in UTC | Previous streak + 1 |
+| Previous qualifying date is within the configured gap | Previous streak + 1 |
 | Today in UTC | Unchanged |
-| Earlier than yesterday | 1 |
+| Earlier than the configured gap | 1 |
 
-`longest_streak` is increased only when the active streak exceeds the reader's previous best. Sign-in and authenticated published-edition responses return `currentStreak` and `longestStreak`; the signed-in header Flame Pill displays the active value.
+`ProductConfig.readerEngagement.streak.maximumDaysBetweenQualifyingActivities` controls the inclusive gap. Its configured value of `4` permits up to three missed UTC days: activity on August 30 continues a streak last qualified on August 26. `longest_streak` is increased only when the active streak exceeds the reader's previous best. Sign-in and authenticated published-edition responses return `currentStreak` and `longestStreak`; the signed-in header Flame Pill displays the active value.
 
 ## Reader interface
 
-The signed-in header renders the active streak in a Flame Pill beside the account control. It follows the active theme's glass and neumorphic elevation language, includes an ambient fire aura and hover response, and preserves the same geometry in light and dark modes. The pill is hidden when signed out and respects reduced-motion preferences.
+The header always renders the Flame Pill beside the account control. Signed-out readers see `0 Start streak`; activating the keyboard-accessible pill opens the existing sign-in popover, and Escape returns focus to the button that opened it. Hovering the control or focusing the interactive guest button shows a separate floating, product-configured guidance bubble explaining the permitted gap without framing it as a countdown. The bubble has no layout footprint and is associated with the button through `aria-describedby`. Signed-in readers see their server-managed active value as a non-interactive status. If sign-in is unavailable, the guest prompt remains visible but disabled with a clear accessible label. It follows the active theme's glass and neumorphic elevation language, gives only the interactive guest prompt a hover response, preserves the same geometry in light and dark modes, and respects reduced-motion preferences.
 
 ## Persistence
 
@@ -32,12 +32,12 @@ Migration `infra/cloudflare/content-worker/migrations/0008_add_user_daily_streak
 
 | Storage | Purpose |
 |---|---|
-| `user_profiles.current_streak` | Current consecutive UTC-day streak. |
+| `user_profiles.current_streak` | Current streak under the configured UTC-day gap policy. |
 | `user_profiles.longest_streak` | Highest streak achieved by the user. |
 | `user_profiles.streak_last_active_date` | Most recent qualifying UTC date (`YYYY-MM-DD`). |
 | `user_daily_activity` | One durable row per `(user_id, activity_date)` for idempotency and history. |
 
-The Worker inserts the activity row and conditionally updates the profile in one D1 batch. The unique primary key prevents duplicate same-day requests from being counted more than once.
+The Worker inserts the activity row and conditionally updates the profile in one D1 batch. The unique primary key prevents duplicate same-day requests from being counted more than once. The product-owned grace-window setting is evaluated by the Worker; no schema or browser contract changes are required to adjust it.
 
 ## Querying streak information
 

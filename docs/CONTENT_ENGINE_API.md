@@ -24,7 +24,7 @@ The content Worker provides Google-only sign-in and durable session endpoints. T
 
 Each Google identity has one `user_profiles` record. The Worker updates both `last_logged_in_at` and `last_refreshed_at` when that email completes Google sign-in, because a completed login counts as a page refresh. An authenticated browser requesting a published edition also updates `last_refreshed_at`.
 
-The Worker records at most one qualifying activity for each user per UTC calendar date. A qualifying Google sign-in or authenticated published-edition request starts a streak at `1`, increments it when the prior active date was the preceding UTC date, and resets it to `1` after a missed UTC date. `currentStreak` is the active streak and `longestStreak` is the user's historical best. The browser never submits a date or counter value. Authenticated edition responses are private and not cached, ensuring that each page fetch reaches the Worker and can record the refresh.
+The Worker records at most one qualifying activity for each user per UTC calendar date. A qualifying Google sign-in or authenticated published-edition request starts a streak at `1`, increments it when the prior active date is within the configured four-day UTC window, and resets it to `1` after a longer gap. `currentStreak` is the active streak and `longestStreak` is the user's historical best. The browser never submits a date or counter value. Authenticated edition responses are private and not cached, ensuring that each page fetch reaches the Worker and can record the refresh.
 
 ### `POST /auth/google`
 

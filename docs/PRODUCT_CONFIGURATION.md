@@ -8,22 +8,28 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | Product identity, user-facing framing, authentication-menu, and About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
+| `product/config.js` | Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific source and entity artwork matching used by the shared story renderer. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 | `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |
 
 ## Rebranding workflow
 
-1. Update identity and copy values in `product/config.js`, including the Login menu and provider labels when appropriate.
+1. Update identity and copy values in `product/config.js`, including the Login menu, guest-streak call to action and guidance, and provider labels when appropriate.
 2. Change `storageNamespace` if the rebranded site must not reuse existing reader color preferences or opaque session tokens.
 3. Update `runtime.sites` and `runtime.contentApiUrls` for the new public frontend and content API hosts.
 4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different source or entity matching.
 5. Update approved sources, candidate-selection mode, and the generation instruction in `product/editorial-config.mjs`. Add, rename, or remove the matching source artwork entry and asset in the same change; the automation configuration test rejects incomplete coverage.
-6. Update `summaryFeatures` in `product/config.js` when the product offers a different set of summary views or generated detail levels.
-7. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
+6. Update `readerEngagement.streak.maximumDaysBetweenQualifyingActivities` in `product/config.js` when the product permits a gap between qualifying streak days. The current value, `4`, permits up to three missed UTC days.
+7. Update `readerEngagement.streakGuidanceTemplate` in `product/config.js` when changing reader-facing gap guidance. It supports `{days}`, which renders the configured allowance as a singular or plural day count.
+8. Update `summaryFeatures` in `product/config.js` when the product offers a different set of summary views or generated detail levels.
+9. Publish new topic-appropriate editions through the content engine; editions and stories deliberately remain D1-backed editorial data.
 
 ## Summary feature capabilities
+
+## Reader engagement policies
+
+`ProductConfig.readerEngagement.streak.maximumDaysBetweenQualifyingActivities` is the maximum inclusive UTC calendar-day gap that continues a signed-in reader's streak. It must be an integer from `1` through `365`. The current value is `4`, allowing up to three missed UTC dates; in general, a value of `N` permits up to `N - 1` missed UTC dates. Set it to `1` to require consecutive UTC dates. The Worker validates and applies the value; the browser reads the public setting only to render guidance and cannot alter the server-authoritative streak.
 
 ## About-page copy
 

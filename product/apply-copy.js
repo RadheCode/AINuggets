@@ -20,6 +20,7 @@
     loginLabel: copy.loginLabel,
     loginMenuTitle: copy.loginMenuTitle,
     loginMenuDescription: copy.loginMenuDescription,
+    guestStreakLabel: copy.guestStreakLabel,
     continueWithGoogleLabel: copy.continueWithGoogleLabel,
     aboutLabel: copy.about.label,
     aboutEyebrow: copy.about.eyebrow,

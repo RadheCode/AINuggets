@@ -19,6 +19,8 @@ globalThis.ProductConfig = Object.freeze({
     loginLabel: "Login",
     loginMenuTitle: "Welcome back",
     loginMenuDescription: "Sign in to save your reading streak.",
+    guestStreakLabel: "Start streak",
+    streakGuidanceTemplate: "Your streak has room for life: you can take up to {days} days between visits and keep it going.",
     continueWithGoogleLabel: "Continue with Google",
     about: Object.freeze({
       label: "About",
@@ -39,6 +41,12 @@ globalThis.ProductConfig = Object.freeze({
   }),
   authentication: Object.freeze({
     googleClientId: "119476209987-a7plo7e675cl200cjnk78msq7ol06umr.apps.googleusercontent.com"
+  }),
+  readerEngagement: Object.freeze({
+    streak: Object.freeze({
+      // The maximum UTC calendar-day gap that continues an existing streak.
+      maximumDaysBetweenQualifyingActivities: 4
+    })
   }),
   summaryFeatures: Object.freeze({
     // UI and generated variants are independently configurable product capabilities.

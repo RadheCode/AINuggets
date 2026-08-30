@@ -12,6 +12,7 @@ import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs"
 import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
 import { validateContentEngineConfig } from "../../validate-content-engine-config.mjs";
 import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
+import { STREAK_FEATURE_CONFIG, validateStreakFeatureConfig } from "../../../product/streak-features.mjs";
 
 test("uses the built-in blog collector when no source URL is supplied", () => {
   const dependencies = createGenerationProviderDependencies({});
@@ -51,7 +52,16 @@ test("uses the centralized product editorial configuration", () => {
   assert.ok(SUMMARY_FEATURE_CONFIG.generation.length > 0);
   assert.deepEqual(SUMMARY_FEATURE_CONFIG.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180, format: "paragraph" });
   assert.doesNotThrow(() => validateSummaryFeatureConfig(SUMMARY_FEATURE_CONFIG));
+  assert.equal(STREAK_FEATURE_CONFIG.maximumDaysBetweenQualifyingActivities, 4);
+  assert.doesNotThrow(() => validateStreakFeatureConfig(STREAK_FEATURE_CONFIG));
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
+});
+
+test("rejects an invalid streak grace-window configuration", () => {
+  assert.throws(
+    () => validateStreakFeatureConfig({ maximumDaysBetweenQualifyingActivities: 0 }),
+    /must be an integer from 1 through 365/i
+  );
 });
 
 test("requires every configured feed to have a valid product artwork mapping", () => {

@@ -4,8 +4,12 @@ import { runScheduledEdition } from "../../../../content-engine/automation/jobs/
 import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
 import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../../product/summary-features.mjs";
+import { STREAK_FEATURE_CONFIG, validateStreakFeatureConfig } from "../../../../product/streak-features.mjs";
 import { createD1EditionRepository } from "./d1-edition-repository.js";
 import { createSessionToken, hashToken, verifyGoogleCredential } from "./google-auth.js";
+import { earliestContinuationDate, utcActivityDate } from "./streak-policy.js";
+
+validateStreakFeatureConfig();
 
 function json(body, status = 200, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -39,18 +43,12 @@ function userResponse(user) {
   };
 }
 
-function utcActivityDate(date = new Date()) {
-  return date.toISOString().slice(0, 10);
-}
-
-function previousUtcDate(date = new Date()) {
-  const previousDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - 1));
-  return utcActivityDate(previousDay);
-}
-
 async function recordDailyActivity(db, userId, date = new Date()) {
   const today = utcActivityDate(date);
-  const yesterday = previousUtcDate(date);
+  const continuationStartDate = earliestContinuationDate(
+    date,
+    STREAK_FEATURE_CONFIG.maximumDaysBetweenQualifyingActivities
+  );
   await db.batch([
     db.prepare(`
       INSERT INTO user_daily_activity (user_id, activity_date)
@@ -60,18 +58,18 @@ async function recordDailyActivity(db, userId, date = new Date()) {
     db.prepare(`
       UPDATE user_profiles
       SET current_streak = CASE
-            WHEN streak_last_active_date = ? THEN current_streak + 1
+            WHEN streak_last_active_date >= ? THEN current_streak + 1
             ELSE 1
           END,
           longest_streak = MAX(
             longest_streak,
-            CASE WHEN streak_last_active_date = ? THEN current_streak + 1 ELSE 1 END
+            CASE WHEN streak_last_active_date >= ? THEN current_streak + 1 ELSE 1 END
           ),
           streak_last_active_date = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
         AND (streak_last_active_date IS NULL OR streak_last_active_date <> ?)
-    `).bind(yesterday, yesterday, today, userId, today)
+    `).bind(continuationStartDate, continuationStartDate, today, userId, today)
   ]);
 
   return db.prepare(`
@@ -301,6 +299,7 @@ async function submitFeedback(request, env, cors) {
 
 function createAutomationDependencies(env) {
   validateSummaryFeatureConfig();
+  validateStreakFeatureConfig();
   return {
     editionRepository: createD1EditionRepository(env.CONTENT_DB),
     ...createGenerationProviderDependencies(env),

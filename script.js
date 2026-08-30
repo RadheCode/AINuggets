@@ -13,6 +13,7 @@ const accountEmail = document.querySelector("#accountEmail");
 const streakPill = document.querySelector("#streakPill");
 const streakPillCount = document.querySelector("#streakPillCount");
 const streakPillLabel = document.querySelector("#streakPillLabel");
+const streakGuidance = document.querySelector("[data-product-streak-guidance]");
 const signOutButton = document.querySelector("#signOutButton");
 const signInStatus = document.querySelector("#signInStatus");
 const feedbackTab = document.querySelector("#feedbackTab");
@@ -28,14 +29,19 @@ const feedbackMessageStatus = document.querySelector("#feedbackMessageStatus");
 const productConfig = window.ProductConfig;
 const authConfig = productConfig?.authentication;
 const contentRuntime = productConfig?.runtime;
+const maximumDaysBetweenQualifyingActivities = productConfig?.readerEngagement?.streak?.maximumDaysBetweenQualifyingActivities;
 const storageNamespace = productConfig?.identity?.storageNamespace;
 if (typeof storageNamespace !== "string" || !storageNamespace.trim()) {
   throw new Error("Product storage namespace is missing or invalid.");
+}
+if (!Number.isInteger(maximumDaysBetweenQualifyingActivities) || maximumDaysBetweenQualifyingActivities < 1 || maximumDaysBetweenQualifyingActivities > 365) {
+  throw new Error("Product streak configuration is missing or invalid.");
 }
 const sessionTokenKey = `${storageNamespace}-session-token`;
 let googleIdentityInitialized = false;
 let authState = "initializing";
 let currentUser = null;
+let loginMenuTrigger = null;
 
 function createOpaqueId() {
   if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
@@ -63,6 +69,16 @@ function avatarInitial(user) {
   return displayName(user).trim().charAt(0).toUpperCase();
 }
 
+function streakGuidanceText() {
+  const lenienceDays = maximumDaysBetweenQualifyingActivities - 1;
+  const dayLabel = lenienceDays === 1 ? "day" : "days";
+  const template = productConfig.copy.streakGuidanceTemplate;
+  if (typeof template !== "string" || !template.includes("{days}")) {
+    throw new Error("Product streak guidance copy is missing or invalid.");
+  }
+  return template.replace("{days}", `${lenienceDays} ${dayLabel}`);
+}
+
 function closeAccountMenu() {
   accountMenu.hidden = true;
   accountMenuToggle.setAttribute("aria-expanded", "false");
@@ -72,6 +88,20 @@ function closeLoginMenu() {
   loginMenu.hidden = true;
   loginMenuToggle.setAttribute("aria-expanded", "false");
   loginMenuToggle.classList.remove("is-open");
+  streakPill.setAttribute("aria-expanded", "false");
+}
+
+function toggleLoginMenu(trigger = loginMenuToggle) {
+  if (authState === "unavailable") return;
+  const opening = loginMenu.hidden;
+  loginMenu.hidden = !opening;
+  loginMenuToggle.setAttribute("aria-expanded", String(opening));
+  loginMenuToggle.classList.toggle("is-open", opening);
+  streakPill.setAttribute("aria-expanded", String(opening && trigger === streakPill));
+  if (opening) {
+    loginMenuTrigger = trigger;
+    googleSignInTarget.querySelector('[role="button"]')?.focus();
+  }
 }
 
 function updateFeedbackEmail() {
@@ -115,11 +145,13 @@ function renderAuthWidget(state, user = null, message = "") {
   accountMenuToggle.hidden = !signedIn;
   accountMenuToggle.disabled = signingOut;
   signOutButton.disabled = signingOut;
-  streakPill.hidden = !signedIn;
+  streakPill.disabled = signedIn || state === "unavailable";
+  streakPill.classList.toggle("streak-pill--guest", !signedIn);
   closeAccountMenu();
   closeLoginMenu();
   currentUser = signedIn && user ? user : null;
   updateFeedbackEmail();
+  streakGuidance.textContent = streakGuidanceText();
 
   if (signedIn && user) {
     const name = displayName(user);
@@ -134,6 +166,12 @@ function renderAuthWidget(state, user = null, message = "") {
     streakPill.setAttribute("aria-label", `${streak} ${streakLabel}`);
     accountAvatar.textContent = initial;
     accountMenuAvatar.textContent = initial;
+  } else {
+    streakPillCount.textContent = "0";
+    streakPillLabel.textContent = productConfig.copy.guestStreakLabel;
+    streakPill.setAttribute("aria-label", state === "unavailable"
+      ? "Streak sign-in is currently unavailable."
+      : "Start your streak. Sign in to save it.");
   }
 
   signInStatus.textContent = message;
@@ -259,17 +297,17 @@ accountMenuToggle.addEventListener("click", () => {
 });
 
 loginMenuToggle.addEventListener("click", () => {
-  if (authState === "unavailable") return;
-  const opening = loginMenu.hidden;
-  loginMenu.hidden = !opening;
-  loginMenuToggle.setAttribute("aria-expanded", String(opening));
-  loginMenuToggle.classList.toggle("is-open", opening);
-  if (opening) googleSignInTarget.querySelector('[role="button"]')?.focus();
+  toggleLoginMenu(loginMenuToggle);
+});
+
+streakPill.addEventListener("click", () => {
+  if (authState === "signed-in" || authState === "signing-out") return;
+  toggleLoginMenu(streakPill);
 });
 
 document.addEventListener("click", (event) => {
   if (!accountMenu.hidden && !event.target.closest(".sign-in-control")) closeAccountMenu();
-  if (!loginMenu.hidden && !event.target.closest(".sign-in-control")) closeLoginMenu();
+  if (!loginMenu.hidden && !event.target.closest(".sign-in-control, #streakPill")) closeLoginMenu();
 });
 
 document.addEventListener("keydown", (event) => {
@@ -279,7 +317,8 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !loginMenu.hidden) {
     closeLoginMenu();
-    loginMenuToggle.focus();
+    loginMenuTrigger?.focus();
+    loginMenuTrigger = null;
   }
 });
 

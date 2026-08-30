@@ -90,7 +90,7 @@ erDiagram
 
 **What:** One verified Google identity with unique `google_subject`, current verified email, display name, optional picture URL, lifecycle timestamps, login/refresh timestamps, and current/longest streak state.
 
-**Why:** The Google subject remains stable when email or display name changes. Server-side activity and streak fields prevent browser-controlled streaks while supplying the authenticated-reader response.
+**Why:** The Google subject remains stable when email or display name changes. Server-side activity and streak fields prevent browser-controlled streaks while supplying the authenticated-reader response. The Worker applies the product-owned grace-window policy when calculating the current value.
 
 **Where:** The Worker writes it after credential verification in `POST /auth/google`. Authenticated published-edition requests update refresh activity and may qualify for a streak. Session lookups join this table for `GET /auth/session` and authenticated edition responses.
 
@@ -116,7 +116,7 @@ erDiagram
 
 **Where:** The Worker writes it after verified sign-in and authenticated published-edition requests. [Daily Streak](DAILY_STREAK.md) documents the reader rules and operational queries.
 
-**How:** The Worker calculates today and yesterday from its UTC clock, inserts with `ON CONFLICT(user_id, activity_date) DO NOTHING`, then conditionally updates the profile streak fields in the same D1 batch. Profile deletion cascades to activity rows.
+**How:** The Worker calculates today's UTC date and the earliest prior date allowed by `ProductConfig.readerEngagement.streak.maximumDaysBetweenQualifyingActivities`, inserts with `ON CONFLICT(user_id, activity_date) DO NOTHING`, then conditionally updates the profile streak fields in the same D1 batch. Profile deletion cascades to activity rows.
 
 ## Reader feedback table
 

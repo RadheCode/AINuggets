@@ -31,11 +31,14 @@
 
       <div class="header-actions">
         <span class="current-date">Daily edition</span>
-        <output class="streak-pill" id="streakPill" aria-live="polite" hidden>
-          <span class="streak-pill__flame" aria-hidden="true">&#128293;</span>
-          <strong id="streakPillCount">0</strong>
-          <span class="streak-pill__label" id="streakPillLabel">day streaks</span>
-        </output>
+        <div class="streak-control">
+          <button class="streak-pill" id="streakPill" type="button" aria-controls="loginMenu" aria-describedby="streakGuidance" aria-expanded="false" aria-live="polite">
+            <span class="streak-pill__flame" aria-hidden="true">&#128293;</span>
+            <strong id="streakPillCount">0</strong>
+            <span class="streak-pill__label" id="streakPillLabel" data-product-copy="guestStreakLabel"></span>
+          </button>
+          <span class="streak-guidance" id="streakGuidance" role="tooltip" data-product-streak-guidance></span>
+        </div>
         <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
           <span class="mode-icon mode-icon--sun" aria-hidden="true">&#9728;</span>
           <span class="mode-icon mode-icon--moon" aria-hidden="true">&#9790;</span>
