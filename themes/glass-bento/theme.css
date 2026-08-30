@@ -1082,3 +1082,27 @@ main::before { display: none; }
   color: var(--blue-deep);
   box-shadow: 4px 4px 8px var(--tile-shadow), -3px -3px 7px var(--tile-highlight);
 }
+
+/* The header's two utility controls share one blue-surface treatment in every mode. */
+.login-menu-toggle,
+.color-mode-toggle {
+  border: 0;
+  color: var(--blue-deep);
+  background: var(--surface);
+  box-shadow: 5px 5px 10px var(--tile-shadow), -4px -4px 9px var(--tile-highlight);
+}
+
+.login-menu-toggle:not(:disabled):hover,
+.color-mode-toggle:hover {
+  color: var(--blue);
+  background: var(--surface);
+  box-shadow: 6px 6px 12px var(--tile-shadow), -5px -5px 10px var(--tile-highlight);
+}
+
+:root[data-color-mode="dark"] .login-menu-toggle,
+:root[data-color-mode="dark"] .color-mode-toggle {
+  border: 0;
+  color: var(--blue-deep);
+  background: var(--surface);
+  box-shadow: 5px 5px 10px var(--tile-shadow), -4px -4px 9px var(--tile-highlight);
+}
