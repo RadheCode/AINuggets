@@ -664,6 +664,37 @@ main::before { display: none; }
   background: #f8faff;
 }
 
+.streak-pill { min-height: 32px; gap: 4px; padding: 6px 9px; border: 1px solid #fed7aa; border-radius: 6px; color: #9a3412; background: #fff7ed; box-shadow: none; font-size: 0.68rem; font-weight: 600; }
+.streak-pill::before, .streak-pill::after { display: none; }
+.streak-pill__flame { animation: none; filter: none; }
+.streak-pill strong, .streak-pill__label { color: inherit; font-size: inherit; }
+.streak-pill:hover { border-color: #fdba74; background: #ffedd5; box-shadow: none; transform: none; }
+.account-menu-toggle { max-width: 220px; min-height: 36px; gap: 8px; padding: 5px 10px 5px 5px; border-color: #d1d5db; border-radius: 6px; color: #1f2937; background: #fff; box-shadow: none; }
+.account-menu-toggle:not(:disabled):hover { border-color: #9ca3af; background: #f9fafb; box-shadow: none; transform: none; }
+.account-avatar { width: 25px; background: #4f46e5; box-shadow: none; font-size: 0.68rem; }
+.account-name { font-size: 0.76rem; font-weight: 600; }
+.account-menu-chevron { color: #6b7280; }
+.account-menu { top: calc(100% + 8px); width: min(300px, calc(100vw - 28px)); padding: 16px; border-color: #dfe3eb; border-radius: 10px; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16); backdrop-filter: none; }
+.account-menu::before { right: 20px; border-color: #dfe3eb; background: #fff; }
+.account-menu__profile { gap: 11px; padding: 0; }
+.account-menu__profile .account-avatar { width: 40px; font-size: 0.86rem; }
+.account-menu__profile strong { color: #111827; font-size: 0.9rem; }
+.account-menu__profile small { margin-top: 3px; color: #6b7280; font-size: 0.72rem; }
+.account-menu__divider { height: 1px; margin: 16px 0 12px; background: #e5e7eb; }
+.sign-out-button { min-height: 38px; border-color: #d1d5db; border-radius: 6px; color: #374151; background: #fff; box-shadow: none; backdrop-filter: none; font-size: 0.76rem; font-weight: 600; text-transform: none; }
+.sign-out-button:not(:disabled):hover { border-color: #9ca3af; background: #f9fafb; box-shadow: none; transform: none; }
+:root[data-color-mode="dark"] .streak-pill { border-color: #854d0e; color: #fed7aa; background: #431407; box-shadow: none; }
+:root[data-color-mode="dark"] .streak-pill:hover { border-color: #b45309; background: #581c07; box-shadow: none; }
+:root[data-color-mode="dark"] .account-menu-toggle { border-color: #46516d; color: #edf0f8; background: #293253; box-shadow: none; }
+:root[data-color-mode="dark"] .account-menu-toggle:not(:disabled):hover { border-color: #61709a; background: #344067; box-shadow: none; }
+:root[data-color-mode="dark"] .account-menu { border-color: #46516d; background: #293253; box-shadow: 0 12px 28px rgba(0, 0, 12, 0.38); }
+:root[data-color-mode="dark"] .account-menu::before { border-color: #46516d; background: #293253; }
+:root[data-color-mode="dark"] .account-menu__profile strong { color: #f3f5ff; }
+:root[data-color-mode="dark"] .account-menu__profile small { color: #b9c2df; }
+:root[data-color-mode="dark"] .account-menu__divider { background: #46516d; }
+:root[data-color-mode="dark"] .sign-out-button { border-color: #61709a; color: #edf0f8; background: #293253; box-shadow: none; }
+:root[data-color-mode="dark"] .sign-out-button:not(:disabled):hover { border-color: #8292be; background: #344067; box-shadow: none; }
+
 .feedback-tab {
   position: absolute;
   z-index: 31;
