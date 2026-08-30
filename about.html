@@ -36,12 +36,26 @@
           <strong id="streakPillCount">0</strong>
           <span class="streak-pill__label" id="streakPillLabel">day streaks</span>
         </output>
+        <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+          <span class="mode-icon mode-icon--sun" aria-hidden="true">&#9728;</span>
+          <span class="mode-icon mode-icon--moon" aria-hidden="true">&#9790;</span>
+        </button>
         <div class="sign-in-control">
-          <div class="google-sign-in-button" id="googleSignInButton" aria-hidden="true">
-            <span class="google-sign-in-button__mark" aria-hidden="true">G</span>
-            <span>Continue with Google</span>
+          <button class="login-menu-toggle" id="loginMenuToggle" type="button" aria-expanded="false" aria-controls="loginMenu">
+            <span class="login-menu-toggle__icon" aria-hidden="true">&#128100;</span>
+            <span data-product-copy="loginLabel"></span>
+          </button>
+          <div class="login-menu" id="loginMenu" hidden>
+            <p class="login-menu__title" data-product-copy="loginMenuTitle"></p>
+            <p class="login-menu__description" data-product-copy="loginMenuDescription"></p>
+            <div class="google-sign-in-option">
+              <div class="google-sign-in-button" id="googleSignInButton" aria-hidden="true">
+                <span class="google-sign-in-button__mark" aria-hidden="true">G</span>
+                <span data-product-copy="continueWithGoogleLabel"></span>
+              </div>
+              <div class="google-sign-in-target" id="googleSignInTarget"></div>
+            </div>
           </div>
-          <div class="google-sign-in-target" id="googleSignInTarget"></div>
           <button class="account-menu-toggle" id="accountMenuToggle" type="button" aria-expanded="false" aria-controls="accountMenu" hidden>
             <span class="account-avatar" id="accountAvatar" aria-hidden="true"></span>
             <span class="account-name" id="accountName"></span>
@@ -56,10 +70,6 @@
           </div>
           <output class="sign-in-status" id="signInStatus" aria-live="polite"></output>
         </div>
-        <button class="color-mode-toggle" id="colorModeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
-          <span class="mode-icon mode-icon--sun" aria-hidden="true">&#9728;</span>
-          <span class="mode-icon mode-icon--moon" aria-hidden="true">&#9790;</span>
-        </button>
       </div>
     </header>
 

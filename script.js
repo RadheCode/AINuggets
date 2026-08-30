@@ -1,6 +1,8 @@
 const colorModeToggle = document.querySelector("#colorModeToggle");
 const googleSignInButton = document.querySelector("#googleSignInButton");
 const googleSignInTarget = document.querySelector("#googleSignInTarget");
+const loginMenuToggle = document.querySelector("#loginMenuToggle");
+const loginMenu = document.querySelector("#loginMenu");
 const accountMenuToggle = document.querySelector("#accountMenuToggle");
 const accountMenu = document.querySelector("#accountMenu");
 const accountAvatar = document.querySelector("#accountAvatar");
@@ -66,6 +68,12 @@ function closeAccountMenu() {
   accountMenuToggle.setAttribute("aria-expanded", "false");
 }
 
+function closeLoginMenu() {
+  loginMenu.hidden = true;
+  loginMenuToggle.setAttribute("aria-expanded", "false");
+  loginMenuToggle.classList.remove("is-open");
+}
+
 function updateFeedbackEmail() {
   if (!feedbackEmail) return;
   const signedIn = Boolean(currentUser?.email);
@@ -99,15 +107,17 @@ function renderAuthWidget(state, user = null, message = "") {
   const signingIn = state === "signing-in";
   const signingOut = state === "signing-out";
 
-  const signInUnavailable = Boolean(signedIn) || state === "unavailable";
-  googleSignInButton.hidden = signInUnavailable;
-  googleSignInTarget.hidden = signInUnavailable;
+  const signInAvailable = !signedIn && state !== "unavailable";
+  loginMenuToggle.hidden = !signInAvailable;
+  googleSignInButton.hidden = !signInAvailable;
+  googleSignInTarget.hidden = !signInAvailable;
   googleSignInButton.classList.toggle("is-unavailable", state === "unavailable");
   accountMenuToggle.hidden = !signedIn;
   accountMenuToggle.disabled = signingOut;
   signOutButton.disabled = signingOut;
   streakPill.hidden = !signedIn;
   closeAccountMenu();
+  closeLoginMenu();
   currentUser = signedIn && user ? user : null;
   updateFeedbackEmail();
 
@@ -186,7 +196,7 @@ function finishGoogleInitialization() {
     size: "medium",
     shape: "pill",
     text: "continue_with",
-    width: Math.round(googleSignInButton.getBoundingClientRect().width)
+    width: Math.max(200, Math.round(googleSignInButton.getBoundingClientRect().width))
   });
   if (authState === "initializing") renderAuthWidget("signed-out");
 }
@@ -248,14 +258,28 @@ accountMenuToggle.addEventListener("click", () => {
   if (opening) signOutButton.focus();
 });
 
+loginMenuToggle.addEventListener("click", () => {
+  if (authState === "unavailable") return;
+  const opening = loginMenu.hidden;
+  loginMenu.hidden = !opening;
+  loginMenuToggle.setAttribute("aria-expanded", String(opening));
+  loginMenuToggle.classList.toggle("is-open", opening);
+  if (opening) googleSignInTarget.querySelector('[role="button"]')?.focus();
+});
+
 document.addEventListener("click", (event) => {
   if (!accountMenu.hidden && !event.target.closest(".sign-in-control")) closeAccountMenu();
+  if (!loginMenu.hidden && !event.target.closest(".sign-in-control")) closeLoginMenu();
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !accountMenu.hidden) {
     closeAccountMenu();
     accountMenuToggle.focus();
+  }
+  if (event.key === "Escape" && !loginMenu.hidden) {
+    closeLoginMenu();
+    loginMenuToggle.focus();
   }
 });
 

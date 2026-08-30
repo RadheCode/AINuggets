@@ -8,14 +8,14 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | Product identity, user-facing framing and About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
+| `product/config.js` | Product identity, user-facing framing, authentication-menu, and About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, and summary feature capabilities. |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific source and entity artwork matching used by the shared story renderer. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 | `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |
 
 ## Rebranding workflow
 
-1. Update identity and copy values in `product/config.js`.
+1. Update identity and copy values in `product/config.js`, including the Login menu and provider labels when appropriate.
 2. Change `storageNamespace` if the rebranded site must not reuse existing reader color preferences or opaque session tokens.
 3. Update `runtime.sites` and `runtime.contentApiUrls` for the new public frontend and content API hosts.
 4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different source or entity matching.
