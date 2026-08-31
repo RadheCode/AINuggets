@@ -20,7 +20,7 @@ globalThis.ProductConfig = Object.freeze({
     loginMenuTitle: "Welcome back",
     loginMenuDescription: "Sign in to save your reading streak.",
     guestStreakLabel: "Start streak",
-    streakGuidanceTemplate: "Your streak has room for life: you can take up to {days} days between visits and keep it going.",
+    streakGuidanceTemplate: "Your streak has room for life: you can take up to {days} between visits and keep it going.",
     continueWithGoogleLabel: "Continue with Google",
     about: Object.freeze({
       label: "About",
