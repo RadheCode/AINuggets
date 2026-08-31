@@ -42,11 +42,13 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 | `ui` | Ordered summary context keys that the browser may offer in the story dialog. The renderer creates controls from this array; it does not require static controls in `index.html`. |
 | `generation` | Summary context keys generated, validated, and persisted for each new story. A generated context is stored only in its matching D1 column. |
 | `defaultContext` | Initial dialog view. It must occur in `ui`; if a story does not include it, the first available UI context is used. |
-| `contexts` | Labels, length limits, and the structured format expected for each supported key. |
+| `contexts` | Labels, mandatory minimum character counts, advisory maximum targets, and the structured format expected for each supported key. |
 
 The default enables `compact` (Quick take), `standard` (Overview), and `detailed` (Deep dive) for both UI and generation. To offer two views, remove one key from `ui`; the dialog immediately renders two controls on the next browser deployment. To store only Deep dive for future editions, set `generation` to `['detailed']`. Existing editions are preserved, while future editions generate and persist only that context. If a UI-enabled context is absent from an edition, the browser omits it instead of showing an empty control.
 
 Both browser code and the portable generation runtime consume the same feature vocabulary. `product/summary-features.mjs` exposes and validates the browser configuration for the runtime without introducing provider dependencies into the product contract.
+
+Each context's `minCharacters` is enforced during both provider generation and domain validation. Its `maxCharacters` is an advisory target for concise summaries, not a rejection limit: the provider must complete meaningful sentences and thoughts instead of truncating text to fit it.
 
 ## Editorial candidate selection
 

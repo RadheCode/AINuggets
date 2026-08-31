@@ -417,7 +417,7 @@ test("rejects editions with duplicated summary layers", async () => {
   );
 });
 
-test("rejects summaries outside their configured character bounds", async () => {
+test("rejects summaries below their configured minimum character count", async () => {
   const repository = createMemoryEditionRepository();
   const summaryProvider = {
     async generateEdition() {
@@ -435,11 +435,11 @@ test("rejects summaries outside their configured character bounds", async () => 
       summaryProvider,
       logger: {}
     }),
-    /summaries\.compact.*between 100 and 180 characters/i
+    /summaries\.compact.*at least 100 characters/i
   );
 });
 
-test("rejects summaries that exceed their configured character bounds", async () => {
+test("accepts summaries that exceed their configured character target", async () => {
   const repository = createMemoryEditionRepository();
   const summaryProvider = {
     async generateEdition() {
@@ -449,16 +449,16 @@ test("rejects summaries that exceed their configured character bounds", async ()
     }
   };
 
-  await assert.rejects(
-    generateDailyEdition({
-      targetDate,
-      editionRepository: repository,
-      contentSources: [candidateSource()],
-      summaryProvider,
-      logger: {}
-    }),
-    /summaries\.detailed.*between 500 and 900 characters/i
-  );
+  const result = await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [candidateSource()],
+    summaryProvider,
+    logger: {}
+  });
+
+  assert.equal(result.status, "succeeded");
+  assert.ok(repository.editions.get(targetDate).stories[0].summaries.detailed.length > 900);
 });
 
 test("rejects Overview summaries that are not bullet points", async () => {

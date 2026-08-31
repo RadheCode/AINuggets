@@ -47,13 +47,15 @@ test("requests a structured edition from a compatible endpoint", async () => {
   const summaries = payload.response_format.json_schema.schema.properties.stories.items.properties.summaries;
   assert.deepEqual(summaries.required, ["compact", "standard", "detailed"]);
   assert.equal(summaries.properties.compact.minLength, 100);
-  assert.equal(summaries.properties.compact.maxLength, 180);
+  assert.equal("maxLength" in summaries.properties.compact, false);
   assert.equal(summaries.properties.standard.minLength, 240);
-  assert.equal(summaries.properties.standard.maxLength, 420);
+  assert.equal("maxLength" in summaries.properties.standard, false);
   assert.equal(summaries.properties.detailed.minLength, 500);
-  assert.equal(summaries.properties.detailed.maxLength, 900);
+  assert.equal("maxLength" in summaries.properties.detailed, false);
   const systemPrompt = payload.messages.find((message) => message.role === "system").content;
   assert.match(systemPrompt, /Count every character/i);
+  assert.match(systemPrompt, /Every minimum is mandatory/i);
+  assert.match(systemPrompt, /maximum is a target, not a rejection limit/i);
   assert.match(systemPrompt, /three or four Markdown-style bullet points/i);
   assert.match(systemPrompt, /two to four short paragraphs/i);
   assert.deepEqual(edition, { date: "2026-08-24" });

@@ -54,6 +54,7 @@ globalThis.ProductConfig = Object.freeze({
     generation: Object.freeze(["compact", "standard", "detailed"]),
     defaultContext: "standard",
     contexts: Object.freeze({
+      // Minimums are enforced; maximums guide the model without truncating complete thoughts.
       compact: Object.freeze({ label: "Quick take", minCharacters: 100, maxCharacters: 180, format: "paragraph" }),
       standard: Object.freeze({ label: "Overview", minCharacters: 240, maxCharacters: 420, format: "bullets" }),
       detailed: Object.freeze({ label: "Deep dive", minCharacters: 500, maxCharacters: 900, format: "paragraphs" })

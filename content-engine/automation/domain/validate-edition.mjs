@@ -15,9 +15,9 @@ function requireMaximumLength(value, maximum, field) {
   }
 }
 
-function requireLength(value, minimum, maximum, field) {
-  if (value.length < minimum || value.length > maximum) {
-    throw new Error(`Edition field "${field}" must be between ${minimum} and ${maximum} characters.`);
+function requireMinimumLength(value, minimum, field) {
+  if (value.length < minimum) {
+    throw new Error(`Edition field "${field}" must be at least ${minimum} characters.`);
   }
 }
 
@@ -80,10 +80,9 @@ export function validateEdition(edition, targetDate, summaryContexts) {
     }
     for (const key of summaryContextKeys) {
       const context = summaryContexts[key];
-      requireLength(
+      requireMinimumLength(
         story.summaries[key],
         context.minCharacters,
-        context.maxCharacters,
         `stories[${index}].summaries.${key}`
       );
     }

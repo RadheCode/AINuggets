@@ -32,7 +32,7 @@ Read `docs/PRODUCT_EXTERNALIZATION_ARCHITECTURE.md` and `docs/PRODUCT_CONFIGURAT
 
 | Ownership | Paths | Rebranding action |
 |---|---|---|
-| Product identity and public runtime settings | `product/config.js` | Update all product copy and reader-engagement policies, including authentication-menu labels, guest-streak CTA and guidance copy, metadata, namespace, public hosts if supplied, and public OAuth ID only if supplied. |
+| Product identity and public runtime settings | `product/config.js` | Update all product copy, reader-engagement policies, and summary-context minimums/advisory concision targets, including authentication-menu labels, guest-streak CTA and guidance copy, metadata, namespace, public hosts if supplied, and public OAuth ID only if supplied. |
 | Product editorial domain | `product/editorial-config.mjs` | Replace sources, categories, candidate-selection mode, and prompt. Keep local trigger endpoints in explicit environment variables, never as product fallback configuration. |
 | Product feed and entity artwork | `product/company-images.js`, `product/company-images/` | Replace with relevant source and entity assets/matching, or remove mappings cleanly when artwork is not wanted. Every configured feed requires one valid local source-artwork mapping. |
 | Shared shell and behavior | `index.html`, `script.js`, `content-engine/`, `themes/` | Do not add product-specific copy, data, or conditions. Change only to support a genuinely new, reusable product contract. |

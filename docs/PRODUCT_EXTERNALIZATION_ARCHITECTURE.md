@@ -24,7 +24,7 @@ The boundary provides these guarantees:
 
 | Path | Owns | Change when retargeting? |
 |---|---|---|
-| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, and reader-engagement policies | Yes |
+| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, and summary-context minimums plus advisory concision targets | Yes |
 | `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell | Only when the shared copy contract changes |
 | `product/editorial-config.mjs` | Approved feeds, categories, candidate-selection mode, and generation instruction | Yes |
 | `product/company-images.js` | Feed-source and entity matching for story artwork | Yes, if sources or entity matching changes |

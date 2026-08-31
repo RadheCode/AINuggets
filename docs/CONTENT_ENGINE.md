@@ -89,7 +89,7 @@ The domain layer rejects an edition unless it has:
 - the requested editorial date;
 - exactly four or five stories;
 - unique story IDs and ordered positions;
-- required category, title, every configured generated summary context within its configured minimum and maximum lengths, destination, and artwork fields;
+- required category, title, every configured generated summary context meeting its mandatory minimum length and format, destination, and artwork fields; configured maximums are advisory targets that never force truncation;
 - HTTPS story and source URLs where URLs are present;
 - supported artwork keys: `models`, `agents`, `research`, `product`, or `business`;
 - exactly one `lead` story and no more than one `wide` story;
