@@ -80,7 +80,7 @@ For the full canonicalization, ten-day published-history, priority-score, random
 
 ### 4. Summarization and selection
 
-An OpenAI-compatible summary provider receives exactly five eligible candidates and returns a structured edition containing four or five stories. The product-level `summaryFeatures.generation` configuration selects which summary variants are generated and stored for each new story; the default is Quick take, Overview, and Deep dive. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
+A summary provider receives exactly five eligible candidates and returns a structured edition containing four or five stories. The provider is chosen by `SUMMARY_PROVIDER_KIND`: the default OpenAI-compatible Chat Completions provider or the Cloudflare Workers AI binding (`env.AI`); a single configuration change swaps between them. The product-level `summaryFeatures.generation` configuration selects which summary variants are generated and stored for each new story; the default is Quick take, Overview, and Deep dive. Provider settings are supplied at runtime; API keys never belong in browser assets, logs, or Git.
 
 ### 5. Validation
 

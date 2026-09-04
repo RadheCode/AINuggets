@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 import {
   GENERATION_PROVIDER_CONFIGURATION,
+  SUMMARY_PROVIDER_KINDS,
   createGenerationProviderDependencies
 } from "../config/create-generation-provider-dependencies.mjs";
 import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
@@ -40,6 +41,124 @@ test("rejects partial summary provider configuration", () => {
       [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://model.example/v1"
     }),
     /configuration is incomplete.*SUMMARY_PROVIDER_API_KEY.*SUMMARY_PROVIDER_MODEL/i
+  );
+});
+
+test("creates a workers-ai summary provider from a binding and model", () => {
+  const dependencies = createGenerationProviderDependencies({
+    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderKind]: SUMMARY_PROVIDER_KINDS.workersAi,
+    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    AI: { run: async () => ({ response: "{}" }) }
+  });
+
+  assert.ok(dependencies.summaryProvider, "expected a workers-ai summary provider");
+  assert.equal(typeof dependencies.summaryProvider.generateEdition, "function");
+});
+
+test("rejects a workers-ai provider without a model", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderKind]: SUMMARY_PROVIDER_KINDS.workersAi,
+      AI: { run: async () => ({ response: "{}" }) }
+    }),
+    /workers-ai summary provider requires SUMMARY_PROVIDER_MODEL/i
+  );
+});
+
+test("rejects an unknown summary provider kind", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderKind]: "azure"
+    }),
+    /Unknown summary provider kind/i
+  );
+});
+
+test("workers-ai summary provider parses the JSON edition from the binding response", async () => {
+  const edition = {
+    date: "2026-08-24",
+    briefing: { eyebrow: "Daily briefing", title: "A title", emphasis: "An emphasis", summary: "A summary", meta: ["m"] },
+    stories: [...Array(4)].map((_, index) => ({
+      id: `story-${index}`,
+      type: index === 0 ? "lead" : null,
+      category: "models",
+      title: `Story ${index}`,
+      summaries: {
+        compact: "x".repeat(100),
+        standard: "y".repeat(240),
+        detailed: "z".repeat(500)
+      },
+      href: "https://example.com/story",
+      art: "models",
+      sourceUrl: "https://example.com/source",
+      sourceName: "Source",
+      sourcePublishedAt: "2026-08-24T00:00:00.000Z"
+    }))
+  };
+  let receivedMessages;
+  const ai = {
+    run: async (model, options) => {
+      assert.equal(model, "@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+      receivedMessages = options.messages;
+      return { response: JSON.stringify(edition) };
+    }
+  };
+  const provider = (await import("../adapters/workers-ai-summary-provider.mjs")).createWorkersAiSummaryProvider({
+    ai,
+    model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    summaryContexts: {
+      compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 },
+      standard: { label: "Standard", minCharacters: 240, maxCharacters: 420 },
+      detailed: { label: "Deep dive", minCharacters: 500, maxCharacters: 900 }
+    },
+    generationInstruction: "Produce a daily AI briefing."
+  });
+
+  const result = await provider.generateEdition({
+    targetDate: "2026-08-24",
+    candidates: [{ title: "Candidate", url: "https://example.com/candidate" }]
+  });
+
+  assert.deepEqual(result, edition);
+  assert.ok(Array.isArray(receivedMessages));
+  assert.equal(receivedMessages.length, 2);
+});
+
+test("workers-ai summary provider rejects invalid JSON from the binding", async () => {
+  const ai = { run: async () => ({ response: "not json" }) };
+  const provider = (await import("../adapters/workers-ai-summary-provider.mjs")).createWorkersAiSummaryProvider({
+    ai,
+    model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    summaryContexts: { compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 } },
+    generationInstruction: "Produce a daily AI briefing."
+  });
+
+  await assert.rejects(
+    provider.generateEdition({ targetDate: "2026-08-24", candidates: [] }),
+    /Workers AI returned invalid JSON/i
+  );
+});
+
+test("builds a workers-ai summary provider through the factory end-to-end", async () => {
+  const dependencies = createGenerationProviderDependencies({
+    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderKind]: SUMMARY_PROVIDER_KINDS.workersAi,
+    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    AI: { run: async () => ({ response: "not json" }) }
+  });
+
+  await assert.rejects(
+    dependencies.summaryProvider.generateEdition({ targetDate: "2026-08-24", candidates: [] }),
+    /invalid JSON/i
+  );
+});
+
+test("workers-ai requires an AI binding through the factory", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderKind]: SUMMARY_PROVIDER_KINDS.workersAi,
+      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    }),
+    /Workers AI binding \(env.AI\) is required/i
   );
 });
 

@@ -139,7 +139,7 @@ Copy-Item content-engine\automation\config\providers.example.env content-engine\
 .\infra\cloudflare\content-worker\sync-provider-config.ps1
 ```
 
-`providers.local.env` is the portable, Git-ignored source of provider settings. The sync script is the Cloudflare-specific adapter that uploads those values as Worker secrets. `CONTENT_SOURCE_API_KEY` is optional. The source endpoint must accept `?date=YYYY-MM-DD` and return a JSON array or `{ "candidates": [...] }`; the summary endpoint must implement OpenAI-compatible Chat Completions. See [Daily content automation](DAILY_CONTENT_AUTOMATION.md) for the candidate contract, secret meanings, and safety rules.
+`providers.local.env` is the portable, Git-ignored source of provider settings. The sync script is the Cloudflare-specific adapter that uploads those values as Worker secrets. `CONTENT_SOURCE_API_KEY` is optional. The source endpoint must accept `?date=YYYY-MM-DD` and return a JSON array or `{ "candidates": [...] }`; the summary provider is selected by `SUMMARY_PROVIDER_KIND` (OpenAI-compatible Chat Completions, or the Workers AI binding declared as `"ai"` in the Worker manifest). See [Daily content automation](DAILY_CONTENT_AUTOMATION.md) for the candidate contract, secret meanings, and safety rules.
 
 The authenticated `POST /internal/generate` endpoint is available only after `AUTOMATION_TRIGGER_TOKEN` is configured as a Worker secret. It allows an external scheduler to request a run using this Worker's configured adapters and optional `{ "targetDate": "YYYY-MM-DD" }` request body; it does not expose secrets or permit clients to supply providers.
 

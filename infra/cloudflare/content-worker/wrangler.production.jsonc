@@ -21,5 +21,8 @@
       "database_id": "__CONTENT_DATABASE_ID__",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  "ai": {
+    "binding": "AI"
+  }
 }

@@ -52,7 +52,8 @@ content-worker/
 | Cloudflare Cron adapter | Complete | Deploys the Cron expression from the central configuration and invokes the portable runner with its runtime dependencies. |
 | Built-in blog collector | Complete | Fetches up to three recent RSS/Atom posts from each editable source; portable collection removes duplicates and recent published stories, then selects exactly five category-diverse candidates. |
 | Generic JSON content source | Complete | Requests an HTTPS endpoint with `?date=YYYY-MM-DD`; accepts an array or `{ "candidates": [...] }`. |
-| OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON for the product-configured generated summary variants from Chat Completions. |
+| OpenAI-compatible summary provider | Complete | Requests schema-constrained JSON for the product-configured generated summary variants from Chat Completions. Selected by `SUMMARY_PROVIDER_KIND=openai` (default). |
+| Workers AI summary provider | Complete | Requests the same schema-constrained daily edition through the Cloudflare Workers AI binding (`env.AI`), selected by `SUMMARY_PROVIDER_KIND=workers-ai`. |
 | D1 repository | Complete | Checks idempotency, records one correlated run plus ordered detailed event records, and saves a draft or directly published edition plus stories in one D1 batch. |
 | Detailed run investigation | Complete | Assigns each attempt a UUID `runId`, records clear structured events for every pipeline decision, and exposes a protected unified per-run view. |
 | Auditing and safe failure | Complete | Records `started`, `skipped`, `succeeded`, or `failed`; failures do not alter existing editions. |
@@ -80,7 +81,7 @@ Each daily edition follows this sequence:
 1. **Start and protect the existing edition.** The scheduler derives the UTC editorial date. If an edition already exists for that date, the job records a skipped run and leaves it unchanged. An authorized beta-only manual request may use `forceReplace: true` to deliberately replace that date's edition; it cannot be combined with a dry run and is unavailable in production.
 2. **Collect source metadata.** The built-in collector reads the approved RSS/Atom feeds in `product/editorial-config.mjs`, retaining up to three recent posts per source. A configured HTTPS JSON candidate source can replace the built-in collector.
 3. **Choose candidates.** URLs are normalized to remove tracking parameters and duplicates. The job excludes canonical URLs used by `published` editions in the prior ten editorial days, then applies the product-owned `candidateSelection.mode`: source priority and freshness (`priority`) or shuffle (`random`). It takes one item per category where possible, then fills the remaining places in that configured order until it has exactly five candidates. Fewer than five eligible candidates fails the run before model generation.
-4. **Generate a structured edition.** Candidate metadata--such as the title, excerpt, source, publication time, and URL--is sent to the configured OpenAI-compatible provider. Candidate text is explicitly treated as untrusted data, not instructions. The provider receives a strict JSON schema and is instructed to use only facts supported by those candidates.
+4. **Generate a structured edition.** Candidate metadata--such as the title, excerpt, source, publication time, and URL--is sent to the configured summary provider, which is selected by `SUMMARY_PROVIDER_KIND` (OpenAI-compatible or the Cloudflare Workers AI binding). Candidate text is explicitly treated as untrusted data, not instructions. The provider receives a strict JSON schema and is instructed to use only facts supported by those candidates.
 5. **Create distinct summary layers.** For every selected story, the provider generates all contexts configured by `summaryFeatures.generation` in `product/config.js`. The current contexts are:
 
    | Layer | Reader label | Required form |
@@ -142,7 +143,7 @@ The Cloudflare adapter emits the same safe structured events to Workers Logs usi
 
 ### Code ownership by workflow stage
 
-The workflow is organized by responsibility rather than creating a file for every individual line of the sequence. The scheduler is in `jobs/run-scheduled-edition.mjs`; `jobs/generate-daily-edition.mjs` composes the pipeline without provider-specific code. The focused pipeline modules own run eligibility and skip auditing, cross-source candidate collection, canonical selection, recent-publication exclusion, model generation plus edition preparation, and persistence plus success/failure auditing. RSS parsing remains in `adapters/rss-blog-content-source.mjs`; shared canonicalization, ordering, and diversity selection live in `pipeline/candidate-selection.mjs`; model request/schema construction is in `adapters/openai-compatible-summary-provider.mjs`; content constraints are in `domain/validate-edition.mjs`; and D1 persistence/history lookup is in the Cloudflare adapter. This keeps each stage independently testable while avoiding artificial modules for operations that must remain atomic.
+The workflow is organized by responsibility rather than creating a file for every individual line of the sequence. The scheduler is in `jobs/run-scheduled-edition.mjs`; `jobs/generate-daily-edition.mjs` composes the pipeline without provider-specific code. The focused pipeline modules own run eligibility and skip auditing, cross-source candidate collection, canonical selection, recent-publication exclusion, model generation plus edition preparation, and persistence plus success/failure auditing. RSS parsing remains in `adapters/rss-blog-content-source.mjs`; shared canonicalization, ordering, and diversity selection live in `pipeline/candidate-selection.mjs`; the shared edition schema and system prompt live in `adapters/edition-prompt.mjs`, and model request construction is split between the OpenAI-compatible adapter (`adapters/openai-compatible-summary-provider.mjs`) and the Cloudflare Workers AI adapter (`adapters/workers-ai-summary-provider.mjs`), selected by `SUMMARY_PROVIDER_KIND` in the provider factory; content constraints are in `domain/validate-edition.mjs`; and D1 persistence/history lookup is in the Cloudflare adapter. This keeps each stage independently testable while avoiding artificial modules for operations that must remain atomic.
 
 ### Twelve-stage implementation map
 
@@ -155,7 +156,7 @@ flowchart TD
     S5["5. Record generation start\n`content-engine/automation/jobs/generate-daily-edition.mjs`\n`infra/cloudflare/content-worker/src/d1-edition-repository.js`"]
     S6["6. Fetch and parse approved sources\n`content-engine/automation/adapters/rss-blog-content-source.mjs`\n`product/editorial-config.mjs`"]
     S7["7. Deduplicate, exclude prior-ten-day published URLs, rank, diversify, and select exactly five\n`content-engine/automation/pipeline/collect-candidates.mjs`\n`content-engine/automation/pipeline/candidate-selection.mjs`"]
-    S8["8. Request schema-constrained model output\n`content-engine/automation/adapters/openai-compatible-summary-provider.mjs`\n`product/config.js`"]
+    S8["8. Request schema-constrained model output\n`content-engine/automation/adapters/edition-prompt.mjs`\n`adapters/openai-compatible-summary-provider.mjs` | `adapters/workers-ai-summary-provider.mjs`\n`content-engine/automation/config/create-generation-provider-dependencies.mjs`"]
     S9["9. Prepare summary layers and validate the edition\n`content-engine/automation/pipeline/prepare-edition.mjs`\n`content-engine/automation/domain/validate-edition.mjs`"]
     S10["10. Save draft or published edition and audit outcome\n`content-engine/automation/pipeline/persist-edition.mjs`\n`infra/cloudflare/content-worker/src/d1-edition-repository.js`"]
     S11["11. Serve published editions through the public API\n`infra/cloudflare/content-worker/src/index.js`"]
@@ -273,13 +274,16 @@ The portable configuration contract is `content-engine/automation/config/create-
 |---|---|
 | `CONTENT_SOURCE_URL` | Optional override: HTTPS endpoint that accepts `?date=YYYY-MM-DD` and returns a candidate array or `{ "candidates": [...] }` |
 | `CONTENT_SOURCE_API_KEY` | Optional bearer token for that endpoint |
-| `SUMMARY_PROVIDER_URL` | OpenAI-compatible API base URL, excluding `/chat/completions` |
-| `SUMMARY_PROVIDER_API_KEY` | API key for the model endpoint |
-| `SUMMARY_PROVIDER_MODEL` | Model identifier |
+| `SUMMARY_PROVIDER_KIND` | Selects the summary provider: `openai` (default, OpenAI-compatible) or `workers-ai` (Cloudflare Workers AI binding) |
+| `SUMMARY_PROVIDER_URL` | OpenAI-compatible API base URL, excluding `/chat/completions` (used only when `SUMMARY_PROVIDER_KIND=openai`) |
+| `SUMMARY_PROVIDER_API_KEY` | API key for the model endpoint (used only when `SUMMARY_PROVIDER_KIND=openai`) |
+| `SUMMARY_PROVIDER_MODEL` | Model identifier for the selected provider |
 
-Each candidate should provide a stable `url` or `canonicalUrl`; any additional fields, such as title, source name, publication time, or excerpt, are treated as untrusted metadata and are passed to the summary provider. The RSS/Atom collector and custom JSON source adapter each apply a 15-second request timeout. The summary adapter applies a 45-second request timeout.
+For the `openai` kind, all of `SUMMARY_PROVIDER_URL`, `SUMMARY_PROVIDER_API_KEY`, and `SUMMARY_PROVIDER_MODEL` must be set together. For the `workers-ai` kind, only `SUMMARY_PROVIDER_MODEL` is required: the Cloudflare Workers AI binding (`env.AI`) is supplied by the Worker runtime and must be declared in the Worker manifest (`wrangler.jsonc` / `wrangler.production.jsonc`). Because the binding exists only in the Cloudflare Worker runtime, the `workers-ai` kind is exercised inside the deployed Worker; the local `test-provider-config.ps1` path covers the `openai` kind.
 
-No summary-provider values means the job safely records a skipped run. A partial summary-provider configuration is rejected with the missing setting names instead of silently running with incomplete settings. `CONTENT_SOURCE_API_KEY` remains optional and is only used with the custom JSON source override.
+Each candidate should provide a stable `url` or `canonicalUrl`; any additional fields, such as title, source name, publication time, or excerpt, are treated as untrusted metadata and are passed to the summary provider. The RSS/Atom collector and custom JSON source adapter each apply a 15-second request timeout. The OpenAI-compatible summary adapter applies a 45-second request timeout.
+
+No summary-provider values means the job safely records a skipped run. A partial summary-provider configuration is rejected with the missing setting names instead of silently running with incomplete settings, and an unknown `SUMMARY_PROVIDER_KIND` is rejected explicitly. `CONTENT_SOURCE_API_KEY` remains optional and is only used with the custom JSON source override.
 
 Before syncing values to an infrastructure provider, test the local summary-provider configuration without exposing its API key:
 
