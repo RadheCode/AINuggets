@@ -35,42 +35,95 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
   }
   const endpoint = `${requireUrl(baseUrl, "Summary provider URL")}/chat/completions`;
 
+  // Normalize model to array for fallback support
+  const models = Array.isArray(model) ? model : [model];
+  if (models.length === 0) throw new Error("At least one model is required.");
+
   return {
     async generateEdition({ targetDate, candidates, eventLogger } = {}) {
-      const response = await fetchImpl(endpoint, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          model,
-                  response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: systemPrompt(summaryContexts, generationInstruction) },
-            { role: "user", content: JSON.stringify({ targetDate, candidates }) }
-          ]
-        }),
-        signal: AbortSignal.timeout(120_000)
-      });
-      if (!response.ok) {
-              const errText = await response.text();
-              throw new Error(`Summary provider request failed (${response.status}): ${errText}`);
-            }
+      let lastError;
+      
+      for (let i = 0; i < models.length; i++) {
+        const currentModel = models[i];
+        const isLastModel = i === models.length - 1;
+        
+        try {
+          await eventLogger?.record("generation", "summary-provider-attempt", {
+            candidateCount: candidates.length,
+            model: currentModel,
+            attempt: i + 1,
+            totalModels: models.length
+          });
+          
+          const response = await fetchImpl(endpoint, {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${apiKey}`,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              model: currentModel,
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: systemPrompt(summaryContexts, generationInstruction) },
+                { role: "user", content: JSON.stringify({ targetDate, candidates }) }
+              ]
+            }),
+            signal: AbortSignal.timeout(120_000)
+          });
+          
+          if (!response.ok) {
+            const errText = await response.text();
+            const error = new Error(`Summary provider request failed (${response.status}): ${errText}`);
+            error.status = response.status;
+            error.model = currentModel;
+            throw error;
+          }
 
-      const body = await response.json();
-      const content = body.choices?.[0]?.message?.content;
-      if (typeof content !== "string") throw new Error("Summary provider returned no structured edition.");
-      await eventLogger?.record("generation", "summary-provider-response-received", {
-        candidateCount: candidates.length,
-        responseCharacterCount: content.length,
-        model
-      }, { outcome: "succeeded" });
-      try {
-        return JSON.parse(content);
-      } catch {
-        throw new Error("Summary provider returned invalid JSON.");
+          const body = await response.json();
+          const content = body.choices?.[0]?.message?.content;
+          if (typeof content !== "string") throw new Error("Summary provider returned no structured edition.");
+          
+          await eventLogger?.record("generation", "summary-provider-response-received", {
+            candidateCount: candidates.length,
+            responseCharacterCount: content.length,
+            model: currentModel
+          }, { outcome: "succeeded" });
+          
+          try {
+            return JSON.parse(content);
+          } catch {
+            throw new Error("Summary provider returned invalid JSON.");
+          }
+        } catch (error) {
+          lastError = error;
+          
+          await eventLogger?.record("generation", "summary-provider-attempt-failed", {
+            candidateCount: candidates.length,
+            model: currentModel,
+            attempt: i + 1,
+            totalModels: models.length,
+            error: error.message,
+            status: error.status
+          }, { outcome: "failed" });
+          
+          // If this is the last model, throw the error
+          if (isLastModel) {
+            throw lastError;
+          }
+          
+          // For non-final models, continue to next model on 404, 500, 502, 503, 504 errors
+          const retryableStatuses = [404, 500, 502, 503, 504];
+          if (error.status && retryableStatuses.includes(error.status)) {
+            continue; // Try next model
+          }
+          
+          // For other errors (401, 400, etc.), don't retry with other models
+          throw error;
+        }
       }
+      
+      throw lastError;
     }
   };
 }

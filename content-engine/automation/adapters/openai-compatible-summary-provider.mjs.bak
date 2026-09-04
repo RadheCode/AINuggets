@@ -1,0 +1,77 @@
+import { createEditionSchema, systemPrompt } from "./edition-prompt.mjs";
+
+function requireUrl(value, name) {
+  try {
+    return new URL(value).toString().replace(/\/$/, "");
+  } catch {
+    throw new Error(`${name} must be an absolute URL.`);
+  }
+}
+
+function validateSummaryContexts(summaryContexts) {
+  if (!summaryContexts || typeof summaryContexts !== "object") {
+    throw new Error("Summary contexts are required.");
+  }
+  for (const key of Object.keys(summaryContexts)) {
+    const context = summaryContexts[key];
+    if (!context || !Number.isInteger(context.minCharacters) || context.minCharacters < 1) {
+      throw new Error(`Summary context "${key}" must define a positive minCharacters value.`);
+    }
+    if (!Number.isInteger(context.maxCharacters) || context.maxCharacters < context.minCharacters) {
+      throw new Error(`Summary context "${key}" must define a maxCharacters value at least as large as minCharacters.`);
+    }
+    if (typeof context.label !== "string" || !context.label.trim()) {
+      throw new Error(`Summary context "${key}" must define a label.`);
+    }
+  }
+}
+
+export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, summaryContexts, generationInstruction, fetchImpl = fetch }) {
+  if (!apiKey) throw new Error("A summary provider API key is required.");
+  if (!model) throw new Error("A summary provider model is required.");
+  validateSummaryContexts(summaryContexts);
+  if (typeof generationInstruction !== "string" || !generationInstruction.trim()) {
+    throw new Error("A product generation instruction is required.");
+  }
+  const endpoint = `${requireUrl(baseUrl, "Summary provider URL")}/chat/completions`;
+
+  return {
+    async generateEdition({ targetDate, candidates, eventLogger } = {}) {
+      const response = await fetchImpl(endpoint, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+                  response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt(summaryContexts, generationInstruction) },
+            { role: "user", content: JSON.stringify({ targetDate, candidates }) }
+          ]
+        }),
+        signal: AbortSignal.timeout(120_000)
+      });
+      if (!response.ok) {
+              const errText = await response.text();
+              throw new Error(`Summary provider request failed (${response.status}): ${errText}`);
+            }
+
+      const body = await response.json();
+      const content = body.choices?.[0]?.message?.content;
+      if (typeof content !== "string") throw new Error("Summary provider returned no structured edition.");
+      await eventLogger?.record("generation", "summary-provider-response-received", {
+        candidateCount: candidates.length,
+        responseCharacterCount: content.length,
+        model
+      }, { outcome: "succeeded" });
+      try {
+        return JSON.parse(content);
+      } catch {
+        throw new Error("Summary provider returned invalid JSON.");
+      }
+    }
+  };
+}
+

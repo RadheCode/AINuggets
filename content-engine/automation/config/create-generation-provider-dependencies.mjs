@@ -25,6 +25,26 @@ function configuredValue(values, name) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+function configuredValueAsArray(values, name) {
+  const value = values?.[name];
+  if (!value) return undefined;
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    // Try to parse as JSON array first
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // Not valid JSON, treat as single value
+    }
+    // Fall back to single value as array
+    return [trimmed];
+  }
+  return undefined;
+}
+
 function summaryProviderKind(values) {
   return configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderKind) || SUMMARY_PROVIDER_KINDS.openai;
 }
@@ -93,7 +113,7 @@ function createSummaryProvider(kind, values, summaryContexts, generationInstruct
   if (kind === SUMMARY_PROVIDER_KINDS.workersAi) {
     return createWorkersAiSummaryProvider({
       ai: values?.["AI"],
-      model: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
+      model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
       summaryContexts,
       generationInstruction
     });
@@ -102,7 +122,7 @@ function createSummaryProvider(kind, values, summaryContexts, generationInstruct
     return createOpenAiCompatibleSummaryProvider({
       baseUrl: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl),
       apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey),
-      model: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
+      model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
       summaryContexts,
       generationInstruction,
       ...options
