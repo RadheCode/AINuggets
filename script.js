@@ -187,7 +187,19 @@ function authApiUrl(path) {
   return `${apiBaseUrl.replace(/\/$/, "")}${path}`;
 }
 
+const visitCacheKey = `${storageNamespace}-last-visit-at`;
+const visitDedupeTtlMs = 30 * 1000;
+
 function recordVisit() {
+  // Skip duplicate visit events when the reader toggles between pages (Today/About)
+  // within the dedupe window; one visit per session window is enough for analytics.
+  try {
+    const lastVisitAt = Number(sessionStorage.getItem(visitCacheKey));
+    if (Number.isFinite(lastVisitAt) && Date.now() - lastVisitAt < visitDedupeTtlMs) return;
+    sessionStorage.setItem(visitCacheKey, String(Date.now()));
+  } catch {
+    // Deduping is best-effort; a storage failure must not block the visit event.
+  }
   fetch(authApiUrl("/api/analytics/visits"), {
     method: "POST",
     headers: { "content-type": "application/json" },

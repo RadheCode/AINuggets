@@ -1,0 +1,11 @@
+# Cloudflare Pages deployment manifest (project root is the Pages output directory).
+#
+# HTML and application code are revalidated (ETag 304) so editorial content and
+# freshly deployed code always arrive. Effectively immutable company artwork is
+# cached long-term. This keeps Today/About navigation instant without ever
+# serving stale code or stale published content.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+product/company-images/*
+  Cache-Control: public, max-age=604800
