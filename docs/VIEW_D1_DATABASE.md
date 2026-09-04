@@ -238,6 +238,34 @@ The report executes only aggregate `SELECT` queries, displays period boundaries 
 
 Use the repository-local [Visitor Analytics Table skill](../.github/skills/visitor-analytics-table/SKILL.md) when you want this report presented directly as neat Markdown tables for **Beta**, **Production**, or **both**. It runs each requested environment independently and keeps their totals separate.
 
+### Report generation-run analytics (content automation)
+
+The content-generation automation runs twice daily and logs each attempt's status and timing in `generation_runs` plus fine-grained stage events in `generation_run_events`. Use the repository-local report to get aggregate Day / Week / Month IST summaries of runs, succeeded / failed / skipped counts, success rate, and the latest retained run (status + failure reason) for the selected environment:
+
+```powershell
+.\infra\cloudflare\content-worker\report-generation-run-analytics.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-beta-generation-run-analytics.md"
+```
+
+Counts include only retained generation runs (retention is three days). The report requires migration `0011_add_generation_run_events.sql` in the selected environment. Replace `Beta` with `Production` only when production inspection is explicitly intended.
+
+### Report published-content summary
+
+Use the repository-local report to see editions totals by status, stories broken down by category, total published stories, and recent editions (last 7 days) for the selected environment:
+
+```powershell
+.\infra\cloudflare\content-worker\report-content-summary.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-beta-content-summary.md"
+```
+
+Replace `Beta` with `Production` only when production inspection is explicitly intended.
+
+### Fetch all analytics in one go
+
+Use the repository-local [Fetch Analytics (uber) skill](../.github/skills/fetch-analytics/SKILL.md) when you want visitor analytics, generation-run analytics, reader feedback, and the content summary all in one call for **Beta**, **Production**, or **both**. It runs each requested report per environment independently and keeps their totals separate.
+
 View user login and refresh activity:
 
 ```powershell
