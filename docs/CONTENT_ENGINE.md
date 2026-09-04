@@ -138,7 +138,7 @@ The beta Worker accepts browser requests only from `https://beta-ai-nuggets.page
 2. It requests `/api/editions/latest` or the date-specific route from the Worker URL in `product/config.js`.
 3. It verifies the returned briefing and four-to-five-story payload before exposing it as `window.ProductContentReady`.
 4. `content-engine/render.js` creates one accessible button per story and assigns deterministic slot classes such as `story-card--slot-1` through `story-card--slot-5`.
-5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the configured default summary. The renderer derives accessible controls from the product-level `summaryFeatures.ui` configuration and omits any enabled UI context unavailable in that edition, so it never shows an empty control. Switching between available persisted layers does not make another request.
+5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the configured default summary. Its footer keeps previous/next buttons available and visibly identifies the Left and Right Arrow shortcut for browsing stories. The renderer derives accessible controls from the product-level `summaryFeatures.ui` configuration and omits any enabled UI context unavailable in that edition, so it never shows an empty control. Switching between available persisted layers does not make another request.
 
 The rendering layer is intentionally theme-independent, so a theme switch can restyle the same content without changing its data contract or interaction behavior.
 

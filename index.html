@@ -146,9 +146,12 @@
     </div>
     <div id="storyDialogSummary" tabindex="0" aria-label="Story summary. Use Arrow Up and Arrow Down to scroll."></div>
     <div class="story-dialog-actions">
-      <div class="story-dialog-navigation" aria-label="Story navigation" role="group">
-        <button class="story-dialog-navigation-button" id="storyDialogPrevious" type="button" aria-label="Previous story" disabled><span aria-hidden="true">&larr;</span><span>Previous</span></button>
-        <button class="story-dialog-navigation-button" id="storyDialogNext" type="button" aria-label="Next story"><span>Next</span><span aria-hidden="true">&rarr;</span></button>
+      <div class="story-dialog-navigation-group">
+        <div class="story-dialog-navigation" aria-label="Story navigation" role="group">
+          <button class="story-dialog-navigation-button" id="storyDialogPrevious" type="button" aria-label="Previous story" disabled><span aria-hidden="true">&larr;</span><span>Previous</span></button>
+          <button class="story-dialog-navigation-button" id="storyDialogNext" type="button" aria-label="Next story"><span>Next</span><span aria-hidden="true">&rarr;</span></button>
+        </div>
+        <p class="story-dialog-navigation-hint"><span aria-hidden="true">&larr; &rarr;</span> keys browse stories</p>
       </div>
       <a class="story-dialog-source" id="storyDialogSource" target="_blank" rel="noopener noreferrer">Read the source <span aria-hidden="true">&nearr;</span></a>
     </div>
