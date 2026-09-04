@@ -153,7 +153,7 @@ function renderAuthWidget(state, user = null, message = "") {
   closeLoginMenu();
   currentUser = signedIn && user ? user : null;
   updateFeedbackEmail();
-  streakGuidance.textContent = streakGuidanceText();
+  streakGuidance.innerHTML = streakGuidanceText();
 
   if (signedIn && user) {
     const name = displayName(user);
