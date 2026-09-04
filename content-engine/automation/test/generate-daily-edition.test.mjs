@@ -328,8 +328,9 @@ test("records a failed run when validation rejects an edition", async () => {
   const source = candidateSource();
   const summaryProvider = {
     async generateEdition() {
+      // Missing summaries entirely - not repairable
       const invalid = edition();
-      invalid.stories = invalid.stories.slice(0, 3);
+      invalid.stories[0].summaries = null;
       return invalid;
     }
   };
@@ -342,7 +343,7 @@ test("records a failed run when validation rejects an edition", async () => {
       summaryProvider,
       logger: {}
     }),
-    /four or five stories/
+    /summaries/
   );
   assert.deepEqual(repository.runs.map((run) => run.status), ["failed"]);
   assert.equal(repository.editions.size, 0);
@@ -479,7 +480,7 @@ test("rejects Overview summaries that are not bullet points", async () => {
       summaryProvider,
       logger: {}
     }),
-    /summaries\.standard.*three or four bullet points/i
+    /must contain three or four bullet points/i
   );
 });
 

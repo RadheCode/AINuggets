@@ -45,17 +45,18 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
         },
         body: JSON.stringify({
           model,
-          response_format: { type: "json_schema", json_schema: createEditionSchema(summaryContexts) },
+                  response_format: { type: "json_object" },
           messages: [
             { role: "system", content: systemPrompt(summaryContexts, generationInstruction) },
             { role: "user", content: JSON.stringify({ targetDate, candidates }) }
           ]
         }),
-        signal: AbortSignal.timeout(45_000)
+        signal: AbortSignal.timeout(120_000)
       });
       if (!response.ok) {
-        throw new Error(`Summary provider request failed (${response.status}).`);
-      }
+              const errText = await response.text();
+              throw new Error(`Summary provider request failed (${response.status}): ${errText}`);
+            }
 
       const body = await response.json();
       const content = body.choices?.[0]?.message?.content;

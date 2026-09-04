@@ -40,10 +40,23 @@ export function createWorkersAiSummaryProvider({ ai, model, summaryContexts, gen
           { role: "system", content: systemPrompt(summaryContexts, generationInstruction) },
           { role: "user", content: JSON.stringify({ targetDate, candidates }) }
         ],
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        // The default max_tokens for this model is only 256, which truncates
+        // a full edition (5 stories x 3 summary layers) mid-JSON. Raise it so
+        // the entire structured edition is generated before parsing.
+        max_tokens: 6000,
+        temperature: 0.2
       });
 
-      const content = typeof result === "string" ? result : result?.response;
+      // Workers AI returns a vLLM/OpenAI-compatible envelope: when structured
+      // json_object mode is used the generated text lands in
+      // choices[0].message.content, while the top-level `response` key can be
+      // empty. Accept a plain string, a non-empty top-level `response`, or the
+      // choices content so all shapes resolve to the edition text.
+      const content = typeof result === "string"
+        ? result
+        : (typeof result?.response === "string" && result.response.trim() ? result.response : undefined)
+          ?? result?.choices?.[0]?.message?.content;
       if (typeof content !== "string" || !content.trim()) {
         throw new Error("Workers AI returned no structured edition.");
       }
@@ -53,10 +66,28 @@ export function createWorkersAiSummaryProvider({ ai, model, summaryContexts, gen
         model
       }, { outcome: "succeeded" });
       try {
-        return JSON.parse(content);
+        return JSON.parse(extractJson(content));
       } catch {
         throw new Error("Workers AI returned invalid JSON.");
       }
     }
   };
+}
+
+/**
+ * Recovers a JSON value from a model response. Llama-family models sometimes
+ * wrap JSON in ```json fences or prefix it with prose even when
+ * response_format asks for json_object, so strip fences and surface the first
+ * balanced JSON object/array before relying on strict JSON.parse.
+ */
+function extractJson(content) {
+  const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : content;
+  const trimmed = candidate.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) return trimmed;
+  const objectStart = candidate.indexOf("{");
+  const arrayStart = candidate.indexOf("[");
+  const start = objectStart === -1 ? arrayStart : arrayStart === -1 ? objectStart : Math.min(objectStart, arrayStart);
+  if (start === -1) return trimmed;
+  return candidate.slice(start).trim();
 }

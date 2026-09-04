@@ -300,9 +300,18 @@ async function submitFeedback(request, env, cors) {
 function createAutomationDependencies(env) {
   validateSummaryFeatureConfig();
   validateStreakFeatureConfig();
+  const values = {
+    CONTENT_SOURCE_URL: env.CONTENT_SOURCE_URL,
+    CONTENT_SOURCE_API_KEY: env.CONTENT_SOURCE_API_KEY,
+    SUMMARY_PROVIDER_KIND: env.SUMMARY_PROVIDER_KIND,
+    SUMMARY_PROVIDER_URL: env.SUMMARY_PROVIDER_URL,
+    SUMMARY_PROVIDER_API_KEY: env.SUMMARY_PROVIDER_API_KEY,
+    SUMMARY_PROVIDER_MODEL: env.SUMMARY_PROVIDER_MODEL,
+    AI: env.AI
+  };
   return {
     editionRepository: createD1EditionRepository(env.CONTENT_DB),
-    ...createGenerationProviderDependencies(env),
+    ...createGenerationProviderDependencies(values),
     automaticallyPublish: CONTENT_ENGINE_CONFIG.publication.automaticallyPublish,
     logger: console
   };

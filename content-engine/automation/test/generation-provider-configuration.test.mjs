@@ -15,6 +15,29 @@ import { validateContentEngineConfig } from "../../validate-content-engine-confi
 import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
 import { STREAK_FEATURE_CONFIG, validateStreakFeatureConfig } from "../../../product/streak-features.mjs";
 
+function sampleEdition() {
+  return {
+    date: "2026-08-24",
+    briefing: { eyebrow: "Daily briefing", title: "A title", emphasis: "An emphasis", summary: "A summary", meta: ["m"] },
+    stories: [...Array(4)].map((_, index) => ({
+      id: `story-${index}`,
+      type: index === 0 ? "lead" : null,
+      category: "models",
+      title: `Story ${index}`,
+      summaries: {
+        compact: "x".repeat(100),
+        standard: "y".repeat(240),
+        detailed: "z".repeat(500)
+      },
+      href: "https://example.com/story",
+      art: "models",
+      sourceUrl: "https://example.com/source",
+      sourceName: "Source",
+      sourcePublishedAt: "2026-08-24T00:00:00.000Z"
+    }))
+  };
+}
+
 test("uses the built-in blog collector when no source URL is supplied", () => {
   const dependencies = createGenerationProviderDependencies({});
 
@@ -75,26 +98,7 @@ test("rejects an unknown summary provider kind", () => {
 });
 
 test("workers-ai summary provider parses the JSON edition from the binding response", async () => {
-  const edition = {
-    date: "2026-08-24",
-    briefing: { eyebrow: "Daily briefing", title: "A title", emphasis: "An emphasis", summary: "A summary", meta: ["m"] },
-    stories: [...Array(4)].map((_, index) => ({
-      id: `story-${index}`,
-      type: index === 0 ? "lead" : null,
-      category: "models",
-      title: `Story ${index}`,
-      summaries: {
-        compact: "x".repeat(100),
-        standard: "y".repeat(240),
-        detailed: "z".repeat(500)
-      },
-      href: "https://example.com/story",
-      art: "models",
-      sourceUrl: "https://example.com/source",
-      sourceName: "Source",
-      sourcePublishedAt: "2026-08-24T00:00:00.000Z"
-    }))
-  };
+  const edition = sampleEdition();
   let receivedMessages;
   const ai = {
     run: async (model, options) => {
@@ -122,6 +126,38 @@ test("workers-ai summary provider parses the JSON edition from the binding respo
   assert.deepEqual(result, edition);
   assert.ok(Array.isArray(receivedMessages));
   assert.equal(receivedMessages.length, 2);
+});
+
+test("workers-ai summary provider strips markdown fences and prose around JSON", async () => {
+  const edition = sampleEdition();
+  const ai = {
+    run: async () => ({ response: `Here is your edition:\n\`\`\`json\n${JSON.stringify(edition)}\n\`\`\`` })
+  };
+  const provider = (await import("../adapters/workers-ai-summary-provider.mjs")).createWorkersAiSummaryProvider({
+    ai,
+    model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    summaryContexts: { compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 } },
+    generationInstruction: "Produce a daily AI briefing."
+  });
+
+  const result = await provider.generateEdition({ targetDate: "2026-08-24", candidates: [] });
+  assert.deepEqual(result, edition);
+});
+
+test("workers-ai summary provider reads the edition from choices content (vLLM envelope)", async () => {
+  const edition = sampleEdition();
+  const ai = {
+    run: async () => ({ response: "", choices: [{ message: { content: JSON.stringify(edition) } }] })
+  };
+  const provider = (await import("../adapters/workers-ai-summary-provider.mjs")).createWorkersAiSummaryProvider({
+    ai,
+    model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    summaryContexts: { compact: { label: "Quick take", minCharacters: 100, maxCharacters: 180 } },
+    generationInstruction: "Produce a daily AI briefing."
+  });
+
+  const result = await provider.generateEdition({ targetDate: "2026-08-24", candidates: [] });
+  assert.deepEqual(result, edition);
 });
 
 test("workers-ai summary provider rejects invalid JSON from the binding", async () => {

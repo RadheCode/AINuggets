@@ -43,20 +43,13 @@ test("requests a structured edition from a compatible endpoint", async () => {
   assert.equal(request.url, "https://model.example/v1/chat/completions");
   assert.equal(request.options.headers.authorization, "Bearer model-secret");
   assert.equal(payload.model, "editorial-model");
-  assert.equal(payload.response_format.type, "json_schema");
-  const summaries = payload.response_format.json_schema.schema.properties.stories.items.properties.summaries;
-  assert.deepEqual(summaries.required, ["compact", "standard", "detailed"]);
-  assert.equal(summaries.properties.compact.minLength, 100);
-  assert.equal("maxLength" in summaries.properties.compact, false);
-  assert.equal(summaries.properties.standard.minLength, 240);
-  assert.equal("maxLength" in summaries.properties.standard, false);
-  assert.equal(summaries.properties.detailed.minLength, 500);
-  assert.equal("maxLength" in summaries.properties.detailed, false);
-  const systemPrompt = payload.messages.find((message) => message.role === "system").content;
+  // Gemini OpenAI endpoint only supports json_object, not json_schema
+    assert.equal(payload.response_format.type, "json_object");
+      const systemPrompt = payload.messages.find((message) => message.role === "system").content;
   assert.match(systemPrompt, /Count every character/i);
   assert.match(systemPrompt, /Every minimum is mandatory/i);
   assert.match(systemPrompt, /maximum is a target, not a rejection limit/i);
-  assert.match(systemPrompt, /three or four Markdown-style bullet points/i);
-  assert.match(systemPrompt, /two to four short paragraphs/i);
+  assert.match(systemPrompt, /EXACTLY 3 or 4 bullet points/i);
+  assert.match(systemPrompt, /2 to 4 short paragraphs/i);
   assert.deepEqual(edition, { date: "2026-08-24" });
 });

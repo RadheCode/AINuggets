@@ -16,7 +16,8 @@ export async function generateDailyEdition({
   automaticallyPublish = false,
   logger = console,
   dryRun = false,
-  forceReplace = false
+  forceReplace = false,
+  generationAttempts
 }) {
   if (!isValidEditorialDate(targetDate)) throw new Error(`Invalid target date: ${targetDate}.`);
   if (!editionRepository) throw new Error("An edition repository is required.");
@@ -42,7 +43,7 @@ export async function generateDailyEdition({
 
   try {
     const candidates = await collectCandidates(contentSources, targetDate, editionRepository, candidateSelection, eventLogger);
-    const edition = await prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger });
+    const edition = await prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger, generationAttempts });
     if (dryRun) return completeDryRun({ editionRepository, edition, targetDate, runId, logger, eventLogger });
     return persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, forceReplace, logger, eventLogger });
   } catch (error) {
