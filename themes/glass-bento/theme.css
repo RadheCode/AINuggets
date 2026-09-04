@@ -317,7 +317,9 @@ dialog:not([open]) { display: none; }
 .story-dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-top: 16px; }
 .story-dialog-navigation-group { display: grid; gap: 5px; }
 .story-dialog-navigation { display: flex; gap: 6px; }
-.story-dialog-navigation-hint { margin: 0; color: var(--muted); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.03em; }
+.story-dialog-navigation-hint { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0; color: var(--muted); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.03em; }
+.story-dialog-navigation-hint-item { display: inline-flex; gap: 3px; align-items: center; }
+.story-dialog-kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 3px; border: 1px solid #9ea9d7; border-radius: 4px; color: #28366f; background: #eef1ff; font-size: 0.6rem; line-height: 1; }
 .story-dialog-navigation-button { display: inline-flex; gap: 6px; align-items: center; border: 1px solid #9ea9d7; border-radius: 9px; padding: 9px 10px; color: #28366f; background: #eef1ff; font-size: 0.68rem; font-weight: 800; cursor: pointer; }
 .story-dialog-navigation-button:hover { border-color: #5365bb; background: #dfe5ff; }
 .story-dialog-navigation-button:disabled { border-color: #c9cde0; color: #858a9f; background: #e3e5eb; cursor: not-allowed; opacity: 0.72; }

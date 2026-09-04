@@ -1,11 +1,37 @@
 (function initializeContentLoader() {
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const editionCacheTtlMs = 5 * 60 * 1000;
 
   function isValidDate(value) {
     if (!datePattern.test(value)) return false;
     const [year, month, day] = value.split("-").map(Number);
     const date = new Date(Date.UTC(year, month - 1, day));
     return date.toISOString().slice(0, 10) === value;
+  }
+
+  function editionCacheKey(editionKey) {
+    return `${window.ProductConfig?.identity?.storageNamespace}-edition:${editionKey}`;
+  }
+
+  function readCachedEdition(editionKey) {
+    try {
+      const raw = sessionStorage.getItem(editionCacheKey(editionKey));
+      if (!raw) return null;
+      const cached = JSON.parse(raw);
+      if (!cached || !cached.data || !Number.isFinite(cached.at)) return null;
+      if (Date.now() - cached.at > editionCacheTtlMs) return null;
+      return cached.data;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeCachedEdition(editionKey, data) {
+    try {
+      sessionStorage.setItem(editionCacheKey(editionKey), JSON.stringify({ at: Date.now(), data }));
+    } catch {
+      // Caching is best-effort; a full storage failure must not block rendering.
+    }
   }
 
   async function fetchJson(url) {
@@ -29,6 +55,9 @@
     }
 
     const editionKey = requestedDate || "latest";
+    const cached = readCachedEdition(editionKey);
+    if (cached) return Object.freeze(cached);
+
     const apiBaseUrl = (window.location.hostname === runtime.sites.production
       ? runtime.contentApiUrls.production
       : runtime.contentApiUrls.beta).replace(/\/$/, "");
@@ -44,6 +73,7 @@
       }
     }
 
+    writeCachedEdition(editionKey, content);
     return Object.freeze(content);
   }
 

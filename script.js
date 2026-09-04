@@ -38,6 +38,8 @@ if (!Number.isInteger(maximumDaysBetweenQualifyingActivities) || maximumDaysBetw
   throw new Error("Product streak configuration is missing or invalid.");
 }
 const sessionTokenKey = `${storageNamespace}-session-token`;
+const sessionCacheKey = `${storageNamespace}-session-cache`;
+const sessionCacheTtlMs = 5 * 60 * 1000;
 let googleIdentityInitialized = false;
 let authState = "initializing";
 let currentUser = null;
@@ -334,21 +336,55 @@ signOutButton.addEventListener("click", async () => {
     // A locally removed bearer token must remain unusable even if its revocation request fails.
   }
   localStorage.removeItem(sessionTokenKey);
+  sessionStorage.removeItem(sessionCacheKey);
   window.google?.accounts.id.disableAutoSelect();
   renderAuthWidget("signed-out");
 });
+
+function readCachedSession() {
+  try {
+    const raw = sessionStorage.getItem(sessionCacheKey);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (!cached || !cached.user || !Number.isFinite(cached.at)) return null;
+    if (Date.now() - cached.at > sessionCacheTtlMs) return null;
+    if (cached.token !== localStorage.getItem(sessionTokenKey)) return null;
+    return cached.user;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSession(user) {
+  try {
+    sessionStorage.setItem(sessionCacheKey, JSON.stringify({
+      token: localStorage.getItem(sessionTokenKey),
+      user,
+      at: Date.now()
+    }));
+  } catch {
+    // Caching is best-effort; a full storage failure must not block sign-in.
+  }
+}
 
 async function restoreSession() {
   if (!localStorage.getItem(sessionTokenKey)) {
     if (googleIdentityInitialized) renderAuthWidget("signed-out");
     return;
   }
+  const cachedUser = readCachedSession();
+  if (cachedUser) {
+    renderAuthWidget("signed-in", cachedUser, `Signed in as ${displayName(cachedUser)}.`);
+    return;
+  }
   try {
     if (window.ProductContentReady) await window.ProductContentReady.catch(() => undefined);
     const data = await responseData(await authRequest("/auth/session"));
+    writeCachedSession(data.user);
     renderAuthWidget("signed-in", data.user, `Signed in as ${displayName(data.user)}.`);
   } catch {
     localStorage.removeItem(sessionTokenKey);
+    sessionStorage.removeItem(sessionCacheKey);
     if (googleIdentityInitialized) renderAuthWidget("signed-out");
   }
 }

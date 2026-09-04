@@ -115,3 +115,9 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Every new or materially changed user-facing feature must also update `docs/AI_NUGGETS_FEATURE_SUMMARY.md`. Create the relevant documentation when none exists, and keep root documentation links current.
 - Update `docs/THEME_RULEBOOK.md` and this instruction file when the theme contract changes.
 - Before completing changes, verify JavaScript syntax, theme asset paths, keyboard interactions, reduced-motion behavior, and no-scroll viewport fit at representative breakpoints. For UI changes, also verify that every affected visible element remains anchored, present, and usable during window resizing and every state that changes its surrounding content.
+
+## Progress reporting
+
+- At the start of every multi-step task, report the estimated percentage of work complete (% ), a concise list of what has been done and what remains, and an ETA in minutes to finish.
+- Re-report % done and ETA whenever a scheduled check-in (e.g. the 1-minute automation) wakes the session mid-task, or whenever a task's scope changes materially.
+- When a task completes, report `100%` and `ETA: 0 minutes`.
