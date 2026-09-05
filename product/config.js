@@ -59,5 +59,32 @@ globalThis.ProductConfig = Object.freeze({
       standard: Object.freeze({ label: "Overview", minCharacters: 240, maxCharacters: 420, format: "bullets" }),
       detailed: Object.freeze({ label: "Deep dive", minCharacters: 500, maxCharacters: 900, format: "paragraphs" })
     })
+  }),
+  monetization: Object.freeze({
+    // Sponsorship configuration
+    sponsorships: Object.freeze({
+      // Maximum sponsored stories per edition (0 = disabled, 1 = enabled with limit)
+      maxStoriesPerEdition: 0,
+      // Whether to show sponsor recognition in newsletter/email
+      newsletterRecognitionEnabled: false,
+      // Whether to show sponsor recognition on website
+      websiteRecognitionEnabled: false
+    }),
+    // Affiliate program configuration
+    affiliate: Object.freeze({
+      // Whether affiliate links are enabled
+      enabled: false,
+      // Disclosure text for affiliate links
+      disclosureText: "We may earn a commission if you purchase through this link, at no extra cost to you. We only recommend products we've tested and believe genuinely benefit our audience."
+    }),
+    // Premium features configuration
+    premium: Object.freeze({
+      // Whether premium tier is enabled
+      enabled: false,
+      // Monthly price in USD
+      priceMonthly: 5,
+      // Annual price in USD
+      priceAnnual: 50
+    })
   })
 });

@@ -126,6 +126,28 @@ function trackReferralVisit() {
   }
 }
 
+// Affiliate Tracking Functions
+function trackAffiliateClick(destinationUrl, affiliateId) {
+  if (!ProductConfig.monetization?.affiliate?.enabled) return;
+   
+  try {
+    // Track affiliate click to analytics
+    fetch(authApiUrl("/api/analytics/affiliate-click"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        eventId: createOpaqueId(),
+        visitorId: visitorId(),
+        destinationUrl: destinationUrl,
+        affiliateId: affiliateId || "unknown"
+      }),
+      keepalive: true
+    }).catch(() => undefined);
+  } catch {
+    // Tracking failure is non-critical
+  }
+}
+
 function closeAccountMenu() {
   accountMenu.hidden = true;
   accountMenuToggle.setAttribute("aria-expanded", "false");
@@ -450,6 +472,7 @@ renderAuthWidget("initializing");
 initializeGoogleSignIn();
 restoreSession();
 recordVisit();
+trackReferralVisit();
 trackReferralVisit();
 
 feedbackTab.addEventListener("click", () => {
