@@ -81,6 +81,51 @@ function streakGuidanceText() {
   return template.replace("{days}", `${lenienceDays} ${dayLabel}`);
 }
 
+// Referral Tracking Functions
+function getReferralSource() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('ref') || urlParams.get('source') || urlParams.get('utm_source');
+  } catch {
+    return null;
+  }
+}
+
+function storeReferralSource(source) {
+  if (!source) return;
+  try {
+    localStorage.setItem(`${storageNamespace}-referral-source`, source);
+  } catch {
+    // Storage failure is non-critical
+  }
+}
+
+function getStoredReferralSource() {
+  try {
+    return localStorage.getItem(`${storageNamespace}-referral-source`);
+  } catch {
+    return null;
+  }
+}
+
+function trackReferralVisit() {
+  const referralSource = getReferralSource();
+  if (referralSource) {
+    storeReferralSource(referralSource);
+    // Track referral visit to analytics
+    fetch(authApiUrl("/api/analytics/referral-visit"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        eventId: createOpaqueId(),
+        visitorId: visitorId(),
+        referralSource: referralSource
+      }),
+      keepalive: true
+    }).catch(() => undefined);
+  }
+}
+
 function closeAccountMenu() {
   accountMenu.hidden = true;
   accountMenuToggle.setAttribute("aria-expanded", "false");
@@ -405,6 +450,7 @@ renderAuthWidget("initializing");
 initializeGoogleSignIn();
 restoreSession();
 recordVisit();
+trackReferralVisit();
 
 feedbackTab.addEventListener("click", () => {
   feedbackMessageStatus.textContent = "";
