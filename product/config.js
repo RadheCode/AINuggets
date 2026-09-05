@@ -107,7 +107,7 @@ globalThis.ProductConfig = Object.freeze({
                                         name: "Razorpay",
                                                                               iconSvg: '<svg viewBox="0 0 24 24" aria-hidden="true"><text x="5.5" y="17" font-size="14.5" font-weight="700" font-family="sans-serif" fill="currentColor">₹</text></svg>',
                                         tagline: "Pay your way, securely",
-                                        href: "https://rzp.io/l/ai-nuggets-support",
+                                        href: "https://razorpay.me/@ainuggets",
                                         cta: "Pay with Razorpay",
                                         detail: "A secure one-time contribution that keeps AI Nuggets independent and free. Pay via UPI, cards, or netbanking — the Razorpay checkout opens in a new tab."
                                       })
