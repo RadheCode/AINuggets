@@ -129,12 +129,13 @@ The header is a three-part grid: product identity on the left, navigation in the
 - Every story must retain its title and action at every supported viewport. Summary copy may condense before essential information is hidden.
 - Artwork is decorative support for content, never the only source of information. `.story-shade` must keep foreground content readable over every supported artwork key.
 
-### 4.5 Footer and feedback
+### 4.5 Footer and edge tabs
 
-`.site-footer` is quiet, structural product context. The feedback tab is an explicit, discoverable action anchored to the shared frame.
+`.site-footer` is quiet, structural product context. Feedback is an edge tab in `.edge-tabs`, vertically centered and fixed to the shared frame's right border so it stays anchored to the frame during resize. `.edge-tabs` lives outside the frame shell (which clips overflow) and is pinned with `position: fixed` so the tab may protrude beyond the frame border; Feedback slides inside the frame (`translateX(-100%)`), its right edge touching the frame's right border. Support is a compact horizontal pill hosted in the footer's right side.
 
-- Avoid adding competing calls to action in the footer.
-- Feedback opens the canonical dialog shell and must be keyboard accessible, labeled, and focus-managed.
+- Keep the footer free of competing calls to action; the Feedback edge tab is the discoverable reader-engagement action, and Support sits quietly at the footer's right edge.
+- Feedback uses the docked edge-tab treatment (vertical label, rounded left corners, distinctive elevation and hover/focus behavior) so it reads as the attached reader-engagement control.
+- The Feedback edge tab must remain visible and usable at every supported breakpoint; do not hide it to resolve responsive constraints. Its fixed-left anchor follows the frame's right-border geometry (`calc(50% + min(590px, calc(50% - 20px)))` base, `calc(100% - 12px)` at ≤1050px, `calc(100% - 6px)` at ≤760px).
 
 ## 5. Components and interaction states
 
@@ -152,6 +153,8 @@ The header is a three-part grid: product identity on the left, navigation in the
 | Dialog | `.story-dialog`, `.feedback-dialog`, `.dialog-close`, `.dialog-mark` | Canonical overlay shell; all new dialogs, panels, and overlays must inherit its surface, elevation, backdrop, close treatment, responsive size, spacing, motion, and internal scroll behavior. |
 | Menu | `.account-menu` | Anchored to its trigger, visually related to account control, with a clear boundary and keyboard-safe open/close behavior. |
 | Feedback controls | `.feedback-*` | Use normal labels, grouped rating semantics, clear validation and submit states. |
+| Edge tab | `.edge-tabs`, `.feedback-tab` | Feedback tab vertically centered at the frame's right border; `.edge-tabs` is `position: fixed` outside the clipping frame so Feedback reads inside the border. Vertical-label treatment, rounded left corners, distinctive elevation and hover/focus behavior. Must stay anchored and visible at every breakpoint. |
+| Support pill | `.support-tab` | Compact horizontal pill hosted in the site footer's right side; opens the support dialog. Reuses the warm accent treatment while staying visually lighter than the Feedback edge tab. |
 
 ### 5.2 Required states
 

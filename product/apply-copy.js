@@ -4,7 +4,7 @@
     throw new Error("Product configuration is missing or invalid.");
   }
 
-  const { identity, copy } = config;
+  const { identity, copy, support } = config;
   document.title = copy.documentTitle;
   document.querySelector('meta[name="description"]')?.setAttribute("content", copy.metaDescription);
 
@@ -25,8 +25,11 @@
     aboutLabel: copy.about.label,
     aboutEyebrow: copy.about.eyebrow,
     aboutDescription: copy.about.description,
-    aboutPromise: copy.about.promise
-  };
+        aboutPromise: copy.about.promise,
+        supportLabel: support?.copy?.label ?? "",
+                supportTitle: support?.copy?.title ?? "",
+                supportDescription: support?.copy?.description ?? ""
+              };
 
   for (const [id, text] of Object.entries(textTargets)) {
     document.querySelectorAll(`[data-product-copy="${id}"]`).forEach((target) => {

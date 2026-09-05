@@ -529,3 +529,177 @@ feedbackForm.addEventListener("submit", async (event) => {
     feedbackSubmit.textContent = "Send feedback";
   }
 });
+
+  // --- Support (donation) dialog ---
+  const supportTab = document.querySelector("#supportTab");
+  const supportDialog = document.querySelector("#supportDialog");
+  const supportDialogClose = document.querySelector("#supportDialogClose");
+  const supportBody = document.querySelector("#supportBody");
+  const supportCopy = productConfig?.support?.copy ?? {};
+
+  function supportActionButton({ className, href, label, emoji, svg }) {
+    const button = document.createElement("a");
+    button.className = className;
+    button.href = href;
+    button.target = "_blank";
+    button.rel = "noopener noreferrer";
+    const icon = document.createElement("span");
+    icon.className = "support-action-icon";
+    icon.setAttribute("aria-hidden", "true");
+      if (svg) {
+        icon.innerHTML = svg;
+      } else {
+        icon.textContent = emoji;
+      }
+      const text = document.createElement("span");
+      text.textContent = label;
+      button.append(icon, text);
+      return button;
+    }
+
+  function renderSupportComingSoon() {
+      if (!supportBody) return;
+      supportBody.replaceChildren();
+      const message = document.createElement("p");
+      message.className = "support-coming-soon";
+      message.textContent = supportCopy.comingSoon ?? "Support coming soon.";
+      supportBody.append(message);
+    }
+
+      function renderSupportBody() {
+      if (!supportBody) return;
+          const config = productConfig?.support;
+          const providers = (config?.providers ?? []).filter((p) => typeof p?.href === "string" && p.href);
+
+          if (!providers.length) {
+            renderSupportComingSoon();
+            return;
+          }
+
+          supportBody.replaceChildren();
+
+          const layout = document.createElement("div");
+          layout.className = "support-layout";
+
+          const picker = document.createElement("div");
+          picker.className = "support-picker";
+          picker.setAttribute("role", "tablist");
+          picker.setAttribute("aria-label", supportCopy.providerPrompt ?? "Choose a payment method");
+
+          const detail = document.createElement("div");
+          detail.className = "support-detail";
+          detail.id = "supportDetailPane";
+          detail.setAttribute("role", "tabpanel");
+          detail.setAttribute("aria-live", "polite");
+
+          let activeId = config?.defaultProvider;
+          if (!providers.some((p) => p.id === activeId)) activeId = providers[0].id;
+
+          function renderDetail(provider) {
+            detail.replaceChildren();
+
+            const head = document.createElement("div");
+            head.className = "support-detail-head";
+            const name = document.createElement("p");
+            name.className = "support-detail-name";
+            name.textContent = provider.name;
+            head.append(name);
+            const tagline = document.createElement("p");
+            tagline.className = "support-detail-tagline";
+            tagline.textContent = provider.tagline ?? "";
+            head.append(tagline);
+            detail.append(head);
+
+            const text = document.createElement("p");
+            text.className = "support-detail-text";
+            text.textContent = provider.detail ?? "";
+            detail.append(text);
+
+            detail.append(supportActionButton({
+              className: `support-cta support-cta--${provider.id}`,
+              href: provider.href,
+              label: provider.cta || `Donate via ${provider.name}`,
+              emoji: (provider.icon || "\uD83D\uDCB3"),
+              svg: provider.iconSvg
+            }));
+
+            const openHint = document.createElement("p");
+            openHint.className = "support-open-hint";
+            openHint.textContent = supportCopy.opensInNewTab ?? "Opens in a new tab";
+            detail.append(openHint);
+          }
+
+          for (const provider of providers) {
+            const option = document.createElement("button");
+            option.type = "button";
+            option.className = "support-provider";
+            option.setAttribute("role", "tab");
+            option.setAttribute("aria-controls", "supportDetailPane");
+
+            const icon = document.createElement("span");
+            icon.className = "support-provider-icon";
+            icon.setAttribute("aria-hidden", "true");
+            if (provider.iconSvg) {
+              icon.innerHTML = provider.iconSvg;
+            } else {
+              icon.textContent = provider.icon || provider.name.slice(0, 1);
+            }
+            const label = document.createElement("span");
+            label.className = "support-provider-name";
+            label.textContent = provider.name;
+            option.append(icon, label);
+
+            const setActive = (isActive) => {
+              option.classList.toggle("is-selected", isActive);
+              option.setAttribute("aria-selected", String(isActive));
+              option.tabIndex = isActive ? 0 : -1;
+            };
+
+            setActive(provider.id === activeId);
+            option.addEventListener("click", () => {
+              activeId = provider.id;
+              for (const other of picker.querySelectorAll(".support-provider")) {
+                other.classList.remove("is-selected");
+                other.setAttribute("aria-selected", "false");
+                other.tabIndex = -1;
+              }
+              option.classList.add("is-selected");
+              option.setAttribute("aria-selected", "true");
+              option.tabIndex = 0;
+              renderDetail(provider);
+            });
+
+            picker.append(option);
+          }
+
+          layout.append(picker, detail);
+          supportBody.append(layout);
+          renderDetail(providers.find((p) => p.id === activeId) ?? providers[0]);
+        }
+
+  function openSupportDialog() {
+    if (!supportDialog) return;
+    renderSupportBody();
+    supportTab?.setAttribute("aria-expanded", "true");
+    supportDialog.showModal();
+  }
+
+  function closeSupportDialog() {
+    if (!supportDialog) return;
+    supportDialog.close();
+  }
+
+  if (supportTab && supportDialog) {
+    supportTab.addEventListener("click", openSupportDialog);
+    supportDialogClose?.addEventListener("click", closeSupportDialog);
+    supportDialog.addEventListener("click", (event) => {
+      if (event.target === supportDialog) closeSupportDialog();
+    });
+    supportDialog.addEventListener("close", () => {
+      supportTab.setAttribute("aria-expanded", "false");
+      supportTab.focus();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && supportDialog.open) closeSupportDialog();
+    });
+  }

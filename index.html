@@ -133,11 +133,17 @@
 
     <footer class="site-footer">
       <span data-product-copy="footer"></span>
+      <button class="support-tab" id="supportTab" type="button" aria-haspopup="dialog" aria-controls="supportDialog">
+        <span aria-hidden="true">&#9829;</span><span data-product-copy="supportLabel"></span>
+      </button>
     </footer>
-    <button class="feedback-tab" id="feedbackTab" type="button" aria-haspopup="dialog" aria-controls="feedbackDialog">
-      <span aria-hidden="true">★</span><span>Feedback</span>
-    </button>
-  </div>
+      </div>
+
+      <div class="edge-tabs" id="edgeTabs">
+        <button class="feedback-tab" id="feedbackTab" type="button" aria-haspopup="dialog" aria-controls="feedbackDialog">
+          <span aria-hidden="true">★</span><span>Feedback</span>
+        </button>
+      </div>
 
   <dialog class="feedback-dialog" id="feedbackDialog" aria-labelledby="feedbackTitle" aria-describedby="feedbackDescription">
     <button class="dialog-close" id="feedbackDialogClose" type="button" aria-label="Close feedback form">&times;</button>
@@ -174,6 +180,14 @@
       <output class="feedback-message" id="feedbackMessageStatus" aria-live="polite"></output>
     </form>
   </dialog>
+
+  <dialog class="support-dialog" id="supportDialog" aria-labelledby="supportTitle" aria-describedby="supportDescription">
+    <button class="dialog-close" id="supportDialogClose" type="button" aria-label="Close support dialog">&times;</button>
+    <span class="dialog-mark support-dialog-mark" aria-hidden="true">&#9829;</span>
+    <h2 id="supportTitle" data-product-copy="supportTitle"></h2>
+    <p id="supportDescription" data-product-copy="supportDescription"></p>
+    <div class="support-body" id="supportBody" aria-live="polite"></div>
+      </dialog>
 
   <dialog class="story-dialog" id="storyDialog" aria-labelledby="storyDialogTitle">
     <button class="dialog-close" id="storyDialogClose" type="button" aria-label="Close story summary">&times;</button>

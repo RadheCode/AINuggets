@@ -291,8 +291,12 @@ Get more depth, control, and convenience:
 - [x] Set up basic affiliate/referral tracking foundation (built upon existing referral system)
 - [x] Established sponsor outreach preparation (documented in this strategy)
 - [x] Created monetization strategy documentation (this document)
+- [x] Added reader support (donation) dialog UI — a Support pill hosted in the site footer's right side, opening an accessible two-pane dialog: left rail of stacked provider icon buttons (Ko-fi, Razorpay, …) with a pre-selected default, and a right detail pane with the provider's name/tagline/details plus a full-width checkout button. Fully configured and gated by product-owned `support` settings (`providers`, `defaultProvider`) in `product/config.js`
 
 ### Phase 1: Foundation (In Progress)
+- [ ] Create the Razorpay / Cashfree account and publish a Payment Link for Indian readers (UPI + cards), then paste it into `support.providers` (id `razorpay`)
+- [ ] Create a Ko-fi page (Google Pay / Apple Pay / cards for US & international readers) and a PayPal.me link, then paste them into `support.providers` (e.g. ids `kofi` / `paypal`)
+- [ ] Verify each donation path end-to-end (test a sandbox/small real transfer) before going live
 - [ ] Design sponsored story visual treatment (requires UI changes - future phase)
 - [ ] Launch first newsletter sponsorship (requires config changes and sponsor acquisition)
 - [ ] Implement payment processing for premium tier (requires backend work)

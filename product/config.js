@@ -86,5 +86,41 @@ globalThis.ProductConfig = Object.freeze({
       // Annual price in USD
       priceAnnual: 50
     })
-  })
-});
+    }),
+    support: Object.freeze({
+            // Hosted donation providers — rendered as a picker (left rail) + detail
+                                    // pane. Works with any provider that offers a hosted URL: Ko-fi,
+                                    // Razorpay Payment Links, PayPal.me, Cashfree/PayU links, etc.
+                                    providers: Object.freeze([
+                                      // Example entries (uncomment and fill your real URLs):
+                                      Object.freeze({
+                                        id: "kofi",
+                                        name: "Ko-fi",
+                                                                              iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 9.4h10v5a3.2 3.2 0 0 1-3.2 3.2H7.8A3.2 3.2 0 0 1 4.6 14.4z"/><path d="M14.6 10.2h1a2.3 2.3 0 0 1 0 4.6h-1"/><path d="M8 14.5c.4-.85 1.2-1.2 1.2-2.05 0-.65-.55-1-1.2-.7-.65-.3-1.2.05-1.2.7 0 .85.8 1.2 1.2 2.05z"/><path d="M6.9 5.5c-.35.7-.35 1.35 0 1.85M10.4 5.5c-.35.7-.35 1.35 0 1.85"/></svg>',
+                                        tagline: "Simple, secure support",
+                                        href: "https://ko-fi.com/simplelife",
+                                        cta: "Continue on Ko-fi",
+                                        detail: "A quick, secure one-time contribution that keeps AI Nuggets independent and free. The Ko-fi checkout opens in a new tab — no account needed."
+                                      }),
+                                      Object.freeze({
+                                        id: "razorpay",
+                                        name: "Razorpay",
+                                                                              iconSvg: '<svg viewBox="0 0 24 24" aria-hidden="true"><text x="5.5" y="17" font-size="14.5" font-weight="700" font-family="sans-serif" fill="currentColor">₹</text></svg>',
+                                        tagline: "Pay your way, securely",
+                                        href: "https://rzp.io/l/ai-nuggets-support",
+                                        cta: "Pay with Razorpay",
+                                        detail: "A secure one-time contribution that keeps AI Nuggets independent and free. Pay via UPI, cards, or netbanking — the Razorpay checkout opens in a new tab."
+                                      })
+                                    ]),
+                                    // Provider pre-selected when the dialog opens.
+                                    defaultProvider: "kofi",
+            copy: Object.freeze({
+              label: "Support",
+              title: "Support AI Nuggets",
+              description: "If this daily briefing is useful to you, a small one-time contribution keeps it independent and ad-free.",
+                                          providerPrompt: "Choose a payment method",
+                                                        opensInNewTab: "Opens in a new tab",
+                                                        comingSoon: "Secure one-time support is coming soon. Thank you for being here."
+            })
+        })
+  });
