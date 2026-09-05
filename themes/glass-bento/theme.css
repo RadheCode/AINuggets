@@ -857,14 +857,12 @@ main::before { display: none; }
   text-shadow: 0 1px 2px rgba(255, 247, 232, 0.55);
 }
 
-.support-tab:hover::before,
-.support-tab:focus-visible::before {
-  animation: support-heart-left 1.5s ease-out;
+.support-tab::before {
+  animation: support-heart-left 2.4s ease-out 0s infinite;
 }
 
-.support-tab:hover::after,
-.support-tab:focus-visible::after {
-  animation: support-heart-right 1.8s ease-out;
+.support-tab::after {
+  animation: support-heart-right 2.8s ease-out 1s infinite;
 }
 
 @keyframes support-heart-left {
