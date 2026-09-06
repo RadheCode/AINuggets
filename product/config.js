@@ -270,7 +270,7 @@
 
   // Exported configurations for use in other modules
   export const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
-  export const SUMMARY_PROMPTS = globalThis.ProductConfig.summaryPrompts;
+  export const summaryPrompts = globalThis.ProductConfig.summaryPrompts;
   export function validateStreakFeatureConfig(config = STREAK_FEATURE_CONFIG) {
     if (!config || typeof config !== "object") throw new Error("Streak feature configuration must be an object.");
     const { maximumDaysBetweenQualifyingActivities } = config;
