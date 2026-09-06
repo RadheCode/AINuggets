@@ -47,7 +47,7 @@
         // The maximum UTC calendar-day gap that continues an existing streak.
         maximumDaysBetweenQualifyingActivities: 4
     })
-    }),
+        }),
     // Editorial configuration
     editorial: Object.freeze({
     generationInstruction: "Create a factual daily AI-news edition only from the supplied candidate metadata.",
@@ -55,7 +55,7 @@
         // "priority" ranks by feed priority and freshness; "random" shuffles candidates before preserving category diversity.
         mode: "random"
     }),
-    // Keep each feed's name aligned with product/company-images.js sourceArtwork. The coverage test requires a valid artwork asset for every feed.
+    // Keep each feed's name aligned with the companyImages.sourceArtwork mapping. The coverage test requires a valid artwork asset for every feed.
     feeds: Object.freeze([
         { name: "OpenAI", feedUrl: "https://openai.com/news/rss.xml", category: "Models", priority: 100 },
         { name: "VentureBeat AI", feedUrl: "https://venturebeat.com/category/ai/feed/", category: "Business", priority: 85 },
@@ -80,7 +80,7 @@
         { name: "Microsoft Semantic Kernel", feedUrl: "https://devblogs.microsoft.com/semantic-kernel/feed/", category: "Developer tools", priority: 75 },
         { name: "Microsoft Research", feedUrl: "https://www.microsoft.com/en-us/research/feed/", category: "Research", priority: 85 },
         { name: "Google Research", feedUrl: "https://research.google/blog/rss/", category: "Research", priority: 85 },
-        { name: "MIT News AI", feedUrl: "https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml", category: "Research", priority: 85 },
+        { name: "MIT News AI", feedUrl: "https://news.mit.edu/topic/mitartificialintelligence2-rss.xml", category: "Research", priority: 85 },
         { name: "AI Business", feedUrl: "https://aibusiness.com/rss.xml", category: "Business", priority: 65 },
         { name: "NVIDIA Technical Blog", feedUrl: "https://developer.nvidia.com/blog/feed/", category: "Infrastructure", priority: 80 },
         { name: "TensorFlow", feedUrl: "https://blog.tensorflow.org/feeds/posts/default", category: "Developer tools", priority: 80 },
@@ -265,21 +265,48 @@
                                                         opensInNewTab: "Opens in a new tab",
                                                         comingSoon: "Contribution and subscription support is coming soon. Thank you for being here."
             })
-        })
-  });
-  
-  // Export the full configuration and individual parts for use in other modules
-  export const ProductConfig = globalThis.ProductConfig;
-  export const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
-  export const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
-  export const summaryPrompts = globalThis.ProductConfig.summaryPrompts;
-  export function validateStreakFeatureConfig(config = STREAK_FEATURE_CONFIG) {
-    if (!config || typeof config !== "object") throw new Error("Streak feature configuration must be an object.");
-    const { maximumDaysBetweenQualifyingActivities } = config;
-    if (!Number.isInteger(maximumDaysBetweenQualifyingActivities)
-      || maximumDaysBetweenQualifyingActivities < 1
-      || maximumDaysBetweenQualifyingActivities > 365) {
-      throw new Error("Streak maximumDaysBetweenQualifyingActivities must be an integer from 1 through 365.");
-    }
-    return config;
-  }
+                    }),
+                // Feature-contract validation. These helpers enforce the product configuration
+                // contract so the browser and every runtime fail fast on invalid values. They
+                // live on ProductConfig so this one object remains the single source of
+                // product configuration and contract validation.
+                validateSummaryFeatureConfig(config = globalThis.ProductConfig.summaryFeatures) {
+                    if (!config || typeof config !== "object") throw new Error("Summary feature configuration must be an object.");
+                    const { ui, generation, defaultContext, contexts } = config;
+                    for (const [name, keys] of [["ui", ui], ["generation", generation]]) {
+                    if (!Array.isArray(keys) || !keys.length || new Set(keys).size !== keys.length) {
+                        throw new Error(`Summary feature configuration ${name} must contain unique context keys.`);
+                    }
+                    for (const key of keys) {
+                        if (typeof key !== "string" || !contexts?.[key]) throw new Error(`Summary feature configuration ${name} contains an unsupported context: ${key}.`);
+                    }
+                    }
+                    if (typeof defaultContext !== "string" || !ui.includes(defaultContext)) {
+                    throw new Error("Summary feature configuration defaultContext must be enabled for the UI.");
+                    }
+                    for (const [key, context] of Object.entries(contexts || {})) {
+                    if (!context || typeof context.label !== "string" || !context.label.trim()) throw new Error(`Summary context ${key} must define a label.`);
+                    if (!Number.isInteger(context.minCharacters) || context.minCharacters < 1) throw new Error(`Summary context ${key} must define a positive minCharacters value.`);
+                    if (!Number.isInteger(context.maxCharacters) || context.maxCharacters < context.minCharacters) throw new Error(`Summary context ${key} must define a valid maxCharacters value.`);
+                    if (!["paragraph", "bullets", "paragraphs"].includes(context.format)) throw new Error(`Summary context ${key} must define a supported format.`);
+                    }
+                    return config;
+                },
+                validateStreakFeatureConfig(config = globalThis.ProductConfig.readerEngagement?.streak) {
+                    if (!config || typeof config !== "object") throw new Error("Streak feature configuration must be an object.");
+                    const { maximumDaysBetweenQualifyingActivities } = config;
+                    if (!Number.isInteger(maximumDaysBetweenQualifyingActivities)
+                    || maximumDaysBetweenQualifyingActivities < 1
+                    || maximumDaysBetweenQualifyingActivities > 365) {
+                    throw new Error("Streak maximumDaysBetweenQualifyingActivities must be an integer from 1 through 365.");
+                    }
+                    return config;
+                }
+              });
+
+              // NOTE: product/config.js is the single product configuration file. It is also
+                // a browser classic script (loaded via <script src>), so it must NOT contain
+                // ES module export statements — browsers throw a SyntaxError on top-level
+                // `export` in a non-module script, which blanks the whole page. Node/Worker
+                // ESM consumers import it for its side effect (it assigns
+                // globalThis.ProductConfig) and read all configuration from that one object.

@@ -3,8 +3,11 @@ import { createOpenAiCompatibleSummaryProvider } from "../adapters/openai-compat
 import { createRssBlogContentSource } from "../adapters/rss-blog-content-source.mjs";
 import { createWorkersAiSummaryProvider } from "../adapters/workers-ai-summary-provider.mjs";
 import { validateCandidateSelectionMode } from "../pipeline/candidate-selection.mjs";
-import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
-import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
+import "../../../product/config.js";
+
+const PRODUCT_EDITORIAL_CONFIG = globalThis.ProductConfig.editorial;
+const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
+const validateSummaryFeatureConfig = globalThis.ProductConfig.validateSummaryFeatureConfig;
 
 export const GENERATION_PROVIDER_CONFIGURATION = Object.freeze({
   contentSourceUrl: "CONTENT_SOURCE_URL",

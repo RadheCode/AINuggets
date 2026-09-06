@@ -24,9 +24,8 @@ The boundary provides these guarantees:
 
 | Path | Owns | Change when retargeting? |
 |---|---|---|
-| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, and summary-context minimums plus advisory concision targets | Yes |
+| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, and summary-context minimums plus advisory concision targets, the approved feeds, candidate-selection mode, and generation instruction, and the company-image (feed-source and entity) artwork mappings | Yes |
 | `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell | Only when the shared copy contract changes |
-| `product/editorial-config.mjs` | Approved feeds, categories, candidate-selection mode, and generation instruction | Yes |
 | `product/company-images.js` | Feed-source and entity matching for story artwork | Yes, if sources or entity matching changes |
 | `product/company-images/` | Product-owned artwork assets | Yes, if feed or entity artwork changes |
 
@@ -82,7 +81,7 @@ Change `infra/<provider>/` only when a rebrand also needs newly provisioned doma
 
 1. Define the new product's reader promise, name, concise framing copy, categories, trusted sources, entity-artwork needs, and desired hosts.
 2. Update `product/config.js`, including a new `storageNamespace` when old preferences and session tokens must not carry over.
-3. Update `product/editorial-config.mjs` with topic-appropriate primary sources and a factual generation instruction.
+3. Update the `editorial` section in `product/config.js` with topic-appropriate approved sources and a factual generation instruction, along with the matching `companyImages.sourceArtwork` mappings.
 4. Update or remove `product/company-images.js` and `product/company-images/` to match the new domain. Every configured feed must retain exactly one source-artwork mapping backed by a local asset.
 5. Publish new topic-appropriate editions; existing D1 content is editorial history and does not automatically become the new product.
 6. If hosts or public OAuth identity change, make the corresponding Cloudflare and Google-console changes, deploy beta, and verify it before an explicitly approved production deployment.
@@ -109,6 +108,6 @@ Every feature, configuration, integration, or copy change must be classified usi
 3. Update `.github/skills/product-rebranding/SKILL.md` in the same change so its inventory, instructions, validations, and user-owned checklist remain accurate.
 4. Verify a product-term scan and the narrowest relevant automated checks before completing the work.
 
-Feed configuration and feed artwork are an atomic product update: adding, renaming, or removing a feed in `product/editorial-config.mjs` must update the source-artwork mapping and its asset in the same change. The configuration test enforces exact feed-name coverage and valid local artwork paths.
+Feed configuration and feed artwork are an atomic product update: adding, renaming, or removing a feed in `product/config.js` (`editorial.feeds`, `companyImages.sourceArtwork`) must update the source-artwork mapping and its asset in the same change. The configuration test enforces exact feed-name coverage and valid local artwork paths.
 
 The repository instructions enforce this contract for AI-assisted changes. The skill is intentionally versioned with the source so a one-prompt rebrand remains safe as the product evolves.

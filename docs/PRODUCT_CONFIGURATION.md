@@ -8,18 +8,19 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, and summary feature capabilities. |
+| `product/config.js` | The single product configuration file. Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, summary feature capabilities, summarization prompts, editorial sources and candidate-selection policy, and company-image (feed-source and entity) artwork mappings. Also attaches the product feature-contract validators (`ProductConfig.validateSummaryFeatureConfig`, `ProductConfig.validateStreakFeatureConfig`). |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
-| `product/company-images.js` | Product-specific source and entity artwork matching used by the shared story renderer. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
-| `product/editorial-config.mjs` | Product-specific approved sources, candidate-selection mode, and generation instruction used by the portable daily-edition workflow. |
+| `product/company-images.js` | Product-specific source and entity artwork **matching logic** used by the shared story renderer. It reads `ProductConfig.companyImages` (`sourceArtwork` and `companies`) from `product/config.js`; it owns no configuration data itself. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
+
+`product/config.js` is a browser classic script (loaded via `<script src>`), so it must never contain top-level ESM `export` statements — a SyntaxError there blanks the whole page. Node/Worker ESM consumers import the file for its side effect (it assigns `globalThis.ProductConfig`) and read every value from that single object, e.g. `const { summaryFeatures } = globalThis.ProductConfig;`.
 
 ## Rebranding workflow
 
 1. Update identity and copy values in `product/config.js`, including the Login menu, guest-streak call to action and guidance, and provider labels when appropriate.
 2. Change `storageNamespace` if the rebranded site must not reuse existing reader color preferences or opaque session tokens.
 3. Update `runtime.sites` and `runtime.contentApiUrls` for the new public frontend and content API hosts.
-4. Replace `product/company-images.js` and its artwork only when the new editorial domain needs different source or entity matching.
-5. Update approved sources, candidate-selection mode, and the generation instruction in `product/editorial-config.mjs`. Add, rename, or remove the matching source artwork entry and asset in the same change; the automation configuration test rejects incomplete coverage.
+4. Replace the `companyImages` mappings in `product/config.js` and its artwork only when the new editorial domain needs different source or entity matching.
+5. Update approved sources, candidate-selection mode, and the generation instruction in `product/config.js` (`ProductConfig.editorial`). Add, rename, or remove the matching `companyImages.sourceArtwork` entry and asset in the same change; the automation configuration test rejects incomplete coverage.
 6. Update `readerEngagement.streak.maximumDaysBetweenQualifyingActivities` in `product/config.js` when the product permits a gap between qualifying streak days. The current value, `4`, permits up to three missed UTC days.
 7. Update `readerEngagement.streakGuidanceTemplate` in `product/config.js` when changing reader-facing gap guidance. It supports `{days}`, which renders the configured allowance as a singular or plural day count.
 8. Update `summaryFeatures` in `product/config.js` when the product offers a different set of summary views or generated detail levels.
@@ -46,13 +47,15 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 The default enables `compact` (Quick take), `standard` (Overview), and `detailed` (Deep dive) for both UI and generation. To offer two views, remove one key from `ui`; the dialog immediately renders two controls on the next browser deployment. To store only Deep dive for future editions, set `generation` to `['detailed']`. Existing editions are preserved, while future editions generate and persist only that context. If a UI-enabled context is absent from an edition, the browser omits it instead of showing an empty control.
 
-Both browser code and the portable generation runtime consume the same feature vocabulary. `product/summary-features.mjs` exposes and validates the browser configuration for the runtime without introducing provider dependencies into the product contract.
+Both browser code and the portable generation runtime consume the same feature vocabulary. The validation helper `ProductConfig.validateSummaryFeatureConfig` enforces the browser configuration contract for the runtime without introducing provider dependencies into the product contract.
 
 Each context's `minCharacters` is enforced during both provider generation and domain validation. Its `maxCharacters` is an advisory target for concise summaries, not a rejection limit: the provider must complete meaningful sentences and thoughts instead of truncating text to fit it.
 
+`ProductConfig.summaryPrompts` owns the product's summarization prompts for the generated summary layers (`overview`, `detailed`, `compact`). The prompt block lives in `product/config.js` as data and is read directly from `globalThis.ProductConfig.summaryPrompts` by Node/Worker consumers; no ESM bridge file is needed. Keep each prompt aligned with its matching `summaryFeatures.contexts` entry and with `docs/DAILY_CONTENT_AUTOMATION.md`.
+
 ## Editorial candidate selection
 
-`PRODUCT_EDITORIAL_CONFIG.candidateSelection.mode` controls how the built-in RSS/Atom collector orders eligible candidates before it selects up to five category-diverse stories. The setting is product-owned because it defines editorial policy, while the collector implementation remains portable.
+`ProductConfig.editorial.candidateSelection.mode` controls how the built-in RSS/Atom collector orders eligible candidates before it selects up to five category-diverse stories. The setting is product-owned because it defines editorial policy, while the collector implementation remains portable.
 
 | Mode | Behavior |
 |---|---|
@@ -63,7 +66,7 @@ Retain a numeric `priority` on every feed even when `random` is active so switch
 
 ## Feed artwork coverage
 
-`product/company-images.js` maps every `PRODUCT_EDITORIAL_CONFIG.feeds[].name` to a local source-artwork asset. The renderer resolves this source mapping before inspecting story text, so selected stories from every approved feed consistently receive their publisher or editorial-category artwork. It uses title and summary entity matching only when no configured source is available.
+`product/company-images.js` maps every `ProductConfig.editorial.feeds[].name` to a local source-artwork asset (`ProductConfig.companyImages.sourceArtwork`). The renderer resolves this source mapping before inspecting story text, so selected stories from every approved feed consistently receive their publisher or editorial-category artwork. It uses title and summary entity matching only when no configured source is available.
 
 Treat a feed-list change as an artwork change: add, rename, or remove the corresponding `sourceArtwork` entry and local `.jpg` or `.svg` asset in the same pull request. `generation-provider-configuration.test.mjs` checks that the mapping names exactly equal the configured feed names and that every referenced asset exists.
 

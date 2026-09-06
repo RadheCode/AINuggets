@@ -1,10 +1,12 @@
 import { isValidEditorialDate } from "../domain/editorial-date.mjs";
-import { SUMMARY_FEATURE_CONFIG } from "../../../product/summary-features.mjs";
+import "../../../product/config.js";
 import { collectCandidates } from "../pipeline/collect-candidates.mjs";
 import { completeDryRun, persistEdition, recordFailedRun } from "../pipeline/persist-edition.mjs";
 import { prepareEdition } from "../pipeline/prepare-edition.mjs";
 import { evaluateRunEligibility, recordSkippedRun } from "../pipeline/run-eligibility.mjs";
 import { createGenerationEventLogger, newGenerationRunId } from "../pipeline/generation-event-logger.mjs";
+
+const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
 
 export async function generateDailyEdition({
   targetDate,

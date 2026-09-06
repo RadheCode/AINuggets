@@ -1,4 +1,4 @@
-import { PRODUCT_EDITORIAL_CONFIG } from "../product/editorial-config.mjs";
+import "../product/config.js";
 
 // Central content-engine controls. Edit this file to change the daily schedule,
 // publication mode, or approved RSS/Atom feeds.
@@ -14,5 +14,5 @@ export const CONTENT_ENGINE_CONFIG = Object.freeze({
     // Validated editions publish immediately; set false to require editorial review.
     automaticallyPublish: true
   }),
-  feeds: PRODUCT_EDITORIAL_CONFIG.feeds
+  feeds: globalThis.ProductConfig.editorial.feeds
 });

@@ -46,10 +46,10 @@ test("requests a structured edition from a compatible endpoint", async () => {
   // Gemini OpenAI endpoint only supports json_object, not json_schema
     assert.equal(payload.response_format.type, "json_object");
       const systemPrompt = payload.messages.find((message) => message.role === "system").content;
-  assert.match(systemPrompt, /Count every character/i);
+  assert.match(systemPrompt, /total character count MUST be strictly/i);
   assert.match(systemPrompt, /Every minimum is mandatory/i);
   assert.match(systemPrompt, /maximum is a target, not a rejection limit/i);
-  assert.match(systemPrompt, /EXACTLY 3 or 4 bullet points/i);
-  assert.match(systemPrompt, /2 to 4 short paragraphs/i);
+    assert.match(systemPrompt, /bulleted list only/i);
+    assert.match(systemPrompt, /3 cohesive paragraphs only/i);
   assert.deepEqual(edition, { date: "2026-08-24" });
 });

@@ -4,7 +4,9 @@ import { createMemoryEditionRepository } from "../adapters/memory-edition-reposi
 import { editorialDate } from "../domain/editorial-date.mjs";
 import { generateDailyEdition } from "../jobs/generate-daily-edition.mjs";
 import { runScheduledEdition } from "../jobs/run-scheduled-edition.mjs";
-import { SUMMARY_FEATURE_CONFIG } from "../../../product/summary-features.mjs";
+import "../../../product/config.js";
+
+const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
 
 const targetDate = "2026-08-24";
 

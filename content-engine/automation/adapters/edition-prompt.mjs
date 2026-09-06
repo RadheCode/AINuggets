@@ -3,7 +3,9 @@
  * adapter so all providers converge on the same daily-edition shape and
  * editorial instructions.
  */
-import { summaryPrompts as SUMMARY_PROMPTS } from "../../../product/config.js";
+import "../../../product/config.js";
+
+const SUMMARY_PROMPTS = globalThis.ProductConfig.summaryPrompts;
 
 export function createEditionSchema(summaryContexts) {
   const summaryContextKeys = Object.keys(summaryContexts);

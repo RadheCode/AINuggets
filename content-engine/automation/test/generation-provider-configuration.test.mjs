@@ -9,11 +9,15 @@ import {
   SUMMARY_PROVIDER_KINDS,
   createGenerationProviderDependencies
 } from "../config/create-generation-provider-dependencies.mjs";
-import { PRODUCT_EDITORIAL_CONFIG } from "../../../product/editorial-config.mjs";
+import "../../../product/config.js";
 import { CONTENT_ENGINE_CONFIG } from "../../content-engine.config.mjs";
 import { validateContentEngineConfig } from "../../validate-content-engine-config.mjs";
-import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../product/summary-features.mjs";
-import { STREAK_FEATURE_CONFIG, validateStreakFeatureConfig } from "../../../product/streak-features.mjs";
+
+const PRODUCT_EDITORIAL_CONFIG = globalThis.ProductConfig.editorial;
+const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
+const validateSummaryFeatureConfig = globalThis.ProductConfig.validateSummaryFeatureConfig;
+const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
+const validateStreakFeatureConfig = globalThis.ProductConfig.validateStreakFeatureConfig;
 
 function sampleEdition() {
   return {
@@ -224,9 +228,9 @@ test("requires every configured feed to have a valid product artwork mapping", (
   const productDirectory = new URL("../../../product/", import.meta.url);
   const artworkDirectory = fileURLToPath(new URL("company-images/", productDirectory));
   const script = fs.readFileSync(new URL("company-images.js", productDirectory), "utf8");
-  const context = { window: {} };
+  const context = { window: { ProductConfig: globalThis.ProductConfig } };
   vm.runInNewContext(script, context, { filename: "product/company-images.js" });
-  const sourceArtwork = context.window.ProductCompanyImages.sourceArtwork;
+    const sourceArtwork = globalThis.ProductConfig.companyImages.sourceArtwork;
 
   assert.deepEqual(
     Object.keys(sourceArtwork).sort(),

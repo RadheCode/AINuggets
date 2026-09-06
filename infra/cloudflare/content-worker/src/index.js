@@ -3,11 +3,15 @@ import { generateDailyEdition } from "../../../../content-engine/automation/jobs
 import { runScheduledEdition } from "../../../../content-engine/automation/jobs/run-scheduled-edition.mjs";
 import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
-import { SUMMARY_FEATURE_CONFIG, validateSummaryFeatureConfig } from "../../../../product/summary-features.mjs";
-import { STREAK_FEATURE_CONFIG, validateStreakFeatureConfig } from "../../../../product/streak-features.mjs";
+import "../../../../product/config.js";
 import { createD1EditionRepository } from "./d1-edition-repository.js";
 import { createSessionToken, hashToken, verifyGoogleCredential } from "./google-auth.js";
 import { earliestContinuationDate, utcActivityDate } from "./streak-policy.js";
+
+const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
+const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
+const validateSummaryFeatureConfig = globalThis.ProductConfig.validateSummaryFeatureConfig;
+const validateStreakFeatureConfig = globalThis.ProductConfig.validateStreakFeatureConfig;
 
 validateStreakFeatureConfig();
 

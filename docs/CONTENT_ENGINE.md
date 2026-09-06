@@ -43,11 +43,10 @@ flowchart TD
 
 | Area | Location | Responsibility |
 |---|---|---|
-| Public API configuration | `product/config.js` | Defines the browser-visible Worker base URLs. |
+| Public API configuration | `product/config.js` | The single product configuration: browser-visible Worker base URLs, approved feeds, candidate-selection mode, generation instruction, company-image mappings, summary features, and prompts. |
 | Browser loader | `content-engine/loader.js` | Validates an optional preview date, requests an edition, and rejects malformed API payloads. |
 | Browser renderer | `content-engine/render.js` | Creates semantic tile buttons, stable slot classes, and the summary dialog behavior. |
 | Engine configuration | `content-engine/content-engine.config.mjs` | Human-editable UTC schedule and publication mode. |
-| Product editorial configuration | `product/editorial-config.mjs` | Product-approved feeds, candidate-selection mode, and generation instruction. |
 | Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, idempotency, and audit orchestration. |
 | Worker adapter | `infra/cloudflare/content-worker/src/` | Connects the portable automation to Cron, D1, secrets, and public HTTP routes. |
 | Content database | Cloudflare D1 `ai-nuggets-content` | Source of truth for editions, stories, and generation audit records. |
@@ -65,7 +64,7 @@ Before collection, the job asks the repository whether an edition already exists
 
 ### 3. Candidate collection
 
-By default, the built-in collector reads the editable product-approved feed list in `product/editorial-config.mjs`:
+By default, the built-in collector reads the editable product-approved feed list in `product/config.js` (`ProductConfig.editorial.feeds`):
 
 1. Fetch up to three recent posts from each RSS or Atom feed.
 2. Remove tracking parameters and normalize candidate URLs.
