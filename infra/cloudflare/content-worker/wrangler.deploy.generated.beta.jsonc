@@ -7,7 +7,7 @@
     "enabled": true
   },
   "triggers": {
-    "crons": ["30 11,23 * * *"]
+    "crons": ["0 1,13 * * *"]
   },
   "vars": {
     "ALLOWED_ORIGINS": "https://beta-ai-nuggets.pages.dev,http://localhost:8080,http://127.0.0.1:8080",

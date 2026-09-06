@@ -1,19 +1,20 @@
-export async function persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, forceReplace = false, logger, eventLogger }) {
+export async function persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, forceReplace = false, refreshExisting = false, logger, eventLogger }) {
   const publicationStatus = automaticallyPublish ? "published" : "draft";
   const startedAt = Date.now();
-  await eventLogger.record("persistence", "edition-save-started", { publicationStatus, storyCount: edition.stories.length, forceReplace });
-  await editionRepository.saveEdition(edition, { status: publicationStatus, replaceExisting: forceReplace });
-  await eventLogger.record("persistence", "edition-save-succeeded", { publicationStatus, storyCount: edition.stories.length, forceReplace }, {
+  const statement = refreshExisting ? "Refreshed" : forceReplace ? "Replaced" : "Created";
+  await eventLogger.record("persistence", "edition-save-started", { publicationStatus, storyCount: edition.stories.length, forceReplace, refreshExisting });
+  await editionRepository.saveEdition(edition, { status: publicationStatus, replaceExisting: refreshExisting || forceReplace });
+  await eventLogger.record("persistence", "edition-save-succeeded", { publicationStatus, storyCount: edition.stories.length, forceReplace, refreshExisting }, {
     outcome: "succeeded",
     durationMs: Date.now() - startedAt
   });
   await editionRepository.finishGenerationRun({
     runId,
     status: "succeeded",
-    details: `${forceReplace ? "Replaced" : "Created"} ${publicationStatus} edition with ${edition.stories.length} stories.`
+    details: `${statement} ${publicationStatus} edition with ${edition.stories.length} stories.`
   });
-  logger.info?.(`${forceReplace ? "Replaced" : "Created"} ${publicationStatus} edition for ${targetDate}.`);
-  return { runId, targetDate, status: "succeeded", storyCount: edition.stories.length, publicationStatus, forceReplace };
+  logger.info?.(`${statement} ${publicationStatus} edition for ${targetDate}.`);
+  return { runId, targetDate, status: "succeeded", storyCount: edition.stories.length, publicationStatus, refreshExisting, forceReplace };
 }
 
 export async function completeDryRun({ editionRepository, edition, targetDate, runId, logger, eventLogger }) {

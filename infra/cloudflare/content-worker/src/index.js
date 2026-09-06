@@ -466,8 +466,9 @@ async function handleRequest(request, env) {
 async function handleScheduled(controller, env) {
   return runScheduledEdition({
     scheduledAt: new Date(controller.scheduledTime),
-    createDependencies: () => createAutomationDependencies(env)
-  });
+      refreshExisting: CONTENT_ENGINE_CONFIG.schedule.refreshExistingEdition === true,
+      createDependencies: () => createAutomationDependencies(env)
+    });
 }
 
 export default {

@@ -46,7 +46,7 @@ erDiagram
 
 **Where:** `content-engine/automation/` creates the portable edition object; `infra/cloudflare/content-worker/src/d1-edition-repository.js` persists it. `infra/cloudflare/content-worker/src/index.js` reads it for `GET /api/editions/latest` and `GET /api/editions/YYYY-MM-DD`.
 
-**How:** A successful run inserts the edition and its stories in one D1 batch. The repository sets `published_at` only when automatic publication is configured; otherwise it saves a draft. The API selects the latest published edition on or before the requested date. Before a new run selects candidates, the repository uses the `(status, edition_date DESC)` index to find `published` editions in the ten editorial days before the target date; drafts and archived editions are excluded. Deleting an edition cascades to its stories.
+**How:** A successful run inserts the edition and its stories in one D1 batch; a same-day refresh replaces the row atomically through a `DELETE` + `INSERT` batch. The repository sets `published_at` only when automatic publication is configured; otherwise it saves a draft. The API selects the latest published edition on or before the requested date. Before a new run selects candidates, the repository uses the `(status, edition_date DESC)` index to find `published` editions in the ten editorial days before the target date; during a scheduled refresh the window is inclusive of the target date itself, so the same-day published edition's URLs block reuse. Drafts and archived editions are excluded. Deleting an edition cascades to its stories.
 
 ### `stories`
 
@@ -56,7 +56,7 @@ erDiagram
 
 **Where:** Rows belong to `editions.id` through `edition_id`. The D1 repository writes validated generation output; the Worker retrieves ordered rows only after selecting a published parent edition.
 
-**How:** The content engine validates exactly four or five stories before persistence. D1 enforces unique `(edition_id, story_key)` and `(edition_id, position)` values. The Worker reads in ascending position order. For candidate repeat avoidance, the generation repository reads only `destination_url` values joined to `published` parent editions in the prior ten editorial days; portable code canonicalizes those URLs before comparison and receives no reader or operational data. `position` is constrained to 1–5; the `(edition_id, position)` index supports retrieval; a parent deletion cascades to child rows.
+**How:** The content engine validates exactly four or five stories before persistence. D1 enforces unique `(edition_id, story_key)` and `(edition_id, position)` values. The Worker reads in ascending position order. For candidate repeat avoidance, the generation repository reads only `destination_url` values joined to `published` parent editions whose editorial dates fall in the prior ten editorial days (`D - 10 <= edition_date < D`), widening the window to include the target date itself during a scheduled same-day refresh; portable code canonicalizes those URLs before comparison and receives no reader or operational data. `position` is constrained to 1–5; the `(edition_id, position)` index supports retrieval; a parent deletion cascades to child rows.
 
 ## Generation investigation tables
 

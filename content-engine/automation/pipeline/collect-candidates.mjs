@@ -39,7 +39,14 @@ function lookbackStartDate(targetDate) {
   return date.toISOString().slice(0, 10);
 }
 
-export async function collectCandidates(contentSources, targetDate, editionRepository, candidateSelection, eventLogger) {
+function lookbackEndDate(targetDate, { refreshExisting = false } = {}) {
+  if (!refreshExisting) return targetDate;
+  const date = new Date(`${targetDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+export async function collectCandidates(contentSources, targetDate, editionRepository, candidateSelection, eventLogger, { refreshExisting = false } = {}) {
   await eventLogger.record("collection", "candidate-collection-started", { sourceCount: contentSources.length });
   const batches = await Promise.all(contentSources.map(async (source, index) => {
     const startedAt = Date.now();
@@ -123,10 +130,11 @@ export async function collectCandidates(contentSources, targetDate, editionRepos
     retainedCandidates: retained.map((candidate) => candidateLogDetails(candidate))
   }, { outcome: "succeeded" });
   const startDate = lookbackStartDate(targetDate);
-  const recentUrls = await editionRepository.listPublishedStoryUrls({
-    startDate,
-    endDate: targetDate
-  });
+    const endDate = lookbackEndDate(targetDate, { refreshExisting });
+    const recentUrls = await editionRepository.listPublishedStoryUrls({
+      startDate,
+      endDate
+    });
   const historicalUrlRecords = recentUrls.map((url) => ({
     url,
     canonicalUrl: normalizeUrl(url)
@@ -145,8 +153,9 @@ export async function collectCandidates(contentSources, targetDate, editionRepos
   });
   await eventLogger.record("collection", "recent-published-candidates-excluded", {
     lookbackDays: RECENT_PUBLISHED_LOOKBACK_DAYS,
-    startDate,
-    endDate: targetDate,
+      refreshExisting,
+      startDate,
+      endDate,
     historicalUrls,
     historicalUrlCount: recentCanonicalUrls.size,
     excludedCandidateCount: excludedRecentCandidates.length,

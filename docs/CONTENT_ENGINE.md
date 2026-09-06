@@ -20,8 +20,9 @@ flowchart TD
     A["⏰ Scheduler\nCloudflare Cron, GitHub Actions, or OS cron"] --> B["📅 Portable scheduled runner\nCalculates the UTC edition date"]
     B --> C{"Edition already exists\nfor that date?"}
 
-    C -- "Yes" --> D["⏭️ Record skipped run\nNo duplicate is created"]
-    C -- "No" --> E["📰 Candidate collection\nApproved RSS/Atom feeds or custom JSON source"]
+        C -- "Yes, ordinary run" --> D["⏭️ Record skipped run\nNo duplicate is created"]
+        C -- "Yes, scheduled refresh" --> E
+        C -- "No" --> E["📰 Candidate collection\nApproved RSS/Atom feeds or custom JSON source"]
     E --> F["🧹 Normalize URLs, deduplicate, and exclude prior-ten-day published stories"]
     F --> G["📊 Apply configured candidate order\nPriority/freshness or random; diversify exactly five"]
     G --> H["🤖 Summary provider\nProduces 4–5 concise stories"]
@@ -60,7 +61,7 @@ The scheduler calls the portable runner. The central configuration supplies the 
 
 ### 2. Idempotency and auditing
 
-Before collection, the job asks the repository whether an edition already exists for the target date. If it does, the job records a `skipped` run and exits without overwriting editorial content. Each attempt is audited as `started`, `skipped`, `succeeded`, or `failed`.
+Before collection, the job asks the repository whether an edition already exists for the target date. If it does, an ordinary run records a `skipped` run and exits without overwriting editorial content. When the configured same-day refresh is enabled (`schedule.refreshExistingEdition`), the second scheduled run of the day instead proceeds and atomically replaces that date's edition with fresher stories. Each attempt is audited as `started`, `skipped`, `succeeded`, or `failed`.
 
 ### 3. Candidate collection
 
@@ -68,7 +69,7 @@ By default, the built-in collector reads the editable product-approved feed list
 
 1. Fetch up to three recent posts from each RSS or Atom feed.
 2. Remove tracking parameters and normalize candidate URLs.
-3. Drop duplicate canonical links and exclude a canonical URL already used by a `published` edition in the prior ten editorial days. Draft and archived editions do not participate.
+3. Drop duplicate canonical links and exclude a canonical URL already used by a `published` edition in the prior ten editorial days. During a scheduled same-day refresh the same-day published edition participates in that window, so the evening replacement cannot reuse the morning stories. Draft and archived editions do not participate.
 4. Apply the configured candidate-selection mode: rank by source priority and recency in `priority` mode, or shuffle in `random` mode.
 5. Prefer category diversity, then fill the remaining positions until exactly five candidates are selected. If fewer than five survive, fail before calling the summary provider.
 
@@ -158,7 +159,8 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 
 | Setting | Purpose | Change effect |
 |---|---|---|
-| `schedule.cron` | Twice-daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `30 11,23 * * *` runs at 5:00 AM and 5:00 PM IST (11:30 and 23:30 UTC). | Worker deployment applies the new trigger. |
+| `schedule.cron` | Twice-daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 1,13 * * *` runs at 6:30 AM and 6:30 PM IST (01:00 and 13:00 UTC). | Worker deployment applies the new trigger. |
+| `schedule.refreshExistingEdition` | When `true`, a scheduled run replaces the target date's existing edition with fresh content (used by the evening run) instead of recording a skipped run. The manual endpoints never set this flag. | Worker deployment applies the new behavior. |
 | `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 

@@ -544,3 +544,126 @@ test("runs through a scheduler-neutral dependency factory", async () => {
   assert.equal(result.status, "skipped");
   assert.equal(repository.runs[0].targetDate, "2026-08-23");
 });
+
+  test("replaces an existing published edition when the scheduled same-day refresh is enabled", async () => {
+    const original = edition();
+    original.status = "published";
+    const replacement = edition();
+    replacement.briefing.title = "Same-day refresh briefing.";
+    const repository = createMemoryEditionRepository([original]);
+
+    const result = await generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [candidateSource()],
+      summaryProvider: { async generateEdition() { return replacement; } },
+      automaticallyPublish: true,
+      refreshExisting: true,
+      logger: {}
+    });
+
+    assert.equal(result.status, "succeeded");
+    assert.equal(result.refreshExisting, true);
+    assert.equal(result.publicationStatus, "published");
+    assert.equal(repository.editions.size, 1);
+    assert.equal(repository.editions.get(targetDate).briefing.title, "Same-day refresh briefing.");
+    assert.equal(repository.editions.get(targetDate).status, "published");
+    assert.ok(repository.events.some((event) => event.event === "existing-edition-bypassed" && event.metadata.mode === "scheduled-refresh"));
+    assert.ok(repository.events.some((event) => event.event === "edition-save-succeeded" && event.metadata.refreshExisting === true));
+    assert.match(repository.runs.at(-1).details, /Refreshed published edition/i);
+  });
+
+  test("excludes same-day published story URLs from candidates during a scheduled refresh", async () => {
+    const morningEdition = edition();
+    morningEdition.status = "published";
+    const repository = createMemoryEditionRepository([morningEdition]);
+    let receivedCandidates;
+
+    await generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [candidateSource([
+        { url: "https://example.com/1", category: "Models" },
+        { url: "https://example.com/2", category: "Agents" },
+        { url: "https://example.com/3", category: "Research" },
+        { url: "https://example.com/4", category: "Business" },
+        ...Array.from({ length: 5 }, (_, index) => ({ url: `https://example.com/fresh-${index + 1}`, category: `Category ${index + 1}` }))
+      ])],
+      summaryProvider: {
+        async generateEdition({ candidates }) {
+          receivedCandidates = candidates;
+          return edition();
+        }
+      },
+      refreshExisting: true,
+      logger: {}
+    });
+
+    assert.equal(receivedCandidates.length, 5);
+    assert.ok(receivedCandidates.every((candidate) => candidate.canonicalUrl.startsWith("https://example.com/fresh-")));
+    const history = repository.events.find((event) => event.event === "recent-published-candidates-excluded").metadata;
+    assert.equal(history.refreshExisting, true);
+    assert.equal(history.startDate, "2026-08-14");
+    assert.equal(history.endDate, "2026-08-25");
+    assert.deepEqual(history.excludedCandidates.map((candidate) => candidate.canonicalUrl), [
+      "https://example.com/1",
+      "https://example.com/2",
+      "https://example.com/3",
+      "https://example.com/4"
+    ]);
+  });
+
+  test("creates a normal edition when a scheduled refresh runs with no existing edition", async () => {
+    const repository = createMemoryEditionRepository();
+
+    const result = await generateDailyEdition({
+      targetDate,
+      editionRepository: repository,
+      contentSources: [candidateSource()],
+      summaryProvider: { async generateEdition() { return edition(); } },
+      refreshExisting: true,
+      logger: {}
+    });
+
+    assert.equal(result.status, "succeeded");
+    assert.equal(result.refreshExisting, true);
+    assert.equal(repository.editions.size, 1);
+    assert.equal(repository.editions.get(targetDate).status, "draft");
+    assert.equal(repository.events.some((event) => event.event === "existing-edition-bypassed"), false);
+    assert.ok(repository.events.some((event) => event.event === "edition-save-succeeded" && event.metadata.refreshExisting === true));
+  });
+
+  test("rejects a run configured as both scheduled refresh and force replacement", async () => {
+    await assert.rejects(
+      generateDailyEdition({
+        targetDate,
+        editionRepository: createMemoryEditionRepository(),
+        refreshExisting: true,
+        forceReplace: true
+      }),
+      /cannot be both a same-day refresh and a force replace/i
+    );
+  });
+
+  test("forwards refreshExisting through the scheduler-neutral runner", async () => {
+    const repository = createMemoryEditionRepository();
+
+    const result = await runScheduledEdition({
+      scheduledAt: new Date("2026-08-24T19:00:00Z"),
+      refreshExisting: true,
+      async createDependencies() {
+        return {
+          editionRepository: repository,
+          contentSources: [candidateSource()],
+          summaryProvider: { async generateEdition() { return edition(); } },
+          automaticallyPublish: false,
+          logger: {}
+        };
+      }
+    });
+
+    assert.equal(result.status, "succeeded");
+    assert.equal(result.targetDate, "2026-08-24");
+    assert.equal(result.refreshExisting, true);
+    assert.ok(repository.events.some((event) => event.event === "edition-save-succeeded" && event.metadata.refreshExisting === true));
+  });

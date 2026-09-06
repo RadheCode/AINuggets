@@ -4,9 +4,12 @@ import { PRODUCT_EDITORIAL_CONFIG } from "../product/editorial-config.mjs";
 // publication mode, or approved RSS/Atom feeds.
 export const CONTENT_ENGINE_CONFIG = Object.freeze({
   schedule: Object.freeze({
-    // 05:00 and 17:00 IST, expressed in UTC for Cloudflare Cron.
-    cron: "30 11,23 * * *"
-  }),
+    // 06:30 and 18:30 IST, expressed in UTC for Cloudflare Cron.
+        cron: "0 1,13 * * *",
+        // A scheduled run later in the day may regenerate and atomically replace an
+        // edition already created for the same target date (a same-day refresh).
+        refreshExistingEdition: true
+    }),
   publication: Object.freeze({
     // Validated editions publish immediately; set false to require editorial review.
     automaticallyPublish: true

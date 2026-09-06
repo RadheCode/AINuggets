@@ -100,7 +100,7 @@ globalThis.ProductConfig = Object.freeze({
                                         tagline: "Simple, secure support",
                                         href: "https://ko-fi.com/simplelife",
                                         cta: "Continue on Ko-fi",
-                                        detail: "A quick, secure one-time contribution that keeps AI Nuggets independent and free. The Ko-fi checkout opens in a new tab — no account needed."
+                                        detail: "A quick, secure contribution that helps cover the costs of researching, writing, and serving this briefing. The Ko-fi checkout opens in a new tab — no account needed."
                                       }),
                                       Object.freeze({
                                         id: "razorpay",
@@ -109,7 +109,7 @@ globalThis.ProductConfig = Object.freeze({
                                         tagline: "Pay your way, securely",
                                         href: "https://razorpay.me/@ainuggets",
                                         cta: "Pay with Razorpay",
-                                        detail: "A secure one-time contribution that keeps AI Nuggets independent and free. Pay via UPI, cards, or netbanking — the Razorpay checkout opens in a new tab."
+                                        detail: "A secure contribution that helps cover the costs of researching, writing, and serving this briefing. Pay via UPI, cards, or netbanking — the Razorpay checkout opens in a new tab."
                                       })
                                     ]),
                                     // Provider pre-selected when the dialog opens.
@@ -117,10 +117,10 @@ globalThis.ProductConfig = Object.freeze({
             copy: Object.freeze({
               label: "Support",
               title: "Support AI Nuggets",
-              description: "If this daily briefing is useful to you, a small one-time contribution keeps it independent and ad-free.",
+              description: "Every day, AI Nuggets is your quick, quiet read on what's changing in AI. Reader contributions support the maintenance behind each edition — the research, tools, and care that keep it dependable.",
                                           providerPrompt: "Choose a payment method",
                                                         opensInNewTab: "Opens in a new tab",
-                                                        comingSoon: "Secure one-time support is coming soon. Thank you for being here."
+                                                        comingSoon: "Contribution and subscription support is coming soon. Thank you for being here."
             })
         })
   });

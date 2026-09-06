@@ -3,6 +3,7 @@ import { generateDailyEdition } from "./generate-daily-edition.mjs";
 
 export async function runScheduledEdition({
   scheduledAt = new Date(),
+  refreshExisting = false,
   createDependencies
 }) {
   if (!(scheduledAt instanceof Date) || Number.isNaN(scheduledAt.getTime())) {
@@ -15,5 +16,5 @@ export async function runScheduledEdition({
   const targetDate = editorialDate(scheduledAt);
   const dependencies = await createDependencies({ targetDate, scheduledAt });
 
-  return generateDailyEdition({ targetDate, ...dependencies });
+  return generateDailyEdition({ targetDate, refreshExisting, ...dependencies });
 }
