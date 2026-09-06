@@ -3,6 +3,7 @@
  * adapter so all providers converge on the same daily-edition shape and
  * editorial instructions.
  */
+import { summaryPrompts as SUMMARY_PROMPTS } from "../../../product/config.js";
 
 export function createEditionSchema(summaryContexts) {
   const summaryContextKeys = Object.keys(summaryContexts);
@@ -84,9 +85,9 @@ export function systemPrompt(summaryContexts, generationInstruction) {
       "  summary: a one-paragraph summary of the entire briefing. Must be non-empty.",
       "  meta: an array of 3-5 short strings describing the edition's story mix.",
       `For each story, generate these summary layers with EXACT formats:`,
-      `  Overview (summaries.standard): EXACTLY 3 or 4 bullet points. Each bullet MUST start with "- " on its own line. Example:\n- First key point about the development.\n- Why this matters for practitioners.\n- What to watch next.\nMinimum 240 chars, target 420. Count every character.`,
-      `  Deep dive (summaries.detailed): 2 to 4 short paragraphs separated by BLANK LINES (i.e., double newline). Example:\nFirst paragraph explaining the development.\n\nSecond paragraph with implications.\n\nThird paragraph on what comes next.\nMinimum 500 chars, target 900. Count every character.`,
-      `  Quick take (summaries.compact): ONE paragraph, minimum 100 chars, target 180.`,
+      `  Overview (summaries.standard): ${SUMMARY_PROMPTS.overview}`,
+      `  Deep dive (summaries.detailed): ${SUMMARY_PROMPTS.detailed}`,
+      `  Quick take (summaries.compact): ${SUMMARY_PROMPTS.compact}`,
       `Every minimum is mandatory. The configured maximum is a target, not a rejection limit: exceed it when needed to finish a meaningful sentence or complete thought, and never truncate a summary merely to meet the target. Never repeat, copy, or merely truncate the same wording between layers.`,
       "Keep briefing.title to 44 characters or fewer and briefing.emphasis to 50 characters or fewer so the daily bento layout remains legible.",
       "Use HTTPS source URLs, retain source attribution, and do not claim facts absent from the candidates.",
