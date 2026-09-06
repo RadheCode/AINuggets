@@ -178,20 +178,27 @@
     // Keep these in sync with the documentation in docs/DAILY_CONTENT_AUTOMATION.md.
     summaryPrompts: Object.freeze({
     // Overview (summaries.standard): EXACTLY 3 or 4 bullet points.
-    overview: `Overview (summaries.standard): EXACTLY 3 or 4 bullet points. Each bullet MUST start with "- " on its own line. Example:
-  - First key point about the development.
-  - Why this matters for practitioners.
-  - What to watch next.
-  Minimum 240 chars, target 420. Count every character.`,
+        overview: `Act as an expert content summarizer. Analyze the provided text and create a brief, high-level "Overview" summary.
+    Follow these strict constraints:
+    1. FORMAT: Output MUST be a bulleted list only. Do not write introductory or concluding sentences.
+    2. LENGTH: The total character count MUST be strictly between 240 and 420 characters (including spaces).
+    3. CONTENT:
+    - State the core subject and main purpose.
+    - MANDATORY: Explicitly name key entities, tools, platforms, or items listed in the text (e.g., specific brand or product names).
+    - Mention primary capabilities and key operational limits/constraints.
+    4. TONE: Concise, neutral, and direct.`,
 
     // Deep dive (summaries.detailed): 2 to 4 short paragraphs separated by BLANK LINES.
-    detailed: `Deep dive (summaries.detailed): 2 to 4 short paragraphs separated by BLANK LINES (i.e., double newline). Example:
-  First paragraph explaining the development.
+        detailed: `Act as a senior domain analyst and communicator. Read the provided text thoroughly and produce a comprehensive "Deep Dive" summary.
 
-  Second paragraph with implications.
-
-  Third paragraph on what comes next.
-  Minimum 500 chars, target 900. Count every character.`,
+    Follow these strict constraints:
+    1. FORMAT: Output MUST be written in 3 cohesive paragraphs only. Do NOT use bullet points, tables, numbered lists, or section headers (e.g., "Paragraph 1", "Summary", "Conclusion").
+    2. LENGTH: The total character count MUST be strictly between 500 and 900 characters (including spaces).
+    3. CONTENT STRUCTURE:
+     - Paragraph 1 (Problem & Scope): State the core topic, primary purpose, and contextual background of the text. Explicitly name the core brands, tools, methods, or entities discussed.
+     - Paragraph 2 (Technical Details & Features): Detail specific mechanics, key capabilities, features, evidence, or methodologies highlighted in the text.
+     - Paragraph 3 (Trade-offs & Implications): Explain practical applications, operational constraints (e.g., costs, limits, edge cases), and broader takeaways or future outlook.
+    4. TONE & STYLE: Direct, analytical, and informative. Avoid fluff, promotional filler, and vague generalities. Every sentence must deliver concrete factual value.`,
 
     // Quick take (summaries.compact): ONE paragraph.
     compact: `Quick take (summaries.compact): ONE paragraph, minimum 100 chars, target 180.`,
