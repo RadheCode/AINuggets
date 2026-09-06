@@ -267,9 +267,11 @@
             })
         })
   });
-
-  // Exported configurations for use in other modules
+  
+  // Export the full configuration and individual parts for use in other modules
+  export const ProductConfig = globalThis.ProductConfig;
   export const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
+  export const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
   export const summaryPrompts = globalThis.ProductConfig.summaryPrompts;
   export function validateStreakFeatureConfig(config = STREAK_FEATURE_CONFIG) {
     if (!config || typeof config !== "object") throw new Error("Streak feature configuration must be an object.");
