@@ -209,7 +209,7 @@
         // Ordered list of summary provider kinds. The factory tries providers in this
         // order, skipping any that lack configured credentials, and stops at the first
         // success. This is the single source of truth for provider selection.
-        fallbackOrder: Object.freeze(["openai", "workers-ai", "openrouter"]),
+        fallbackOrder: Object.freeze(["openrouter", "openai", "workers-ai"]),
         // Per-request timeout applied to provider model calls.
         requestTimeoutMs: 120000,
         // OpenAI-compatible provider behavior (shared by the openai and openrouter kinds).

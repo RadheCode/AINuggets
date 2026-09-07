@@ -125,9 +125,9 @@ test("openai summary provider is configured with a custom SUMMARY_PROVIDER_URL",
     return { ok: true, json: async () => ({}), text: async () => "" };
   };
 
-  // Supplying URL + key + model configures openai (the first fallbackOrder kind)
-  // with the custom URL; openrouter is also active but later in the chain with
-  // its product-owned default URL.
+  // Supplying URL + key + model configures openrouter (the first fallbackOrder kind)
+  // using its default URL; openai is also active and later in the chain with the
+  // custom URL.
   const dependencies = createGenerationProviderDependencies({
     [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://custom-endpoint.example/v1",
     [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "test-key",
@@ -139,7 +139,8 @@ test("openai summary provider is configured with a custom SUMMARY_PROVIDER_URL",
     dependencies.summaryProvider.generateEdition({ targetDate: "2026-08-24", candidates: [] }),
     /no structured edition/i
   );
-  // The openai provider must be attempted first, against the custom URL.
+  // The openai provider is in the chain, so the custom URL (openai's) must be
+  // attempted at some point after openrouter's default URL.
   assert.ok(
     attemptedUrls.includes("https://custom-endpoint.example/v1/chat/completions"),
     `expected the custom OpenAI-compatible URL to be attempted, got ${attemptedUrls.join(", ")}`
@@ -274,8 +275,8 @@ test("uses the centralized product editorial configuration", () => {
   assert.doesNotThrow(() => validateStreakFeatureConfig(STREAK_FEATURE_CONFIG));
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
   assert.doesNotThrow(() => validateSummaryProvidersConfig(SUMMARY_PROVIDERS_CONFIG));
-  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.fallbackOrder, ["openai", "workers-ai", "openrouter"]);
-  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openai", "workers-ai", "openrouter"]);
+  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.fallbackOrder, ["openrouter", "openai", "workers-ai"]);
+  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openrouter", "openai", "workers-ai"]);
   assert.equal(SUMMARY_PROVIDERS_CONFIG.requestTimeoutMs, 120000);
   assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.openaiCompatible.retryableStatuses, [404, 500, 502, 503, 504]);
   assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.workersAi.retryableStatuses, [429]);
@@ -284,14 +285,14 @@ test("uses the centralized product editorial configuration", () => {
 
 test("composite provider falls through to the next provider on first-provider failure", async () => {
   const edition = sampleEdition();
-  let openaiAttempted = false;
+  let openrouterAttempted = false;
   const fetchImpl = async (url) => {
-    // First provider (openai) hits model.example → fail with 500
-    if (url.includes("model.example")) {
-      openaiAttempted = true;
+    // First provider (openrouter) hits openrouter.ai → fail with 500
+    if (url.includes("openrouter.ai")) {
+      openrouterAttempted = true;
       return { ok: false, status: 500, text: async () => "internal error" };
     }
-    // Second provider (openrouter) hits openrouter.ai → succeed
+    // Second provider (openai) hits the custom URL → succeed
     return {
       ok: true,
       json: async () => ({ choices: [{ message: { content: JSON.stringify(edition) } }] }),
@@ -299,13 +300,12 @@ test("composite provider falls through to the next provider on first-provider fa
     };
   };
 
-  // Supply openai config (URL+key+model) so openai is configured first in fallbackOrder.
-  // OpenRouter is configured automatically via the same key+model (openrouter needs only key+model).
-  // Supplying openai config (URL+key+model) configures openai first in fallbackOrder.
-  // OpenRouter is configured automatically via the same key+model (openrouter needs only key+model).
-  // The composite is created with openai → openrouter.
+  // Supplying URL + key + model configures openrouter first in fallbackOrder
+  // (openrouter needs only key+model, using its default URL), while openai is
+  // configured second via the extra custom URL.
+  // The composite is created with openrouter → openai.
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://model.example/v1",
+    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://custom-endpoint.example/v1",
     [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "test-key",
     [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "test-model"
   }, { fetchImpl });
@@ -313,7 +313,7 @@ test("composite provider falls through to the next provider on first-provider fa
   assert.ok(dependencies.summaryProvider, "expected a composite summary provider");
   const result = await dependencies.summaryProvider.generateEdition({ targetDate: "2026-08-24", candidates: [] });
   assert.deepEqual(result, edition);
-  assert.ok(openaiAttempted, "expected the first provider (openai) to be attempted");
+  assert.ok(openrouterAttempted, "expected the first provider (openrouter) to be attempted");
 });
 
 test("factory returns null summary provider when no providers are configured", () => {
@@ -349,8 +349,8 @@ test("requires every configured feed to have a valid product artwork mapping", (
   }
 });
 test("externalizes summary provider fallback order, retry statuses, and default base URL from product/config.js", () => {
-  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openai", "workers-ai", "openrouter"]);
-  assert.equal(SUMMARY_PROVIDER_FALLBACK_ORDER[0], "openai");
+  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openrouter", "openai", "workers-ai"]);
+  assert.equal(SUMMARY_PROVIDER_FALLBACK_ORDER[0], "openrouter");
   assert.equal(OPENROUTER_DEFAULT_BASE_URL, SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl);
   assert.equal(OPENROUTER_DEFAULT_BASE_URL, "https://openrouter.ai/api/v1");
 });
