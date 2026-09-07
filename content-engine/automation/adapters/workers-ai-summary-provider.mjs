@@ -24,7 +24,7 @@ function validateSummaryContexts(summaryContexts) {
  * allows the provider to be driven directly in tests without a live binding.
  * Supports fallback across multiple models on 429 (rate limit) and 5xx errors.
  */
-export function createWorkersAiSummaryProvider({ ai, model, summaryContexts, generationInstruction }) {
+export function createWorkersAiSummaryProvider({ ai, model, summaryContexts, generationInstruction, retryableStatuses = [429], retryableStatusRange = [500, 599], retryableMessageTerms = ["rate limit", "capacity", "overloaded"] }) {
   if (!ai || typeof ai.run !== "function") {
     throw new Error("A Workers AI binding (env.AI) is required for the workers-ai summary provider.");
   }
@@ -80,12 +80,13 @@ export function createWorkersAiSummaryProvider({ ai, model, summaryContexts, gen
           }
         } catch (error) {
           lastError = error;
-          // Check if this is a retryable error (rate limit or server error)
-          const isRetryable = error?.response?.status === 429 || 
-                              (error?.response?.status >= 500 && error?.response?.status < 600) ||
-                              error?.message?.includes("rate limit") ||
-                              error?.message?.includes("capacity") ||
-                              error?.message?.includes("overloaded");
+          // Check if this is a retryable error (rate limit or server error) using the
+          // product-configured fallback criteria.
+          const status = error?.response?.status;
+          const inRange = (value, range) => value >= range[0] && value <= range[1];
+          const isRetryable = retryableStatuses.includes(status) ||
+                              inRange(status, retryableStatusRange) ||
+                              retryableMessageTerms.some((term) => error?.message?.includes(term));
           
           await eventLogger?.record("generation", "summary-provider-model-failed", {
             model: currentModel,

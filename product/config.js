@@ -203,6 +203,34 @@
     // Quick take (summaries.compact): ONE paragraph.
     compact: `Quick take (summaries.compact): ONE paragraph, minimum 100 chars, target 180.`,
     }),
+    // Summary provider selection and fallback behavior. These values are product-owned so
+    // editorial and provider fallback order can be tuned without touching shared adapters.
+    summaryProviders: Object.freeze({
+        // Ordered list of summary provider kinds. The factory tries providers in this
+        // order, skipping any that lack configured credentials, and stops at the first
+        // success. This is the single source of truth for provider selection.
+        fallbackOrder: Object.freeze(["openai", "workers-ai", "openrouter"]),
+        // Per-request timeout applied to provider model calls.
+        requestTimeoutMs: 120000,
+        // OpenAI-compatible provider behavior (shared by the openai and openrouter kinds).
+        openaiCompatible: Object.freeze({
+            // HTTP statuses that trigger fallback to the next configured model.
+            retryableStatuses: Object.freeze([404, 500, 502, 503, 504])
+        }),
+        // Cloudflare Workers AI provider fallback behavior.
+        workersAi: Object.freeze({
+            // Exact HTTP statuses that trigger fallback to the next model.
+            retryableStatuses: Object.freeze([429]),
+            // Inclusive [min, max] status range that also triggers fallback (5xx server errors).
+            retryableStatusRange: Object.freeze([500, 599]),
+            // Error-message substrings (rate/capacity limits) that also trigger fallback.
+            retryableMessageTerms: Object.freeze(["rate limit", "capacity", "overloaded"])
+        }),
+        // OpenRouter.ai defaults (an OpenAI-compatible endpoint).
+        openrouter: Object.freeze({
+            defaultBaseUrl: "https://openrouter.ai/api/v1"
+        })
+    }),
     monetization: Object.freeze({
     // Sponsorship configuration
     sponsorships: Object.freeze({
@@ -300,6 +328,17 @@
                     || maximumDaysBetweenQualifyingActivities > 365) {
                     throw new Error("Streak maximumDaysBetweenQualifyingActivities must be an integer from 1 through 365.");
                     }
+                    return config;
+                },
+                validateSummaryProvidersConfig(config = globalThis.ProductConfig.summaryProviders) {
+                    if (!config || typeof config !== "object") throw new Error("Summary providers configuration must be an object.");
+                    const { fallbackOrder, openaiCompatible, workersAi, openrouter, requestTimeoutMs } = config;
+                    if (!Array.isArray(fallbackOrder) || fallbackOrder.length === 0) throw new Error("Summary providers fallbackOrder must be a non-empty array.");
+                    if (fallbackOrder.some((kind) => typeof kind !== "string" || !kind.trim())) throw new Error("Summary provider fallbackOrder entries must be non-empty strings.");
+                    if (!Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1) throw new Error("Summary providers requestTimeoutMs must be a positive integer.");
+                    if (!openaiCompatible || !Array.isArray(openaiCompatible.retryableStatuses)) throw new Error("Summary providers openaiCompatible.retryableStatuses must be an array.");
+                    if (!workersAi || !Array.isArray(workersAi.retryableStatuses) || !Array.isArray(workersAi.retryableStatusRange) || !Array.isArray(workersAi.retryableMessageTerms)) throw new Error("Summary providers workersAi fallback criteria must be arrays.");
+                    if (!openrouter || typeof openrouter.defaultBaseUrl !== "string" || !openrouter.defaultBaseUrl.trim()) throw new Error("Summary providers openrouter.defaultBaseUrl must be a non-empty URL string.");
                     return config;
                 }
               });

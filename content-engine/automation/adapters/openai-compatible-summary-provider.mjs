@@ -26,7 +26,7 @@ function validateSummaryContexts(summaryContexts) {
   }
 }
 
-export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, summaryContexts, generationInstruction, fetchImpl = fetch }) {
+export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, summaryContexts, generationInstruction, fetchImpl = fetch, retryableStatuses = [404, 500, 502, 503, 504], requestTimeoutMs = 120000 }) {
   if (!apiKey) throw new Error("A summary provider API key is required.");
   if (!model) throw new Error("A summary provider model is required.");
   validateSummaryContexts(summaryContexts);
@@ -69,7 +69,7 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
                 { role: "user", content: JSON.stringify({ targetDate, candidates }) }
               ]
             }),
-            signal: AbortSignal.timeout(120_000)
+            signal: AbortSignal.timeout(requestTimeoutMs)
           });
           
           if (!response.ok) {
@@ -112,8 +112,7 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
             throw lastError;
           }
           
-          // For non-final models, continue to next model on 404, 500, 502, 503, 504 errors
-          const retryableStatuses = [404, 500, 502, 503, 504];
+          // For non-final models, continue to next model on the configured retryable statuses.
           if (error.status && retryableStatuses.includes(error.status)) {
             continue; // Try next model
           }

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createGenerationProviderDependencies } from "../config/create-generation-provider-dependencies.mjs";
-import { validateEdition } from "../domain/validate-edition.mjs";
+import { prepareEdition } from "../pipeline/prepare-edition.mjs";
 
 const DEFAULT_CONFIG_PATH = "content-engine/automation/config/providers.local.env";
 const TEST_DATE = "2026-08-24";
@@ -29,7 +29,8 @@ function testCandidates() {
     ["models", "Models"],
     ["agents", "Agents"],
     ["research", "Research"],
-    ["business", "Business"]
+    ["business", "Business"],
+    ["product", "Product"]
   ].map(([id, category]) => ({
     url: `https://example.com/${id}`,
     canonicalUrl: `https://example.com/${id}`,
@@ -54,13 +55,18 @@ export async function testProviderConfig(configPath = resolve(readArgument("conf
   }
 
   const { summaryProvider, summaryContexts } = createGenerationProviderDependencies(values);
-  if (!summaryProvider) throw new Error("SUMMARY_PROVIDER_URL, SUMMARY_PROVIDER_API_KEY, and SUMMARY_PROVIDER_MODEL are required.");
+  if (!summaryProvider) throw new Error("No summary provider was configured. Provide the SUMMARY_PROVIDER_* variables required by a fallbackOrder provider.");
 
-  return validateEdition(
-    await summaryProvider.generateEdition({ targetDate: TEST_DATE, candidates: testCandidates() }),
-    TEST_DATE,
-    summaryContexts
-  );
+  // Run the same pipeline production uses so date pinning, structural repair,
+  // and validation retries match the real generation path.
+  const noopEventLogger = { record: async () => {}, failure: async () => {} };
+  return prepareEdition({
+    targetDate: TEST_DATE,
+    candidates: testCandidates(),
+    summaryProvider,
+    summaryContexts,
+    eventLogger: noopEventLogger
+  });
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

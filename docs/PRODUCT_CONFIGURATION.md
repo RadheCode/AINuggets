@@ -8,7 +8,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | The single product configuration file. Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, summary feature capabilities, summarization prompts, editorial sources and candidate-selection policy, and company-image (feed-source and entity) artwork mappings. Also attaches the product feature-contract validators (`ProductConfig.validateSummaryFeatureConfig`, `ProductConfig.validateStreakFeatureConfig`). |
+| `product/config.js` | The single product configuration file. Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, summary feature capabilities, summarization prompts, summary provider selection and fallback behavior, editorial sources and candidate-selection policy, and company-image (feed-source and entity) artwork mappings. Also attaches the product feature-contract validators (`ProductConfig.validateSummaryFeatureConfig`, `ProductConfig.validateStreakFeatureConfig`, `ProductConfig.validateSummaryProvidersConfig`). |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific source and entity artwork **matching logic** used by the shared story renderer. It reads `ProductConfig.companyImages` (`sourceArtwork` and `companies`) from `product/config.js`; it owns no configuration data itself. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 
@@ -53,6 +53,22 @@ Each context's `minCharacters` is enforced during both provider generation and d
 
 `ProductConfig.summaryPrompts` owns the product's summarization prompts for the generated summary layers (`overview`, `detailed`, `compact`). The prompt block lives in `product/config.js` as data and is read directly from `globalThis.ProductConfig.summaryPrompts` by Node/Worker consumers; no ESM bridge file is needed. Keep each prompt aligned with its matching `summaryFeatures.contexts` entry and with `docs/DAILY_CONTENT_AUTOMATION.md`.
 
+## Summary provider configuration
+
+`ProductConfig.summaryProviders` owns the generation provider selection and model fallback behavior used by the daily-edition automation. It deliberately lives in `product/config.js`: the provider fallback order, the per-request timeout, and the retryable-model fallback criteria are editorial behavior that is tuned in one product-owned place without editing shared adapters.
+
+| Setting | Purpose |
+|---|---|
+| `fallbackOrder` | Provider kinds to try in precedence order for summary generation (`openai`, then `workers-ai`, then `openrouter`). Every kind in the order that has complete runtime credentials is instantiated and tried in this order; the first provider that produces a valid edition wins. |
+| `requestTimeoutMs` | Per-request timeout applied to summary provider model calls (`120000`). |
+| `openaiCompatible.retryableStatuses` | HTTP statuses that make an OpenAI-compatible provider attempt the next configured model (`404, 500, 502, 503, 504`). |
+| `workersAi.retryableStatuses` | Exact HTTP statuses that make the Workers AI provider fail over to the next model (`429`). |
+| `workersAi.retryableStatusRange` | Inclusive `[min, max]` server-error range that also triggers failover (`500, 599`). |
+| `workersAi.retryableMessageTerms` | Error-message substrings (`rate limit`, `capacity`, `overloaded`) that also trigger failover. |
+| `openrouter.defaultBaseUrl` | Fixed OpenRouter.ai base URL used by the `openrouter` kind (`https://openrouter.ai/api/v1`). In the chain OpenRouter always uses this default; it is not overridable through `SUMMARY_PROVIDER_URL` (custom OpenAI-compatible endpoints belong to the `openai` kind's `SUMMARY_PROVIDER_URL`). |
+
+The provider factory (`create-generation-provider-dependencies.mjs`) reads `ProductConfig.summaryProviders` and injects the configured retry criteria and timeout into the shared adapters. The factory walks `fallbackOrder`, instantiates every kind that has complete runtime credentials, and wraps them in a composite provider that falls through to the next kind on failure; a partially configured kind is rejected with the missing fields instead of being silently skipped. `fallbackOrder` is the single source of truth for provider selection — there is no separate provider-kind override. Because the `openai` and `openrouter` kinds share the `SUMMARY_PROVIDER_API_KEY`/`SUMMARY_PROVIDER_MODEL` variables, an `openai` setup with a URL always also enables `openrouter` (pointed at its default base URL) as a later fallback. The adapters keep portable defaults so they remain usable standalone; the product-configured values are applied whenever the factory wires them. `ProductConfig.validateSummaryProvidersConfig` enforces this contract so a malformed provider block fails fast in tests and at startup.
+
 ## Editorial candidate selection
 
 `ProductConfig.editorial.candidateSelection.mode` controls how the built-in RSS/Atom collector orders eligible candidates before it selects up to five category-diverse stories. The setting is product-owned because it defines editorial policy, while the collector implementation remains portable.
@@ -75,7 +91,7 @@ The public OAuth client ID is intentionally browser-visible. Do not add a client
 ## Ownership boundaries
 
 - `product/` owns product/topic identity and browser-visible public settings.
-- `content-engine/` owns portable loading, rendering, and daily-edition automation behavior.
+- `content-engine/` owns portable loading, rendering, and daily-edition automation behavior, including the generic provider-protocol adapters. The product-owned `ProductConfig.summaryProviders` block supplies the behavior knobs those adapters consume through the factory.
 - `themes/` owns presentation and theme selection. Its neutral `window.ThemeConfig` global is intentionally separate from product content.
 - `infra/config.json` selects the active provider; `infra/<provider>/` owns provider account, project, Worker, database, and deployment details. Do not move provider-specific identifiers into `product/`. For Cloudflare, `infra/cloudflare/config.json` is authoritative for Worker and D1 identities; deployment and secret synchronization render a temporary Wrangler manifest from it, derive CORS origins from it, and take the public OAuth client ID from `product/config.js`.
 
@@ -85,5 +101,5 @@ The public OAuth client ID is intentionally browser-visible. Do not add a client
 
 - Provider resource names, account identifiers, database IDs, and deployment URLs in `infra/<provider>/`, because providers require provider-specific manifests. Cloudflare's checked-in manifests are templates, not second copies of those identifiers.
 - Applied SQL migrations under `infra/<provider>/.../migrations/`, because migration history is immutable. Publish a new edition or add a new ordered migration for a new topic; never rewrite history.
-- Generic provider-protocol adapters, fixtures, and operational documentation, which are not product-facing runtime copy. Concrete resource names in operational documents describe the currently deployed environment.
+- Generic provider-protocol adapters, fixtures, and operational documentation, which are not product-facing runtime copy. Provider *behavior* values deliberately stay in `ProductConfig.summaryProviders` (fallback order, retry criteria, timeout, default base URL); the portable adapters implement the protocol and are wired to those values by the factory. Concrete resource names in operational documents describe the currently deployed environment.
 - The CLI's `CONTENT_AUTOMATION_URL`, which is intentionally an explicit environment variable so a local trigger cannot silently target a stale beta or production endpoint.

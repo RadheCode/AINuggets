@@ -24,12 +24,14 @@ The boundary provides these guarantees:
 
 | Path | Owns | Change when retargeting? |
 |---|---|---|
-| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, and summary-context minimums plus advisory concision targets, the approved feeds, candidate-selection mode, and generation instruction, and the company-image (feed-source and entity) artwork mappings | Yes |
+| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, and summary-context minimums plus advisory concision targets, the approved feeds, candidate-selection mode, and generation instruction, summary provider kinds and their fallback order, per-request timeout, retryable-model fallback criteria, and the default OpenRouter.ai base URL, and the company-image (feed-source and entity) artwork mappings | Yes |
 | `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell | Only when the shared copy contract changes |
 | `product/company-images.js` | Feed-source and entity matching for story artwork | Yes, if sources or entity matching changes |
 | `product/company-images/` | Product-owned artwork assets | Yes, if feed or entity artwork changes |
 
 `product/config.js` is browser-delivered and therefore contains public values only. Never put OAuth client secrets, API keys, account tokens, or other credentials in `product/`.
+
+`ProductConfig.summaryProviders` is a product-owned provider *behavior* contract: the valid summary-provider kinds and their fallback order, the per-request timeout, the retryable-model fallback criteria for each provider, and the default OpenRouter.ai base URL. It is deliberately distinct from `infra/<provider>/` identities (resource names, accounts, databases, deployments) and from the portable protocol adapters in `content-engine/`: editors tune kinds, fallback behavior, timeout, and the default base URL in one public place, and the provider factory injects those values into the generic adapters.
 
 ### Shared application behavior: outside `product/`
 
@@ -58,10 +60,11 @@ This is deliberate: the portable product and application layers must not import 
 Use this decision order before adding or editing configuration or copy:
 
 1. Is it visible to readers, defines the editorial topic, identifies a product entity, defines reader engagement, or is a public browser runtime setting? Put it in `product/`.
-2. Does it define shared behavior usable by every topic? Put it in the existing shared module, and make it consume a product value only if necessary.
-3. Does it create, identify, deploy, secure, or bind a cloud resource? Put it in `infra/<provider>/`.
-4. Is it an already-applied database migration? Do not change it. Add a new ordered migration only when a schema or data migration is required.
-5. Is it current editorial content? Publish a new D1 edition or story set; do not hard-code it into the site.
+2. Is it provider behavior: which summary-provider kinds are valid and in what fallback order, the timeout, the retryable fallback statuses/ranges/terms, or a default base URL? Put it in `ProductConfig.summaryProviders` in `product/config.js`, and keep the generic protocol adapter portable in `content-engine/`.
+3. Does it define shared behavior usable by every topic? Put it in the existing shared module, and make it consume a product value only if necessary.
+4. Does it create, identify, deploy, secure, or bind a cloud resource? Put it in `infra/<provider>/`.
+5. Is it an already-applied database migration? Do not change it. Add a new ordered migration only when a schema or data migration is required.
+6. Is it current editorial content? Publish a new D1 edition or story set; do not hard-code it into the site.
 
 ## When to use each path
 
