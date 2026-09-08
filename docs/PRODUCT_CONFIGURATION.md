@@ -59,7 +59,7 @@ Each context's `minCharacters` is enforced during both provider generation and d
 
 | Setting | Purpose |
 |---|---|
-| `fallbackOrder` | Provider kinds to try in precedence order for summary generation (`openrouter`, then `gemini`, then `openai`, then `workers-ai`). Every kind in the order that has complete runtime credentials is instantiated and tried in this order; the first provider that produces a valid edition wins. |
+| `fallbackOrder` | Provider kinds to try in precedence order for summary generation (`openai`, then `gemini`, then `openrouter`, then `workers-ai`). Every kind in the order that has complete runtime credentials is instantiated and tried in this order; the first provider that produces a valid edition wins. |
 | `requestTimeoutMs` | Per-request timeout applied to summary provider model calls (`300000`). |
 | `openaiCompatible.retryableStatuses` | HTTP statuses that make an OpenAI-compatible provider attempt the next configured model (`404, 500, 502, 503, 504`). |
 | `workersAi.retryableStatuses` | Exact HTTP statuses that make the Workers AI provider fail over to the next model (`429`). |
