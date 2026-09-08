@@ -13,12 +13,17 @@ const SUMMARY_PROVIDERS_CONFIG = globalThis.ProductConfig.summaryProviders;
 export const GENERATION_PROVIDER_CONFIGURATION = Object.freeze({
   contentSourceUrl: "CONTENT_SOURCE_URL",
   contentSourceApiKey: "CONTENT_SOURCE_API_KEY",
-  summaryProviderUrl: "SUMMARY_PROVIDER_URL",
-  summaryProviderApiKey: "SUMMARY_PROVIDER_API_KEY",
-  summaryProviderModel: "SUMMARY_PROVIDER_MODEL"
+  openrouterApiKey: "OPENROUTER_API_KEY",
+  openrouterModel: "OPENROUTER_MODEL",
+  openaiApiKey: "OPENAI_API_KEY",
+  openaiModel: "OPENAI_MODEL",
+  openaiBaseUrl: "OPENAI_BASE_URL",
+  workersAiModel: "WORKERS_AI_MODEL",
+  geminiApiKey: "GEMINI_API_KEY",
+  geminiModel: "GEMINI_MODEL"
 });
 
-const PROVIDER_KIND = Object.freeze({ openai: "openai", workersAi: "workers-ai", openrouter: "openrouter" });
+const PROVIDER_KIND = Object.freeze({ openai: "openai", workersAi: "workers-ai", openrouter: "openrouter", gemini: "gemini" });
 export const SUMMARY_PROVIDER_FALLBACK_ORDER = Object.freeze(SUMMARY_PROVIDERS_CONFIG.fallbackOrder);
 export const OPENROUTER_DEFAULT_BASE_URL = SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl;
 
@@ -52,49 +57,54 @@ function configuredValueAsArray(values, name) {
  */
 function isProviderConfigured(kind, values) {
   if (kind === PROVIDER_KIND.workersAi) {
-    return !!(values?.["AI"] && configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel));
+    return !!(values?.["AI"] && configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.workersAiModel));
   }
   if (kind === PROVIDER_KIND.openrouter) {
-    return !!(configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey) &&
-              configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel));
+    return !!(configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey) &&
+              configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openrouterModel));
   }
   if (kind === PROVIDER_KIND.openai) {
-    return !!(configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl) &&
-              configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey) &&
-              configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel));
+    return !!(configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl) &&
+              configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiApiKey) &&
+              configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiModel));
   }
-  return false;
+    if (kind === PROVIDER_KIND.gemini) {
+      return !!(configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.geminiApiKey) &&
+                configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.geminiModel));
+    }
+    return false;
 }
 
 /**
  * Returns true when a provider kind has a partial configuration that cannot be
- * satisfied by any other provider. Used during fallback-order iteration to catch
- * misconfiguration instead of silently skipping it. Because the openai and
- * openrouter kinds share the SUMMARY_PROVIDER_API_KEY/MODEL variables, a missing
- * URL with key+model present is a valid openrouter config (not a broken openai
- * one), so openai is only flagged when a URL configures it but key or model is
- * missing.
+ * satisfied by any other provider. With provider-specific secret keys, partial
+ * means one key for a provider is set but another required key for the same
+ * provider is missing.
  */
 function hasPartialProviderConfig(kind, values) {
   if (kind === PROVIDER_KIND.openai) {
-    const hasUrl = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl);
-    const hasKey = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey);
-    const hasModel = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel);
-    // A configured URL but missing key/model means openai is half-set-up and no
-    // other provider can use that URL, so it is genuinely broken.
-    return hasUrl && (!hasKey || !hasModel);
+    const hasUrl = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl);
+    const hasKey = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiApiKey);
+    const hasModel = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiModel);
+    return (hasUrl || hasKey || hasModel) && !(hasUrl && hasKey && hasModel);
   }
   if (kind === PROVIDER_KIND.openrouter) {
-    // Without its own URL, a key+model-only setup belongs to openai in the chain
-    // precedence, so openrouter is never "partial" on its own.
-    return false;
+    const hasKey = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey);
+    const hasModel = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openrouterModel);
+    return (hasKey || hasModel) && !(hasKey && hasModel);
   }
+    if (kind === PROVIDER_KIND.gemini) {
+      const hasKey = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.geminiApiKey);
+      const hasModel = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.geminiModel);
+      return (hasKey || hasModel) && !(hasKey && hasModel);
+    }
   if (kind === PROVIDER_KIND.workersAi) {
     const hasBinding = !!(values?.["AI"]);
-    const hasModel = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel);
-    // Flag a present AI binding with a missing model as broken.
-    return hasBinding && !hasModel;
-  }
+    const hasModel = !!configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.workersAiModel);
+      // Workers AI is only "partial" if there's a model but no binding (misconfiguration).
+      // If there's a binding but no model, it's simply not configured - skip silently.
+      return !hasBinding && hasModel;
+    }
   return false;
 }
 
@@ -175,7 +185,7 @@ function createSummaryProvider(kind, values, summaryContexts, generationInstruct
   if (kind === PROVIDER_KIND.workersAi) {
       return createWorkersAiSummaryProvider({
         ai: values?.["AI"],
-        model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
+        model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.workersAiModel),
         summaryContexts,
         generationInstruction,
         retryableStatuses: workersAiConfig.retryableStatuses,
@@ -183,15 +193,11 @@ function createSummaryProvider(kind, values, summaryContexts, generationInstruct
         retryableMessageTerms: workersAiConfig.retryableMessageTerms
       });
   }
-  if (kind === PROVIDER_KIND.openrouter &&
-        (configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey) ||
-         configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel))) {
-      // OpenRouter is OpenAI-compatible, so it reuses the shared adapter pointed at
-      // the product-owned default OpenRouter.ai base URL.
+  if (kind === PROVIDER_KIND.openrouter) {
       return createOpenAiCompatibleSummaryProvider({
         baseUrl: SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl,
-        apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey),
-        model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
+        apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey),
+        model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.openrouterModel),
         summaryContexts,
         generationInstruction,
         retryableStatuses: openaiCompatibleConfig.retryableStatuses,
@@ -199,11 +205,11 @@ function createSummaryProvider(kind, values, summaryContexts, generationInstruct
         ...options
       });
   }
-  if (kind === PROVIDER_KIND.openai && configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl)) {
+  if (kind === PROVIDER_KIND.openai) {
       return createOpenAiCompatibleSummaryProvider({
-        baseUrl: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl),
-        apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey),
-        model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel),
+        baseUrl: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl),
+        apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.openaiApiKey),
+        model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.openaiModel),
         summaryContexts,
         generationInstruction,
         retryableStatuses: openaiCompatibleConfig.retryableStatuses,
@@ -211,5 +217,17 @@ function createSummaryProvider(kind, values, summaryContexts, generationInstruct
         ...options
       });
   }
-  return null;
+    if (kind === PROVIDER_KIND.gemini) {
+        return createOpenAiCompatibleSummaryProvider({
+          baseUrl: SUMMARY_PROVIDERS_CONFIG.gemini.defaultBaseUrl,
+          apiKey: configuredValue(values, GENERATION_PROVIDER_CONFIGURATION.geminiApiKey),
+          model: configuredValueAsArray(values, GENERATION_PROVIDER_CONFIGURATION.geminiModel),
+          summaryContexts,
+          generationInstruction,
+          retryableStatuses: openaiCompatibleConfig.retryableStatuses,
+          requestTimeoutMs,
+          ...options
+        });
+    }
+    return null;
 }

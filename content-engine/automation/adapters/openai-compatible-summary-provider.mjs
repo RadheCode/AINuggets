@@ -8,6 +8,64 @@ function requireUrl(value, name) {
   }
 }
 
+/**
+ * Attempts to extract a JSON object from a model response that may include
+ * markdown code fences, prose, or reasoning text around the JSON payload.
+ * Returns the extracted JSON string, or null when no object can be found.
+ */
+function extractJsonObject(content) {
+  if (typeof content !== "string" || !content.trim()) return null;
+
+  // Strip markdown code fences (```json ... ``` or ``` ... ```).
+  const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) {
+    const candidate = fenced[1].trim();
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch {
+      // fall through to brace matching
+    }
+  }
+
+  // Find the first balanced {...} block.
+  const start = content.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < content.length; i++) {
+    const ch = content[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        const candidate = content.slice(start, i + 1);
+        try {
+          JSON.parse(candidate);
+          return candidate;
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 function validateSummaryContexts(summaryContexts) {
   if (!summaryContexts || typeof summaryContexts !== "object") {
     throw new Error("Summary contexts are required.");
@@ -93,7 +151,24 @@ export function createOpenAiCompatibleSummaryProvider({ baseUrl, apiKey, model, 
           try {
             return JSON.parse(content);
           } catch {
-            throw new Error("Summary provider returned invalid JSON.");
+            // Some providers wrap JSON in markdown code fences or add prose.
+            // Try to extract the first JSON object from the response.
+            const extracted = extractJsonObject(content);
+            if (extracted !== null) {
+              try {
+                return JSON.parse(extracted);
+              } catch {
+                // fall through to error
+              }
+            }
+            const preview = content.length > 300 ? content.slice(0, 300) + "…" : content;
+            await eventLogger?.record("generation", "summary-provider-invalid-json", {
+              candidateCount: candidates.length,
+              responseCharacterCount: content.length,
+              model: currentModel,
+              contentPreview: preview
+            }, { outcome: "failed" });
+            throw new Error(`Summary provider returned invalid JSON. Model ${currentModel} responded with ${content.length} characters that could not be parsed.`);
           }
         } catch (error) {
           lastError = error;

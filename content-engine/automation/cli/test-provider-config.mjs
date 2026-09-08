@@ -55,7 +55,7 @@ export async function testProviderConfig(configPath = resolve(readArgument("conf
   }
 
   const { summaryProvider, summaryContexts } = createGenerationProviderDependencies(values);
-  if (!summaryProvider) throw new Error("No summary provider was configured. Provide the SUMMARY_PROVIDER_* variables required by a fallbackOrder provider.");
+  if (!summaryProvider) throw new Error("No summary provider was configured. Provide the provider-specific variables (OPENROUTER_*, OPENAI_*, or WORKERS_AI_*) required by a fallbackOrder provider.");
 
   // Run the same pipeline production uses so date pinning, structural repair,
   // and validation retries match the real generation path.

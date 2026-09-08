@@ -56,9 +56,9 @@ test("creates generic providers from complete runtime configuration", () => {
   const dependencies = createGenerationProviderDependencies({
     [GENERATION_PROVIDER_CONFIGURATION.contentSourceUrl]: "https://source.example/candidates",
     [GENERATION_PROVIDER_CONFIGURATION.contentSourceApiKey]: "source-secret",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://model.example/v1",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "model-secret",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "editorial-model"
+    [GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl]: "https://model.example/v1",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiApiKey]: "model-secret",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiModel]: "editorial-model"
   });
 
   assert.equal(dependencies.contentSources.length, 1);
@@ -68,7 +68,7 @@ test("creates generic providers from complete runtime configuration", () => {
 test("rejects partial summary provider configuration", () => {
   assert.throws(
     () => createGenerationProviderDependencies({
-      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://model.example/v1"
+      [GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl]: "https://model.example/v1"
     }),
     /has a partial configuration/i
   );
@@ -76,7 +76,7 @@ test("rejects partial summary provider configuration", () => {
 
 test("creates a workers-ai summary provider from a binding and model", () => {
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    [GENERATION_PROVIDER_CONFIGURATION.workersAiModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     AI: { run: async () => ({ response: "{}" }) }
   });
 
@@ -84,13 +84,11 @@ test("creates a workers-ai summary provider from a binding and model", () => {
   assert.equal(typeof dependencies.summaryProvider.generateEdition, "function");
 });
 
-test("rejects a workers-ai binding without a model", () => {
-  assert.throws(
-    () => createGenerationProviderDependencies({
-      AI: { run: async () => ({ response: "{}" }) }
-    }),
-    /partial configuration/i
-  );
+test("workers-ai binding without a model leaves workers-ai unconfigured", () => {
+  const dependencies = createGenerationProviderDependencies({
+    AI: { run: async () => ({ response: "{}" }) }
+  });
+  assert.equal(dependencies.summaryProvider, null);
 });
 
 test("creates an openrouter summary provider using the default OpenRouter base URL", async () => {
@@ -103,8 +101,8 @@ test("creates an openrouter summary provider using the default OpenRouter base U
   };
 
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "openrouter-secret",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "openai/gpt-4o-mini"
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey]: "openrouter-secret",
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterModel]: "openai/gpt-4o-mini"
   }, { fetchImpl });
 
   assert.ok(dependencies.summaryProvider, "expected an openrouter summary provider");
@@ -118,20 +116,57 @@ test("creates an openrouter summary provider using the default OpenRouter base U
   assert.equal(requestedBody.model, "openai/gpt-4o-mini");
 });
 
-test("openai summary provider is configured with a custom SUMMARY_PROVIDER_URL", async () => {
+test("openrouter summary provider extracts JSON from a markdown-fenced response", async () => {
+  const edition = sampleEdition();
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => ({
+      choices: [{ message: { content: "```json\n" + JSON.stringify(edition) + "\n```" } }]
+    }),
+    text: async () => ""
+  });
+
+  const dependencies = createGenerationProviderDependencies({
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey]: "openrouter-secret",
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterModel]: "openai/gpt-4o-mini"
+  }, { fetchImpl });
+
+  const result = await dependencies.summaryProvider.generateEdition({ targetDate: "2026-08-24", candidates: [] });
+  assert.deepEqual(result, edition);
+});
+
+test("openrouter summary provider extracts JSON from prose-wrapped response", async () => {
+  const edition = sampleEdition();
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => ({
+      choices: [{ message: { content: `Here is the edition:\n${JSON.stringify(edition)}\nHope that helps!` } }]
+    }),
+    text: async () => ""
+  });
+
+  const dependencies = createGenerationProviderDependencies({
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey]: "openrouter-secret",
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterModel]: "openai/gpt-4o-mini"
+  }, { fetchImpl });
+
+  const result = await dependencies.summaryProvider.generateEdition({ targetDate: "2026-08-24", candidates: [] });
+  assert.deepEqual(result, edition);
+});
+
+test("openai summary provider is configured with a custom OPENAI_BASE_URL", async () => {
   const attemptedUrls = [];
   const fetchImpl = async (url) => {
     attemptedUrls.push(url);
     return { ok: true, json: async () => ({}), text: async () => "" };
   };
 
-  // Supplying URL + key + model configures openrouter (the first fallbackOrder kind)
-  // using its default URL; openai is also active and later in the chain with the
-  // custom URL.
+  // Supplying openai keys configures openai; openrouter is also configured
+  // via its own keys and is first in fallbackOrder.
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://custom-endpoint.example/v1",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "test-key",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "test-model"
+    [GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl]: "https://custom-endpoint.example/v1",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiApiKey]: "test-key",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiModel]: "test-model"
   }, { fetchImpl });
 
   assert.ok(dependencies.summaryProvider, "expected a summary provider");
@@ -150,18 +185,63 @@ test("openai summary provider is configured with a custom SUMMARY_PROVIDER_URL",
 test("incomplete openai configuration (URL and key, missing model) is rejected as partial", () => {
   assert.throws(
     () => createGenerationProviderDependencies({
-      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://model.example/v1",
-      [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "test-key"
+      [GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl]: "https://model.example/v1",
+      [GENERATION_PROVIDER_CONFIGURATION.openaiApiKey]: "test-key"
     }),
     /has a partial configuration/i
   );
 });
 
-test("key without a model leaves no provider configured and is skipped", () => {
+test("openrouter key without a model is rejected as partial", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey]: "test-key"
+    }),
+    /has a partial configuration/i
+  );
+});
+
+test("creates a gemini summary provider using the default Gemini base URL", async () => {
+  let requestedUrl;
+  let requestedBody;
+  const fetchImpl = async (url, options) => {
+    requestedUrl = url;
+    requestedBody = JSON.parse(options.body);
+    return { ok: true, json: async () => ({}), text: async () => "" };
+  };
+
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "test-key"
-  });
-  assert.equal(dependencies.summaryProvider, null);
+    [GENERATION_PROVIDER_CONFIGURATION.geminiApiKey]: "gemini-secret",
+    [GENERATION_PROVIDER_CONFIGURATION.geminiModel]: "gemini-2.0-flash"
+  }, { fetchImpl });
+
+  assert.ok(dependencies.summaryProvider, "expected a gemini summary provider");
+  assert.equal(typeof dependencies.summaryProvider.generateEdition, "function");
+
+  await assert.rejects(
+    dependencies.summaryProvider.generateEdition({ targetDate: "2026-08-24", candidates: [] }),
+    /no structured edition/i
+  );
+  assert.equal(requestedUrl, `${SUMMARY_PROVIDERS_CONFIG.gemini.defaultBaseUrl}/chat/completions`);
+  assert.equal(requestedBody.model, "gemini-2.0-flash");
+});
+
+test("gemini key without a model is rejected as partial", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.geminiApiKey]: "test-key"
+    }),
+    /has a partial configuration/i
+  );
+});
+
+test("gemini model without a key is rejected as partial", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.geminiModel]: "gemini-2.0-flash"
+    }),
+    /has a partial configuration/i
+  );
 });
 
 test("workers-ai summary provider parses the JSON edition from the binding response", async () => {
@@ -244,7 +324,7 @@ test("workers-ai summary provider rejects invalid JSON from the binding", async 
 
 test("builds a workers-ai summary provider through the factory end-to-end", async () => {
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    [GENERATION_PROVIDER_CONFIGURATION.workersAiModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     AI: { run: async () => ({ response: "not json" }) }
   });
 
@@ -254,11 +334,13 @@ test("builds a workers-ai summary provider through the factory end-to-end", asyn
   );
 });
 
-test("model without a binding or other provider credentials leaves workers-ai unconfigured", () => {
-  const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
-  });
-  assert.equal(dependencies.summaryProvider, null);
+test("workers-ai model without a binding is a partial configuration", () => {
+  assert.throws(
+    () => createGenerationProviderDependencies({
+      [GENERATION_PROVIDER_CONFIGURATION.workersAiModel]: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    }),
+    /partial configuration/i
+  );
 });
 
 test("uses the centralized product editorial configuration", () => {
@@ -275,12 +357,13 @@ test("uses the centralized product editorial configuration", () => {
   assert.doesNotThrow(() => validateStreakFeatureConfig(STREAK_FEATURE_CONFIG));
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
   assert.doesNotThrow(() => validateSummaryProvidersConfig(SUMMARY_PROVIDERS_CONFIG));
-  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.fallbackOrder, ["openrouter", "openai", "workers-ai"]);
-  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openrouter", "openai", "workers-ai"]);
-  assert.equal(SUMMARY_PROVIDERS_CONFIG.requestTimeoutMs, 120000);
+  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.fallbackOrder, ["openrouter", "gemini", "openai", "workers-ai"]);
+    assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openrouter", "gemini", "openai", "workers-ai"]);
+  assert.equal(SUMMARY_PROVIDERS_CONFIG.requestTimeoutMs, 300000);
   assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.openaiCompatible.retryableStatuses, [404, 500, 502, 503, 504]);
   assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.workersAi.retryableStatuses, [429]);
   assert.equal(SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl, "https://openrouter.ai/api/v1");
+    assert.equal(SUMMARY_PROVIDERS_CONFIG.gemini.defaultBaseUrl, "https://generativelanguage.googleapis.com/v1beta/openai");
 });
 
 test("composite provider falls through to the next provider on first-provider failure", async () => {
@@ -300,14 +383,14 @@ test("composite provider falls through to the next provider on first-provider fa
     };
   };
 
-  // Supplying URL + key + model configures openrouter first in fallbackOrder
-  // (openrouter needs only key+model, using its default URL), while openai is
-  // configured second via the extra custom URL.
-  // The composite is created with openrouter → openai.
+  // Provide both openrouter and openai keys. openrouter is first in fallbackOrder
+  // and fails with 500; openai succeeds via the custom URL.
   const dependencies = createGenerationProviderDependencies({
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderUrl]: "https://custom-endpoint.example/v1",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderApiKey]: "test-key",
-    [GENERATION_PROVIDER_CONFIGURATION.summaryProviderModel]: "test-model"
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterApiKey]: "test-key",
+    [GENERATION_PROVIDER_CONFIGURATION.openrouterModel]: "test-model",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiBaseUrl]: "https://custom-endpoint.example/v1",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiApiKey]: "test-key",
+    [GENERATION_PROVIDER_CONFIGURATION.openaiModel]: "test-model"
   }, { fetchImpl });
 
   assert.ok(dependencies.summaryProvider, "expected a composite summary provider");
@@ -349,7 +432,7 @@ test("requires every configured feed to have a valid product artwork mapping", (
   }
 });
 test("externalizes summary provider fallback order, retry statuses, and default base URL from product/config.js", () => {
-  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openrouter", "openai", "workers-ai"]);
+  assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openrouter", "gemini", "openai", "workers-ai"]);
   assert.equal(SUMMARY_PROVIDER_FALLBACK_ORDER[0], "openrouter");
   assert.equal(OPENROUTER_DEFAULT_BASE_URL, SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl);
   assert.equal(OPENROUTER_DEFAULT_BASE_URL, "https://openrouter.ai/api/v1");
@@ -406,11 +489,15 @@ test("openai-compatible summary provider does not fall back on non-retryable sta
 
 test("rejects an invalid summary providers configuration", () => {
   assert.throws(
-    () => validateSummaryProvidersConfig({ fallbackOrder: [], requestTimeoutMs: 120000, openaiCompatible: { retryableStatuses: [503] }, workersAi: { retryableStatuses: [429], retryableStatusRange: [500, 599], retryableMessageTerms: ["rate limit"] }, openrouter: { defaultBaseUrl: "https://openrouter.ai/api/v1" } }),
+    () => validateSummaryProvidersConfig({ fallbackOrder: [], requestTimeoutMs: 120000, openaiCompatible: { retryableStatuses: [503] }, workersAi: { retryableStatuses: [429], retryableStatusRange: [500, 599], retryableMessageTerms: ["rate limit"] }, openrouter: { defaultBaseUrl: "https://openrouter.ai/api/v1" }, gemini: { defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" } }),
     /fallbackOrder must be a non-empty array/i
   );
   assert.throws(
-    () => validateSummaryProvidersConfig({ fallbackOrder: ["openai"], requestTimeoutMs: 120000, openaiCompatible: {}, workersAi: { retryableStatuses: [429], retryableStatusRange: [500, 599], retryableMessageTerms: ["rate limit"] }, openrouter: { defaultBaseUrl: "https://openrouter.ai/api/v1" } }),
+    () => validateSummaryProvidersConfig({ fallbackOrder: ["openai"], requestTimeoutMs: 120000, openaiCompatible: {}, workersAi: { retryableStatuses: [429], retryableStatusRange: [500, 599], retryableMessageTerms: ["rate limit"] }, openrouter: { defaultBaseUrl: "https://openrouter.ai/api/v1" }, gemini: { defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" } }),
     /openaiCompatible.retryableStatuses must be an array/i
+  );
+  assert.throws(
+    () => validateSummaryProvidersConfig({ fallbackOrder: ["openai"], requestTimeoutMs: 120000, openaiCompatible: { retryableStatuses: [503] }, workersAi: { retryableStatuses: [429], retryableStatusRange: [500, 599], retryableMessageTerms: ["rate limit"] }, openrouter: { defaultBaseUrl: "https://openrouter.ai/api/v1" }, gemini: {} }),
+    /gemini.defaultBaseUrl must be a non-empty URL string/i
   );
 });
