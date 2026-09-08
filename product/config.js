@@ -180,13 +180,17 @@
     // Overview (summaries.standard): EXACTLY 3 or 4 bullet points.
         overview: `Act as an expert content summarizer. Analyze the provided text and create a brief, high-level "Overview" summary.
     Follow these strict constraints:
-    1. FORMAT: Output MUST be a bulleted list only. Do not write introductory or concluding sentences.
+    1. FORMAT: Output MUST be EXACTLY 3 or 4 bullet points. Each bullet MUST start with "- " (hyphen followed by a space). Do not write introductory or concluding sentences. Do not use numbered lists, tables, or paragraphs — ONLY hyphen-prefixed bullet lines.
     2. LENGTH: The total character count MUST be strictly between 240 and 420 characters (including spaces).
     3. CONTENT:
     - State the core subject and main purpose.
     - MANDATORY: Explicitly name key entities, tools, platforms, or items listed in the text (e.g., specific brand or product names).
     - Mention primary capabilities and key operational limits/constraints.
-    4. TONE: Concise, neutral, and direct.`,
+    4. TONE: Concise, neutral, and direct.
+    5. EXAMPLE FORMAT (3 bullets):
+    - AI model X launches with Y capability for Z use case
+    - Platform A integrates B to improve C workflows
+    - Key limitation: D requires E before F`,
 
     // Deep dive (summaries.detailed): 2 to 4 short paragraphs separated by BLANK LINES.
         detailed: `Act as a senior domain analyst and communicator. Read the provided text thoroughly and produce a comprehensive "Deep Dive" summary.

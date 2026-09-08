@@ -88,7 +88,7 @@ export function systemPrompt(summaryContexts, generationInstruction) {
       "  summary: a one-paragraph summary of the entire briefing. Must be non-empty.",
       "  meta: an array of 3-5 short strings describing the edition's story mix.",
       `For each story, generate these summary layers with EXACT formats:`,
-      `  Overview (summaries.standard): ${SUMMARY_PROMPTS.overview}`,
+      `  Overview (summaries.standard): EXACTLY 3 or 4 lines. Each line MUST start with "- " (hyphen-space). No introductory text, no concluding text, no paragraphs — ONLY hyphen-prefixed bullet lines. ${SUMMARY_PROMPTS.overview}`,
       `  Deep dive (summaries.detailed): ${SUMMARY_PROMPTS.detailed}`,
       `  Quick take (summaries.compact): ${SUMMARY_PROMPTS.compact}`,
       `Every minimum is mandatory. The configured maximum is a target, not a rejection limit: exceed it when needed to finish a meaningful sentence or complete thought, and never truncate a summary merely to meet the target. Never repeat, copy, or merely truncate the same wording between layers.`,

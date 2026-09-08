@@ -6,3 +6,4 @@ content-engine/automation/config/providers.local.env
 .wrangler/
 infra/cloudflare/content-worker/wrangler*.generated.jsonc
 node_modules/
+infra/cloudflare/content-worker/wrangler.beta.jsonc
