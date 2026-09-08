@@ -49,6 +49,8 @@ test("requests a structured edition from a compatible endpoint", async () => {
   assert.match(systemPrompt, /total character count MUST be strictly/i);
   assert.match(systemPrompt, /Every minimum is mandatory/i);
   assert.match(systemPrompt, /maximum is a target, not a rejection limit/i);
+  // OpenAI's json_object response format requires the word "json" in the messages.
+  assert.match(systemPrompt, /\bjson\b/i);
     assert.match(systemPrompt, /bulleted list only/i);
     assert.match(systemPrompt, /3 cohesive paragraphs only/i);
   assert.deepEqual(edition, { date: "2026-08-24" });
