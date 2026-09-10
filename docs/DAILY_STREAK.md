@@ -26,6 +26,23 @@ The Worker calculates the date from its UTC clock and records at most one activi
 
 The header always renders a Flame control beside the account control. It keeps its visible streak count and label, while matching the color-mode control's height at every breakpoint. Signed-out readers activate it to open the existing sign-in popover, and Escape returns focus to the button that opened it. Hovering the control or focusing the interactive guest button shows a separate floating, product-configured guidance bubble explaining the permitted gap without framing it as a countdown. The bubble has no layout footprint and is associated with the button through `aria-describedby`. Its flame is deliberately prominent and continuously flickers with subtle movement; reduced-motion preferences stop that animation. Signed-in readers see their server-managed active value as a non-interactive status. If sign-in is unavailable, the guest prompt remains visible but disabled with a clear accessible label. It follows the active theme's glass and neumorphic elevation language, gives only the interactive guest prompt a hover response, and preserves the same geometry in light and dark modes.
 
+## Streak celebration
+
+When a signed-in reader's streak increases to a milestone value, the browser fires a self-contained celebration through `CelebrationEngine.celebrateStreak()` in `content-engine/celebration.js`. The celebration tier is determined by the streak count:
+
+| Streak | Tier | Effect |
+|---|---|---|
+| 1 | `start` | Light confetti burst, sparkle stars, single expanding ring, warm toast |
+| 3, 6, 9… | `milestone` | Medium confetti, sparkle stars, two rings, milestone toast |
+| 5, 10, 15… | `mega` | Multi-burst confetti from screen edges, sparkle stars, three rings, mega toast |
+| 20, 25, 30… | `legendary` | Full confetti volume, sparkle stars, four rings, legendary toast |
+
+The engine emits physics-based confetti particles (gravity, rotation, friction decay), four-point sparkle stars, and expanding stroke rings from the streak pill's center. A glassmorphic toast banner with emoji bounce, title, subtitle, and streak badge appears at the viewport center for 3.2 seconds. The streak pill receives a temporary `.streak-pill--celebrating` class that pulses a warm glow aura. A full-screen shimmer overlay adds a subtle top-edge radial flash.
+
+All celebration copy (emoji, title, subtitle) is product-owned through `product/config.js` under `copy.celebration`. The engine respects `prefers-reduced-motion: reduce` by skipping all canvas and CSS animations and showing only the toast. The celebration canvas is created on demand and removed when its particle queue empties; it uses `pointer-events: none` so it never blocks interaction.
+
+The celebration triggers in `renderAuthWidget` when the new streak count exceeds the previously tracked value. The previous streak resets to `-1` on sign-out, so the next sign-in can detect a fresh increase.
+
 ## Persistence
 
 Migration `infra/cloudflare/content-worker/migrations/0008_add_user_daily_streaks.sql` adds:

@@ -42,6 +42,9 @@ const sessionCacheKey = `${storageNamespace}-session-cache`;
 const sessionCacheTtlMs = 5 * 60 * 1000;
 let googleIdentityInitialized = false;
 let authState = "initializing";
+let previousStreak = -1;
+const celebrationToast = document.querySelector("#celebrationToast");
+const celebrationCopy = productConfig?.copy?.celebration;
 let currentUser = null;
 let loginMenuTrigger = null;
 
@@ -235,12 +238,23 @@ function renderAuthWidget(state, user = null, message = "") {
     streakPill.setAttribute("aria-label", `${streak}-day streak`);
     accountAvatar.textContent = initial;
     accountMenuAvatar.textContent = initial;
+
+    // Trigger streak celebration when the count increases
+    if (streak > previousStreak && previousStreak >= 0 && globalThis.CelebrationEngine) {
+      globalThis.CelebrationEngine.celebrateStreak(streak, {
+        pillEl: streakPill,
+        toastEl: celebrationToast,
+        copy: celebrationCopy
+      });
+    }
+    previousStreak = streak;
   } else {
     streakPillCount.textContent = "0";
     streakPillLabel.textContent = productConfig.copy.guestStreakLabel;
     streakPill.setAttribute("aria-label", state === "unavailable"
       ? "Streak sign-in is currently unavailable."
       : "Start your streak. Sign in to save it.");
+    previousStreak = -1;
   }
 
   signInStatus.textContent = message;

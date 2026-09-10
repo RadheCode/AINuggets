@@ -148,6 +148,9 @@ The header is a three-part grid: product identity on the left, navigation in the
 | Navigation | `.nav-tabs` | Compact grouped control; active item has accent-filled selected state. |
 | Header controls | `.header-actions`, `.color-mode-toggle`, auth controls | Explicit flex group, consistent glass elevation, visible focus, no detached placement. |
 | Status pill | `.streak-pill` | Dedicated warm status language; hidden state uses `hidden`, not visual opacity alone. |
+| Celebration toast | `.celebration-toast`, `.celebration-toast--visible`, `.celebration-toast__emoji`, `.celebration-toast__title`, `.celebration-toast__subtitle`, `.celebration-toast__streak` | Centered glassmorphic overlay for streak milestones; inherits shared dialog surface, backdrop blur, and elevation. Triggered by `CelebrationEngine.celebrateStreak()` from `content-engine/celebration.js`. Reduced motion shows the toast only. |
+| Celebration shimmer | `.celebration-shimmer`, `.celebration-shimmer--visible` | Full-screen fixed overlay with a subtle top-edge radial glow; flashes during celebration. Pointer-events are disabled. |
+| Pill glow | `.streak-pill--celebrating` | Temporary class applied during celebration that adds a warm pulsing `box-shadow` aura around the streak pill. Removed after the animation completes. |
 | Briefing label | `.eyebrow` | Shared compact label treatment; live indicator is purposeful and not general animation. |
 | Story card | `.story-card`, `.story-art`, `.story-shade`, `.story-content`, `.story-tag`, `.story-number`, `.story-link` | Readable layered editorial tile; artwork and shade protect content hierarchy. |
 | Dialog | `.story-dialog`, `.feedback-dialog`, `.dialog-close`, `.dialog-mark` | Canonical overlay shell; all new dialogs, panels, and overlays must inherit its surface, elevation, backdrop, close treatment, responsive size, spacing, motion, and internal scroll behavior. |

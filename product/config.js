@@ -21,6 +21,12 @@
     loginMenuDescription: "Sign in to save your reading streak.",
     guestStreakLabel: "Start streak",
     streakGuidanceTemplate: "Your streak has room for life: you can take up to {days} between visits and <strong>yet</strong> keep it going.",
+    celebration: Object.freeze({
+        start: Object.freeze({ emoji: "🔥", title: "Your streak begins!", subtitle: "Every great journey starts with day one." }),
+        milestone: Object.freeze({ emoji: "⚡", title: "{streak}-day streak!", subtitle: "You are building a habit." }),
+        mega: Object.freeze({ emoji: "🎉", title: "{streak}-day streak!", subtitle: "Incredible consistency. Keep going!" }),
+        legendary: Object.freeze({ emoji: "🏆", title: "Legendary streak!", subtitle: "You are absolutely on fire." })
+    }),
     continueWithGoogleLabel: "Continue with Google",
     about: Object.freeze({
         label: "About",
