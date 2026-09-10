@@ -42,9 +42,29 @@ const sessionCacheKey = `${storageNamespace}-session-cache`;
 const sessionCacheTtlMs = 5 * 60 * 1000;
 let googleIdentityInitialized = false;
 let authState = "initializing";
-let previousStreak = -1;
 const celebrationToast = document.querySelector("#celebrationToast");
 const celebrationCopy = productConfig?.copy?.celebration;
+
+function lastSeenStreakKey(user) {
+  return `${storageNamespace}-last-seen-streak-${user?.email ?? "guest"}`;
+}
+
+function readLastSeenStreak(user) {
+  try {
+    const value = Number(localStorage.getItem(lastSeenStreakKey(user)));
+    return Number.isInteger(value) && value > 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeLastSeenStreak(user, streak) {
+  try {
+    localStorage.setItem(lastSeenStreakKey(user), String(streak));
+  } catch {
+    // Best-effort; a storage failure must not block the streak UI.
+  }
+}
 let currentUser = null;
 let loginMenuTrigger = null;
 
@@ -239,23 +259,26 @@ function renderAuthWidget(state, user = null, message = "") {
     accountAvatar.textContent = initial;
     accountMenuAvatar.textContent = initial;
 
-    // Trigger streak celebration when the count increases
-    if (streak > previousStreak && previousStreak >= 0 && globalThis.CelebrationEngine) {
-      globalThis.CelebrationEngine.celebrateStreak(streak, {
-        pillEl: streakPill,
-        toastEl: celebrationToast,
-        copy: celebrationCopy
-      });
-    }
-    previousStreak = streak;
-  } else {
+    // Trigger streak celebration when the count reaches a milestone:
+        // streak 1 (start), every 3rd day, or every multiple of 5.
+        const lastSeenStreak = readLastSeenStreak(user);
+        const reachedMilestone = streak > lastSeenStreak || (streak === 1 && lastSeenStreak > 1);
+        const isMilestone = globalThis.CelebrationEngine?.celebrationTier(streak) !== null;
+        if (reachedMilestone && isMilestone && globalThis.CelebrationEngine) {
+          globalThis.CelebrationEngine.celebrateStreak(streak, {
+            pillEl: streakPill,
+            toastEl: celebrationToast,
+            copy: celebrationCopy
+          });
+        }
+        writeLastSeenStreak(user, streak);
+      } else {
     streakPillCount.textContent = "0";
     streakPillLabel.textContent = productConfig.copy.guestStreakLabel;
     streakPill.setAttribute("aria-label", state === "unavailable"
-      ? "Streak sign-in is currently unavailable."
-      : "Start your streak. Sign in to save it.");
-    previousStreak = -1;
-  }
+          ? "Streak sign-in is currently unavailable."
+          : "Start your streak. Sign in to save it.");
+      }
 
   signInStatus.textContent = message;
 }
@@ -488,6 +511,19 @@ restoreSession();
 recordVisit();
 trackReferralVisit();
 trackReferralVisit();
+
+// Localhost preview: ?demoStreak=N triggers a celebration for the given streak
+// without requiring Google sign-in. Only active on localhost.
+if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+  const demoStreak = Number(new URLSearchParams(window.location.search).get("demoStreak"));
+  if (Number.isInteger(demoStreak) && demoStreak > 0 && globalThis.CelebrationEngine) {
+    globalThis.CelebrationEngine.celebrateStreak(demoStreak, {
+      pillEl: streakPill,
+      toastEl: celebrationToast,
+      copy: celebrationCopy
+    });
+  }
+}
 
 feedbackTab.addEventListener("click", () => {
   feedbackMessageStatus.textContent = "";

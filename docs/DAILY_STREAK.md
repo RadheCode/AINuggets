@@ -41,7 +41,7 @@ The engine emits physics-based confetti particles (gravity, rotation, friction d
 
 All celebration copy (emoji, title, subtitle) is product-owned through `product/config.js` under `copy.celebration`. The engine respects `prefers-reduced-motion: reduce` by skipping all canvas and CSS animations and showing only the toast. The celebration canvas is created on demand and removed when its particle queue empties; it uses `pointer-events: none` so it never blocks interaction.
 
-The celebration triggers in `renderAuthWidget` when the new streak count exceeds the previously tracked value. The previous streak resets to `-1` on sign-out, so the next sign-in can detect a fresh increase.
+The celebration triggers in `renderAuthWidget` when the new streak count exceeds the previously tracked value. The last-seen streak is persisted per user in `localStorage` (keyed by email under the product storage namespace) and is never reset on sign-out. This allows celebration on the very first sign-in (streak 1 from a zero baseline) and again whenever the streak increases beyond its last recorded value. A streak restart (e.g. after a gap) is also detected when the new streak is 1 but the last-seen value was higher.
 
 ## Persistence
 

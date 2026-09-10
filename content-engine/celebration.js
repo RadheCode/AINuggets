@@ -199,16 +199,17 @@
   /* ── Toast helper ── */
   let toastTimeout = null;
 
-  function showToast(toastEl, emoji, title, subtitle, streakText) {
-    if (!toastEl) return;
-    clearTimeout(toastTimeout);
-    toastEl.querySelector("[data-celebration-emoji]").textContent = emoji;
-    toastEl.querySelector("[data-celebration-title]").textContent = title;
-    toastEl.querySelector("[data-celebration-subtitle]").textContent = subtitle;
-    toastEl.querySelector("[data-celebration-streak]").textContent = streakText;
-    toastEl.classList.add("celebration-toast--visible");
-    toastTimeout = setTimeout(() => toastEl.classList.remove("celebration-toast--visible"), 3200);
-  }
+  function showToast(toastEl, emoji, title, subtitle, streak) {
+      if (!toastEl) return;
+      clearTimeout(toastTimeout);
+      const resolve = (text) => String(text).replace(/\{streak\}/g, String(streak));
+      toastEl.querySelector("[data-celebration-emoji]").textContent = emoji;
+      toastEl.querySelector("[data-celebration-title]").textContent = resolve(title);
+      toastEl.querySelector("[data-celebration-subtitle]").textContent = resolve(subtitle);
+      toastEl.querySelector("[data-celebration-streak]").textContent = `🔥 ${streak}-day streak`;
+      toastEl.classList.add("celebration-toast--visible");
+      toastTimeout = setTimeout(() => toastEl.classList.remove("celebration-toast--visible"), 3200);
+    }
 
   /* ── Pill glow pulse ── */
   function pulsePill(pillEl) {
@@ -261,7 +262,7 @@
       // Show toast only, no particles
       if (copy && copy[tier]) {
         const c = copy[tier];
-        showToast(toastEl, c.emoji, c.title, c.subtitle, `🔥 ${streak}-day streak`);
+              showToast(toastEl, c.emoji, c.title, c.subtitle, streak);
       }
       return true;
     }
@@ -304,7 +305,7 @@
     // Show toast
     if (copy && copy[tier]) {
       const c = copy[tier];
-      showToast(toastEl, c.emoji, c.title, c.subtitle, `🔥 ${streak}-day streak`);
+          showToast(toastEl, c.emoji, c.title, c.subtitle, streak);
     }
 
     return true;
