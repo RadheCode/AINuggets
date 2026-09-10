@@ -56,6 +56,8 @@ content-worker/
 | OpenRouter summary provider | Complete | Routes the same schema-constrained request through OpenRouter.ai's OpenAI-compatible API, selected when `openrouter` has complete credentials in the `fallbackOrder` chain. The base URL is always `https://openrouter.ai/api/v1`. |
 | Gemini summary provider | Complete | Routes the same schema-constrained request through Google Gemini's OpenAI-compatible API, selected when `gemini` has complete credentials in the `fallbackOrder` chain. The base URL is always `https://generativelanguage.googleapis.com/v1beta/openai`. |
 | Workers AI summary provider | Complete | Requests the same schema-constrained daily edition through the Cloudflare Workers AI binding (`env.AI`), selected when `workers-ai` has complete credentials in the `fallbackOrder` chain. |
+| Provider fallback chain | Complete | Composite provider pattern: tries providers in `fallbackOrder` order (`["openai", "gemini", "openrouter", "workers-ai"]`), skipping any without configured credentials. Each provider kind supports internal model-level fallback (array of models). On retryable errors (404, 500, 502, 503, 504 for OpenAI-compatible; 429, 5xx, rate/capacity terms for Workers AI), falls through to the next model or provider. Request timeout is 300 seconds per model call. |
+| Model analytics | Complete | Aggregate per-model statistics (attempts, successes, failures, response sizes), per-run model progression showing which model was tried and fallback chain followed, validation retry analysis, and model usage by date. Queryable via `report-model-analytics.ps1`. |
 | D1 repository | Complete | Checks idempotency, records one correlated run plus ordered detailed event records, and saves a draft or directly published edition plus stories in one D1 batch. |
 | Detailed run investigation | Complete | Assigns each attempt a UUID `runId`, records clear structured events for every pipeline decision, and exposes a protected unified per-run view. |
 | Auditing and safe failure | Complete | Records `started`, `skipped`, `succeeded`, or `failed`; failures do not alter existing editions. |
@@ -70,7 +72,7 @@ content-worker/
 | `editions` | One dated briefing with draft, published, or archived status |
 | `stories` | Four or five ordered stories belonging to an edition |
 | `generation_runs` | Audit records for scheduled attempts, skips, and failures |
-| `generation_run_events` | Ordered, structured stage and decision events belonging to one generation run |
+| `generation_run_events` | Ordered, structured stage and decision events belonging to one generation run. Summary provider events include model name, attempt number, response size, and error details for model/provider analytics. |
 
 Each story can retain source name, source URL, and source publication time. Public API responses include source metadata when present.
 

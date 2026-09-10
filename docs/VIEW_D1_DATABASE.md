@@ -250,6 +250,71 @@ The content-generation automation runs twice daily and logs each attempt's statu
 
 Counts include only retained generation runs (retention is three days). The report requires migration `0011_add_generation_run_events.sql` in the selected environment. Replace `Beta` with `Production` only when production inspection is explicitly intended.
 
+### Report model and provider analytics
+
+The generation pipeline uses a composite provider pattern with a product-owned fallback order: `["openai", "gemini", "openrouter", "workers-ai"]`. Each provider kind can be configured with multiple models for internal fallback. Use the repository-local report to get per-model aggregate statistics, model usage by date, run-level summaries with durations, validation retry analysis, and per-run model progression showing which model was tried and the fallback chain followed:
+
+```powershell
+.\infra\cloudflare\content-worker\report-model-analytics.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-beta-model-analytics.md"
+```
+
+The report covers the last 8 days of retained runs. It requires migration `0011_add_generation_run_events.sql` in the selected environment. Replace `Beta` with `Production` only when production inspection is explicitly intended.
+
+#### Key model analytics queries
+
+Per-model aggregate stats (attempts, successes, failures, response sizes):
+
+```sql
+SELECT
+  COALESCE(json_extract(e.metadata_json, '$.model'), 'unknown') AS model,
+  SUM(CASE WHEN e.event_name = 'summary-provider-attempt' THEN 1 ELSE 0 END) AS attempts,
+  SUM(CASE WHEN e.event_name = 'summary-provider-response-received' AND e.outcome = 'succeeded' THEN 1 ELSE 0 END) AS succeeded,
+  SUM(CASE WHEN e.event_name = 'summary-provider-attempt-failed' THEN 1 ELSE 0 END) AS failed,
+  CAST(AVG(CASE WHEN e.event_name = 'summary-provider-response-received' THEN json_extract(e.metadata_json, '$.responseCharacterCount') END) AS INTEGER) AS avg_response_chars
+FROM generation_run_events e
+WHERE e.created_at > datetime('now', '-8 days')
+  AND e.event_name IN ('summary-provider-attempt', 'summary-provider-response-received', 'summary-provider-attempt-failed')
+GROUP BY model
+ORDER BY attempts DESC;
+```
+
+Per-run model progression (which model was tried, outcome, fallback chain):
+
+```sql
+SELECT
+  r.target_date,
+  substr(r.run_id, 1, 8) AS run_short,
+  e.sequence,
+  e.event_name,
+  COALESCE(json_extract(e.metadata_json, '$.model'), '-') AS model,
+  e.outcome,
+  e.duration_ms,
+  json_extract(e.metadata_json, '$.error') AS error
+FROM generation_run_events e
+JOIN generation_runs r ON e.run_id = r.run_id
+WHERE r.started_at > datetime('now', '-8 days')
+  AND e.event_name IN ('summary-provider-attempt', 'summary-provider-response-received', 'summary-provider-attempt-failed', 'summary-provider-retrying', 'summary-provider-model-failed', 'summary-provider-succeeded', 'summary-provider-failed')
+ORDER BY r.target_date DESC, r.run_id, e.sequence ASC;
+```
+
+Validation failure details:
+
+```sql
+SELECT
+  r.target_date,
+  substr(r.run_id, 1, 8) AS run_short,
+  json_extract(e.metadata_json, '$.generatedStoryCount') AS story_count,
+  json_extract(e.metadata_json, '$.attempt') AS attempt,
+  json_extract(e.metadata_json, '$.error') AS error
+FROM generation_run_events e
+JOIN generation_runs r ON e.run_id = r.run_id
+WHERE r.started_at > datetime('now', '-8 days')
+  AND e.event_name = 'edition-validation-failed'
+ORDER BY r.target_date DESC, r.run_id, e.sequence ASC;
+```
+
 ### Report published-content summary
 
 Use the repository-local report to see editions totals by status, stories broken down by category, total published stories, and recent editions (last 7 days) for the selected environment:
