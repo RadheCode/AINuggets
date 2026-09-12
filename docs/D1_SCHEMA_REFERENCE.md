@@ -21,6 +21,7 @@ D1 is the system of record for published editorial data, authenticated-reader da
 | `user_daily_activity` | One qualifying UTC activity day per reader | Makes streak calculation idempotent and auditable | Authentication and authenticated edition requests write | Private activity history |
 | `reader_feedback` | Reader email, rating, optional linked profile, and message | Preserves feedback for editorial and product review | Feedback endpoint writes; authorized operators query | Private contact data and free text |
 | `visitor_visits` | One anonymous page-visit event with an edge-derived country code and name | Supplies privacy-minimal visitor, country, and visit counts | Analytics endpoint writes; authorized operators run aggregate reports | Private pseudonymous analytics; raw events retained for 90 days |
+| `subscribers` | Reader email for the daily-briefing newsletter, optional linked profile, and source | Captures an opt-in subscription list for the daily edition | Subscribe endpoint writes; authorized operators query | Private contact data; retained until the reader unsubscribes or an operator removes it |
 
 ## Relationships
 
@@ -30,11 +31,12 @@ erDiagram
   user_profiles ||--o{ user_sessions : authenticates
   user_profiles ||--o{ user_daily_activity : records
   user_profiles o|--o{ reader_feedback : optionally_submits
+  user_profiles o|--o{ subscribers : optionally_subscribes
   generation_runs ||--o{ generation_run_events : correlates_by_run_id
   visitor_visits }o--|| visitor_hash : groups_by_hash
 ```
 
-`stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `reader_feedback.user_id` is optional: anonymous readers may submit feedback, and deleting a profile retains feedback while setting its link to `NULL`. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier.
+`stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `reader_feedback.user_id` and `subscribers.user_id` are optional: anonymous readers may submit feedback or subscribe without an account, and deleting a profile sets the link to `NULL` while retaining the record. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier.
 
 ## Editorial tables
 
@@ -147,3 +149,17 @@ erDiagram
 **How:** The browser sends a distinct random event ID per page load, and the primary key makes retried events idempotent. The Worker accepts requests only from an allowed configured origin. Three indexes support time-period, unique-visitor, and country aggregation. The reporting script converts current day, week, and month boundaries to explicitly labeled IST, excludes `unknown` from the unique-country metric while retaining those visits in visitor and page-view totals, and lists resolved country names with their codes in an aggregate breakdown.
 
 **Retention and privacy:** On every accepted analytics request, the Worker deletes raw events older than 90 days. `visitor_hash` is pseudonymous private analytics data, not an account identifier: it is never joined to `user_profiles`, returned by a public endpoint, copied by editorial synchronization, or exposed by the aggregate report.
+
+## Subscriber table
+
+### `subscribers`
+
+**What:** One row per opt-in newsletter subscription: optional authenticated `user_id`, normalized `email`, a `source` describing where the reader subscribed (currently `edge-tab`), and `created_at`.
+
+**Why:** The daily briefing product captures an email audience for its editions. The unique email index keeps each address on the list once — a repeat subscribe returns the existing membership rather than a duplicate row.
+
+**Where:** `POST /api/subscribe` in `infra/cloudflare/content-worker/src/index.js` validates and inserts the row. Signed-in readers link their verified profile email; anonymous readers subscribe with the email they provide. There is intentionally no public list-read endpoint; authorized operators query D1 directly.
+
+**How:** The Worker normalizes and validates the email using the same shared rule as feedback, then `INSERT ... ON CONFLICT(email) DO NOTHING`. D1's unique index on `subscribers.email` enforces one row per address. Profile deletion sets `user_id` to `NULL` while retaining the subscription.
+
+**Privacy:** The list holds private contact data. Never expose it publicly, add it to generation logs, or include it in beta editorial syncs. Unsubscribe and removal are deliberate operator actions.

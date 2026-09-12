@@ -305,6 +305,30 @@ async function submitFeedback(request, env, cors) {
   return json({ message: "Thank you for sharing your feedback." }, 201, cors);
 }
 
+async function subscribeReader(request, env, cors) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400, cors);
+  }
+
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  if (!validFeedbackEmail(email)) return json({ error: "Enter a valid email address." }, 400, cors);
+
+  const user = await sessionUser(request, env);
+  const result = await env.CONTENT_DB.prepare(`
+    INSERT INTO subscribers (user_id, email, source)
+    VALUES (?, ?, ?)
+    ON CONFLICT(email) DO NOTHING
+  `).bind(user?.id ?? null, email, "edge-tab").run();
+
+  if (result.meta.changes === 0) {
+      return json({ created: false, message: "You're already on the list." }, 200, cors);
+  }
+    return json({ created: true, message: "You're subscribed! Watch for the first edition in your inbox." }, 201, cors);
+}
+
 function createAutomationDependencies(env) {
   validateSummaryFeatureConfig();
   validateStreakFeatureConfig();
@@ -536,7 +560,8 @@ async function handleRequest(request, env) {
   if (request.method === "POST" && url.pathname === "/auth/google") return createSession(request, env, cors);
   if (request.method === "POST" && url.pathname === "/auth/sign-out") return signOut(request, env, cors);
   if (request.method === "POST" && url.pathname === "/api/feedback") return submitFeedback(request, env, cors);
-  if (request.method === "POST" && url.pathname === "/api/analytics/visits") return recordVisit(request, env, cors);
+    if (request.method === "POST" && url.pathname === "/api/subscribe") return subscribeReader(request, env, cors);
+    if (request.method === "POST" && url.pathname === "/api/analytics/visits") return recordVisit(request, env, cors);
   if (request.method === "GET" && url.pathname === "/auth/session") {
     const user = await sessionUser(request, env);
     return user ? json(userResponse(user), 200, cors) : json({ error: "Unauthenticated." }, 401, cors);

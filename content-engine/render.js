@@ -8,7 +8,8 @@
   const storyDialogSource = document.querySelector("#storyDialogSource");
   const storyDialogPrevious = document.querySelector("#storyDialogPrevious");
   const storyDialogNext = document.querySelector("#storyDialogNext");
-  const summaryContextContainer = document.querySelector(".story-summary-contexts");
+    const storyDialogShare = document.querySelector("#storyDialogShare");
+    const summaryContextContainer = document.querySelector(".story-summary-contexts");
   const summaryFeatures = window.ProductConfig?.summaryFeatures;
   let summaryContextButtons = [];
   let summaryContexts = [];
@@ -20,6 +21,39 @@
   if (!window.ProductContentReady || !summaryFeatures?.ui?.length || !summaryFeatures.contexts || !storyGrid || !storyDialog || !storyDialogClose || !storyDialogCategory || !storyDialogTitle || !summaryContextContainer || !storyDialogSummary || !storyDialogSource || !storyDialogPrevious || !storyDialogNext) {
     throw new Error("The content engine could not find its loader or rendering targets.");
   }
+
+    function flashShareButton() {
+      const original = window.ProductConfig?.copy?.shareStoryLabel ?? "Share story";
+      storyDialogShare.textContent = "Link copied";
+      storyDialogShare.setAttribute("aria-live", "polite");
+      setTimeout(() => {
+        if (storyDialogShare) storyDialogShare.textContent = original;
+      }, 1800);
+    }
+
+    async function shareCurrentStory() {
+      const story = activeStory;
+      if (!story) return;
+      const url = window.location.href.split("#")[0];
+      const siteName = window.ProductConfig?.identity?.name ?? "AI Nuggets";
+      const text = `${story.title} — via ${siteName}`;
+      const navigatorShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+      if (navigatorShare) {
+        try {
+          await navigator.share({ title: story.title, text, url });
+          return;
+        } catch (error) {
+          if (error?.name === "AbortError") return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        flashShareButton();
+      } catch {
+        const mailto = `mailto:?subject=${encodeURIComponent(story.title)}&body=${encodeURIComponent(`${text}\n${url}`)}`;
+        window.location.href = mailto;
+      }
+    }
 
   function createElement(tagName, className, text) {
     const element = document.createElement(tagName);
@@ -136,7 +170,8 @@
   storyDialogNext.addEventListener("click", () => {
     if (activeStoryIndex < stories.length - 1) updateStoryDialog(activeStoryIndex + 1);
   });
-  storyDialog.addEventListener("keydown", (event) => {
+    storyDialogShare.addEventListener("click", () => shareCurrentStory());
+    storyDialog.addEventListener("keydown", (event) => {
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
       storyDialogSummary.scrollTop += event.key === "ArrowDown" ? 96 : -96;
