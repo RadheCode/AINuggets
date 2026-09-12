@@ -1,19 +1,16 @@
-export const SKIP_EXISTING = "Edition already exists.";
 export const SKIP_NO_CONTENT_SOURCE = "No content source is configured; no edition was generated.";
 export const SKIP_NO_SUMMARY_PROVIDER = "No summary provider is configured; no edition was generated.";
 
-export async function evaluateRunEligibility({ targetDate, editionRepository, contentSources, summaryProvider, allowExistingEdition = false }) {
-  const existingEdition = await editionRepository.hasEdition(targetDate);
-  if (existingEdition && !allowExistingEdition) {
-    return { status: "skipped", reason: SKIP_EXISTING };
-  }
+export async function evaluateRunEligibility({ targetDate, editionRepository, contentSources, summaryProvider }) {
+  // A new edition is created for every eligible run; an existing edition for the
+  // day is never a reason to skip, because each run adds a new numbered edition.
   if (!contentSources.length) {
     return { status: "skipped", reason: SKIP_NO_CONTENT_SOURCE };
   }
   if (!summaryProvider) {
     return { status: "skipped", reason: SKIP_NO_SUMMARY_PROVIDER };
   }
-  return { status: "ready", existingEdition };
+  return { status: "ready" };
 }
 
 export async function recordSkippedRun({ editionRepository, targetDate, runId, reason, eventLogger }) {

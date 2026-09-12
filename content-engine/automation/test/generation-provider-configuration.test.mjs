@@ -348,7 +348,7 @@ test("uses the centralized product editorial configuration", () => {
   assert.equal(PRODUCT_EDITORIAL_CONFIG.candidateSelection.mode, "random");
   assert.equal(CONTENT_ENGINE_CONFIG.schedule.cron, "0 1,13 * * *");
   assert.equal("timezone" in CONTENT_ENGINE_CONFIG.schedule, false);
-    assert.equal(CONTENT_ENGINE_CONFIG.schedule.refreshExistingEdition, true);
+    assert.equal("refreshExistingEdition" in CONTENT_ENGINE_CONFIG.schedule, false);
   assert.ok(SUMMARY_FEATURE_CONFIG.ui.length > 0);
   assert.ok(SUMMARY_FEATURE_CONFIG.generation.length > 0);
   assert.deepEqual(SUMMARY_FEATURE_CONFIG.contexts.compact, { label: "Quick take", minCharacters: 100, maxCharacters: 180, format: "paragraph" });

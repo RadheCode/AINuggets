@@ -1,6 +1,10 @@
 import { editorialDate, isValidEditorialDate } from "../../../../content-engine/automation/domain/editorial-date.mjs";
 import { generateDailyEdition } from "../../../../content-engine/automation/jobs/generate-daily-edition.mjs";
 import { runScheduledEdition } from "../../../../content-engine/automation/jobs/run-scheduled-edition.mjs";
+import {
+  normalizeEditionPath,
+  parseEditionPath
+} from "./edition-path.js";
 import { createGenerationProviderDependencies } from "../../../../content-engine/automation/config/create-generation-provider-dependencies.mjs";
 import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
 import "../../../../product/config.js";
@@ -345,33 +349,129 @@ async function handleAutomationRequest(request, env) {
   if (body.dryRun !== undefined && typeof body.dryRun !== "boolean") {
     return json({ error: "dryRun must be a boolean when provided." }, 400);
   }
-  if (body.forceReplace !== undefined && typeof body.forceReplace !== "boolean") {
-    return json({ error: "forceReplace must be a boolean when provided." }, 400);
+  if (body.forceReplace !== undefined) {
+    return json({ error: "Edition overwrites are no longer supported. Each generation creates a new edition." }, 400);
   }
-  if ((body.dryRun || body.forceReplace) && env.DEPLOYMENT_ENVIRONMENT !== "beta") {
-    return json({ error: "Dry runs and forced replacement are available only in beta." }, 403);
-  }
-  if (body.dryRun && body.forceReplace) {
-    return json({ error: "dryRun and forceReplace cannot both be true." }, 400);
+  if (body.dryRun && env.DEPLOYMENT_ENVIRONMENT !== "beta") {
+    return json({ error: "Dry runs are available only in beta." }, 403);
   }
 
   const result = await generateDailyEdition({
     targetDate,
     dryRun: body.dryRun === true,
-    forceReplace: body.forceReplace === true,
     ...createAutomationDependencies(env)
   });
   return json(result, 200);
 }
 
-async function getEdition(db, requestedDate) {
-  const edition = await db.prepare(`
-    SELECT id, edition_date, status, eyebrow, title, emphasis, summary, meta_json, published_at
+function siteUrl(env) {
+  const host = env.DEPLOYMENT_ENVIRONMENT === "production"
+    ? globalThis.ProductConfig.runtime.sites.production
+    : `beta-${globalThis.ProductConfig.runtime.sites.production}`;
+  return `https://${host}`;
+}
+
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+async function getRecentEditions(db, limit = 10) {
+  const { results: editions } = await db.prepare(`
+    SELECT id, edition_date, edition_number, eyebrow, title, emphasis, summary, published_at
     FROM editions
-    WHERE status = 'published' AND edition_date <= ?
-    ORDER BY edition_date DESC
-    LIMIT 1
-  `).bind(requestedDate).first();
+    WHERE status = 'published'
+        ORDER BY edition_date DESC, edition_number DESC
+    LIMIT ?
+  `).bind(limit).all();
+
+  if (!editions.length) return [];
+
+  const editionIds = editions.map((edition) => edition.id);
+  const placeholders = editionIds.map(() => "?").join(",");
+  const { results: stories } = await db.prepare(`
+    SELECT edition_id, position, category, title, summary, destination_url, source_name
+    FROM stories
+    WHERE edition_id IN (${placeholders})
+    ORDER BY edition_id ASC, position ASC
+  `).bind(...editionIds).all();
+
+  const storiesByEdition = new Map();
+  for (const story of stories) {
+    if (!storiesByEdition.has(story.edition_id)) storiesByEdition.set(story.edition_id, []);
+    storiesByEdition.get(story.edition_id).push(story);
+  }
+
+  return editions.map((edition) => ({
+    ...edition,
+      editionNumber: edition.edition_number,
+      stories: storiesByEdition.get(edition.id) || []
+    }));
+  }
+
+  function renderAtomFeed(editions, env) {
+    const baseUrl = siteUrl(env);
+    const feedUrl = `${baseUrl}/feed.xml`;
+    const updated = editions.length
+      ? new Date(`${editions[0].edition_date}T00:00:00Z`).toISOString()
+      : new Date().toISOString();
+
+    const entries = editions.map((edition) => {
+      const editionUrl = edition.edition_number > 1
+        ? `${baseUrl}/?date=${edition.edition_date}&edition=${edition.edition_number}`
+        : `${baseUrl}/?date=${edition.edition_date}`;
+    const published = new Date(`${edition.edition_date}T00:00:00Z`).toISOString();
+    const storyItems = edition.stories.map((story) => `
+      <li><a href="${escapeXml(story.destination_url)}">${escapeXml(story.title)}</a>${story.source_name ? ` (${escapeXml(story.source_name)})` : ""}</li>`).join("");
+    const content = `
+      <p>${escapeXml(edition.summary || "")}</p>
+      <ul>${storyItems}</ul>`;
+
+    return `
+  <entry>
+    <title>${escapeXml(edition.title || `AI Nuggets — ${edition.edition_date}`)}</title>
+    <link href="${escapeXml(editionUrl)}"/>
+    <id>${escapeXml(editionUrl)}</id>
+    <updated>${published}</updated>
+    <published>${published}</published>
+    <content type="html">${content}</content>
+  </entry>`;
+  }).join("");
+
+  return `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>AI Nuggets</title>
+  <subtitle>Five useful AI updates, every day.</subtitle>
+  <link href="${escapeXml(feedUrl)}" rel="self"/>
+  <link href="${escapeXml(baseUrl)}"/>
+  <id>${escapeXml(feedUrl)}</id>
+  <updated>${updated}</updated>
+  <author>
+    <name>AI Nuggets</name>
+  </author>
+${entries}
+</feed>`;
+}
+
+async function getEdition(db, requestedDate, requestedEditionNumber) {
+  const params = [];
+  let sql = `
+    SELECT id, edition_date, edition_number, status, eyebrow, title, emphasis, summary, meta_json, published_at
+    FROM editions
+    WHERE status = 'published'
+  `;
+  if (Number.isInteger(requestedEditionNumber)) {
+    sql += ` AND edition_date = ? AND edition_number = ?`;
+    params.push(requestedDate, requestedEditionNumber);
+  } else {
+    sql += ` AND edition_date <= ? ORDER BY edition_date DESC, edition_number DESC LIMIT 1`;
+    params.push(requestedDate);
+  }
+  const edition = await db.prepare(sql).bind(...params).first();
 
   if (!edition) return null;
 
@@ -385,6 +485,7 @@ async function getEdition(db, requestedDate) {
 
   return {
     date: edition.edition_date,
+    editionNumber: edition.edition_number,
     status: edition.status,
     publishedAt: edition.published_at,
     briefing: {
@@ -444,39 +545,58 @@ async function handleRequest(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed." }, 405, cors);
   if (url.pathname === "/health") return json({ status: "ok" }, 200, cors);
 
-  const match = url.pathname.match(/^\/api\/editions\/(latest|\d{4}-\d{2}-\d{2})$/);
-  if (!match) return json({ error: "Not found." }, 404, cors);
+    if (url.pathname === "/feed.xml") {
+      const editions = await getRecentEditions(env.CONTENT_DB, 10);
+      return new Response(renderAtomFeed(editions, env), {
+        status: 200,
+        headers: {
+          "content-type": "application/atom+xml; charset=utf-8",
+          "cache-control": "public, max-age=600, s-maxage=1800",
+          ...cors
+        }
+      });
+    }
 
-  const targetDate = match[1] === "latest"
-    ? editorialDate()
-    : match[1];
-  if (!isValidEditorialDate(targetDate)) return json({ error: "Invalid edition date." }, 400, cors);
+  if (url.pathname.startsWith("/api/editions/")) {
+      const resolved = parseEditionPath(url);
+      if (resolved.error) return json({ error: resolved.error }, 400, cors);
 
-  const edition = await getEdition(env.CONTENT_DB, targetDate);
-  if (!edition) return json({ error: `No published edition is available on or before ${targetDate}.` }, 404, cors);
+      const edition = await getEdition(
+        env.CONTENT_DB,
+        resolved.isLatest ? editorialDate() : resolved.date,
+        resolved.isLatest ? undefined : resolved.editionNumber
+      );
+      if (!edition) {
+        const fallbackMessage = resolved.isLatest
+          ? "No published edition is available on or before today."
+          : `No published edition is available on or before ${resolved.date}.`;
+        return json({ error: fallbackMessage }, 404, cors);
+      }
 
-  let user = await sessionUser(request, env);
-  if (user) {
-    await env.CONTENT_DB.prepare(`
-      UPDATE user_profiles
-      SET last_refreshed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).bind(user.id).run();
-    user = await recordDailyActivity(env.CONTENT_DB, user.id);
-  }
+      let currentUser = await sessionUser(request, env);
+      if (currentUser) {
+        await env.CONTENT_DB.prepare(`
+          UPDATE user_profiles
+          SET last_refreshed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(currentUser.id).run();
+        currentUser = await recordDailyActivity(env.CONTENT_DB, currentUser.id);
+      }
 
-  return json(edition, 200, {
-    ...cors,
-    "cache-control": user ? "private, no-store" : "public, max-age=300, s-maxage=900"
-  });
-}
+      return json(edition, 200, {
+        ...cors,
+        "cache-control": currentUser ? "private, no-store" : "public, max-age=300, s-maxage=900"
+      });
+    }
 
-async function handleScheduled(controller, env) {
+    return json({ error: "Not found." }, 404, cors);
+    }
+
+    async function handleScheduled(controller, env) {
   return runScheduledEdition({
     scheduledAt: new Date(controller.scheduledTime),
-      refreshExisting: CONTENT_ENGINE_CONFIG.schedule.refreshExistingEdition === true,
-      createDependencies: () => createAutomationDependencies(env)
-    });
+    createDependencies: () => createAutomationDependencies(env)
+  });
 }
 
 export default {

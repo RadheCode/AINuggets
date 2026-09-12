@@ -25,10 +25,7 @@ export function validateContentEngineConfig(config) {
   if (schedule.cron.trim().split(/\s+/).length !== CRON_FIELD_COUNT) {
     throw new Error("schedule.cron must use Cloudflare's five-field Cron syntax.");
   }
-    if (schedule.refreshExistingEdition !== undefined && typeof schedule.refreshExistingEdition !== "boolean") {
-      throw new Error("schedule.refreshExistingEdition must be a boolean.");
-    }
-  if (!publication || typeof publication !== "object" || typeof publication.automaticallyPublish !== "boolean") {
+    if (!publication || typeof publication !== "object" || typeof publication.automaticallyPublish !== "boolean") {
     throw new Error("publication.automaticallyPublish must be a boolean.");
   }
   if (!Array.isArray(feeds) || !feeds.length) throw new Error("feeds must contain at least one source.");

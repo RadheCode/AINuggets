@@ -16,42 +16,32 @@ export async function generateDailyEdition({
   summaryContexts = Object.fromEntries(SUMMARY_FEATURE_CONFIG.generation.map((key) => [key, SUMMARY_FEATURE_CONFIG.contexts[key]])),
   candidateSelection = { mode: "priority" },
   automaticallyPublish = false,
-  logger = console,
-  dryRun = false,
-  forceReplace = false,
-  refreshExisting = false,
-  generationAttempts
-}) {
-  if (!isValidEditorialDate(targetDate)) throw new Error(`Invalid target date: ${targetDate}.`);
-  if (!editionRepository) throw new Error("An edition repository is required.");
-  if (dryRun && forceReplace) throw new Error("A generation run cannot be both dryRun and forceReplace.");
-  if (refreshExisting && forceReplace) throw new Error("A generation run cannot be both a same-day refresh and a force replace.");
+    logger = console,
+    dryRun = false,
+    generationAttempts
+  }) {
+    if (!isValidEditorialDate(targetDate)) throw new Error(`Invalid target date: ${targetDate}.`);
+    if (!editionRepository) throw new Error("An edition repository is required.");
 
-  if (editionRepository.purgeGenerationRuns) await editionRepository.purgeGenerationRuns({ retainedDays: 3 });
-  const runId = newGenerationRunId();
-  await editionRepository.createGenerationRun({ runId, targetDate });
-  const eventLogger = createGenerationEventLogger({ runId, editionRepository, logger });
-  await eventLogger.record("run", "generation-run-started", { targetDate, sourceCount: contentSources.length, dryRun, forceReplace, refreshExisting });
+    if (editionRepository.purgeGenerationRuns) await editionRepository.purgeGenerationRuns({ retainedDays: 3 });
+    const runId = newGenerationRunId();
+    await editionRepository.createGenerationRun({ runId, targetDate });
+    const eventLogger = createGenerationEventLogger({ runId, editionRepository, logger });
+    await eventLogger.record("run", "generation-run-started", { targetDate, sourceCount: contentSources.length, dryRun });
 
-  const eligibility = await evaluateRunEligibility({ targetDate, editionRepository, contentSources, summaryProvider, allowExistingEdition: dryRun || forceReplace || refreshExisting });
-  if (eligibility.status === "skipped") {
-    return recordSkippedRun({ editionRepository, targetDate, runId, reason: eligibility.reason, eventLogger });
-  }
-  if ((dryRun || forceReplace || refreshExisting) && eligibility.existingEdition) {
-    await eventLogger.record("eligibility", "existing-edition-bypassed", {
-      targetDate,
-      mode: dryRun ? "dry-run" : forceReplace ? "force-replace" : "scheduled-refresh"
-    }, { outcome: "succeeded" });
-  }
-  await eventLogger.record("eligibility", "run-eligible", { targetDate, dryRun, forceReplace, refreshExisting }, { outcome: "succeeded" });
+    const eligibility = await evaluateRunEligibility({ targetDate, editionRepository, contentSources, summaryProvider });
+    if (eligibility.status === "skipped") {
+      return recordSkippedRun({ editionRepository, targetDate, runId, reason: eligibility.reason, eventLogger });
+    }
+    await eventLogger.record("eligibility", "run-eligible", { targetDate, dryRun }, { outcome: "succeeded" });
 
-  try {
-    const candidates = await collectCandidates(contentSources, targetDate, editionRepository, candidateSelection, eventLogger, { refreshExisting });
-    const edition = await prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger, generationAttempts });
-    if (dryRun) return completeDryRun({ editionRepository, edition, targetDate, runId, logger, eventLogger });
-    return persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, forceReplace: forceReplace || refreshExisting, refreshExisting, logger, eventLogger });
-  } catch (error) {
-    await recordFailedRun({ editionRepository, targetDate, runId, error, logger, eventLogger });
-    throw error;
+    try {
+      const candidates = await collectCandidates(contentSources, targetDate, editionRepository, candidateSelection, eventLogger);
+      const edition = await prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger, generationAttempts });
+      if (dryRun) return completeDryRun({ editionRepository, edition, targetDate, runId, logger, eventLogger });
+      return persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, logger, eventLogger });
+    } catch (error) {
+      await recordFailedRun({ editionRepository, targetDate, runId, error, logger, eventLogger });
+      throw error;
+    }
   }
-}

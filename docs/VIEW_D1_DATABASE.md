@@ -20,7 +20,9 @@ List editions:
 SELECT
   id,
   edition_date,
+  edition_number,
   status,
+  is_latest,
   eyebrow,
   title,
   emphasis,
@@ -30,15 +32,16 @@ SELECT
   datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS created_at_ist,
   datetime(updated_at, '+5 hours', '+30 minutes') || ' IST' AS updated_at_ist
 FROM editions
-ORDER BY edition_date DESC;
+  ORDER BY edition_date DESC, edition_number DESC;
 ```
 
-View stories together with their edition date:
+  View stories together with their edition date and number:
 
 ```sql
 SELECT
   e.edition_date,
-  s.position,
+    e.edition_number,
+    s.position,
   s.category,
   s.title,
   s.summary,
@@ -46,7 +49,7 @@ SELECT
   s.source_url
 FROM stories AS s
 JOIN editions AS e ON e.id = s.edition_id
-ORDER BY e.edition_date DESC, s.position;
+ORDER BY e.edition_date DESC, e.edition_number DESC, s.position;
 ```
 
 Inspect daily Cron activity:
@@ -131,7 +134,7 @@ View editions:
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT id, edition_date, status, eyebrow, title, emphasis, summary, meta_json, datetime(published_at, '+5 hours', '+30 minutes') || ' IST' AS published_at_ist, datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS created_at_ist, datetime(updated_at, '+5 hours', '+30 minutes') || ' IST' AS updated_at_ist FROM editions ORDER BY edition_date DESC;"
+  --command "SELECT id, edition_date, edition_number, status, is_latest, eyebrow, title, emphasis, summary, meta_json, datetime(published_at, '+5 hours', '+30 minutes') || ' IST' AS published_at_ist, datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS created_at_ist, datetime(updated_at, '+5 hours', '+30 minutes') || ' IST' AS updated_at_ist FROM editions ORDER BY edition_date DESC, edition_number DESC;"
 ```
 
 View stories:
@@ -140,7 +143,7 @@ View stories:
 npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --remote `
   --config $workerConfig `
-  --command "SELECT e.edition_date, s.position, s.category, s.title, s.summary FROM stories s JOIN editions e ON e.id = s.edition_id ORDER BY e.edition_date DESC, s.position;"
+  --command "SELECT e.edition_date, e.edition_number, s.position, s.category, s.title, s.summary FROM stories s JOIN editions e ON e.id = s.edition_id ORDER BY e.edition_date DESC, e.edition_number DESC, s.position;"
 ```
 
 ### Find a `runId` before investigating a run
@@ -163,7 +166,7 @@ npx --yes wrangler@latest d1 execute ai-nuggets-content `
   --command "SELECT run_id, target_date, status, details, datetime(started_at, '+5 hours', '+30 minutes') || ' IST' AS started_at_ist, datetime(finished_at, '+5 hours', '+30 minutes') || ' IST' AS finished_at_ist FROM generation_runs WHERE target_date = '<YYYY-MM-DD>' ORDER BY started_at DESC;"
 ```
 
-The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. On beta only, an authorized caller may send `{ "targetDate": "YYYY-MM-DD", "dryRun": true }` to exercise collection, generation, and validation for an existing edition without changing `editions` or `stories`. To intentionally replace an existing beta edition after validation, send `{ "targetDate": "YYYY-MM-DD", "forceReplace": true }`; it atomically deletes the existing parent and cascades its stories before saving the replacement. `dryRun` and `forceReplace` cannot be combined, and neither option is accepted in production. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
+The `POST /internal/generate` response also returns `runId` immediately for a manually triggered generation. On beta only, an authorized caller may send `{ "targetDate": "YYYY-MM-DD", "dryRun": true }` to exercise collection, generation, and validation while leaving `editions` and `stories` untouched. Each eligible generation run creates a new numbered edition; a second run for the same date no longer overwrites or replaces the date's edition. The `forceReplace` option was removed: the Worker now rejects (400) any request containing `forceReplace` ("Edition overwrites are no longer supported. Each generation creates a new edition."), and `dryRun` remains the only beta-only manual option. `dryRun` is not accepted in production. Scheduled runs do not have an HTTP caller, so discover their ID with one of the read-only queries above. Copy the UUID exactly as returned; it is retained for three days after the run completes.
 
 ### Unified detailed view for one generation run
 
@@ -351,6 +354,7 @@ These examples use `SELECT` statements and do not modify data. Before running `I
 The published content can also be inspected through the read-only Worker API:
 
 - Latest published edition: `https://ai-nuggets-content.ainuggets123.workers.dev/api/editions/latest`
-- Edition on or before a date: `https://ai-nuggets-content.ainuggets123.workers.dev/api/editions/YYYY-MM-DD`
+- Latest published edition on or before a date: `https://ai-nuggets-content.ainuggets123.workers.dev/api/editions/YYYY-MM-DD`
+- A specific numbered edition for that date: `https://ai-nuggets-content.ainuggets123.workers.dev/api/editions/YYYY-MM-DD?edition=N`
 
 The API only exposes published editions. Use the dashboard or Wrangler when you need to inspect drafts, archived editions, or generation audit records.

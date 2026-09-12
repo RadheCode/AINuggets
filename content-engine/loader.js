@@ -49,19 +49,29 @@
     if (!runtime?.contentApiUrls || !runtime?.sites?.production) throw new Error("The content API is not configured.");
     if (!summaryFeatures?.ui?.length || !summaryFeatures.contexts) throw new Error("Summary features are not configured.");
 
-    const requestedDate = new URLSearchParams(window.location.search).get("date");
-    if (requestedDate && !isValidDate(requestedDate)) {
-      throw new Error("The edition date must use the YYYY-MM-DD format.");
-    }
+      const searchParams = new URLSearchParams(window.location.search);
+      const requestedDate = searchParams.get("date");
+      if (requestedDate && !isValidDate(requestedDate)) {
+        throw new Error("The edition date must use the YYYY-MM-DD format.");
+      }
+      const requestedEdition = searchParams.get("edition");
+      if (requestedEdition !== null && !/^[1-9]\d*$/.test(requestedEdition)) {
+        throw new Error("The edition number must be a positive integer.");
+      }
 
-    const editionKey = requestedDate || "latest";
-    const cached = readCachedEdition(editionKey);
-    if (cached) return Object.freeze(cached);
+      // The browser API path mirrors the loader: "latest", or "date" optionally
+      // followed by "?edition=N" to address a specific edition of a day.
+      const editionKey = requestedDate || "latest";
+      const apiEditionPath = requestedEdition && requestedEdition.trim() !== ""
+        ? `${editionKey}?edition=${requestedEdition}`
+        : editionKey;
+      const cached = readCachedEdition(apiEditionPath);
+      if (cached) return Object.freeze(cached);
 
-    const apiBaseUrl = (window.location.hostname === runtime.sites.production
-      ? runtime.contentApiUrls.production
-      : runtime.contentApiUrls.beta).replace(/\/$/, "");
-    const content = await fetchJson(`${apiBaseUrl}/api/editions/${editionKey}`);
+      const apiBaseUrl = (window.location.hostname === runtime.sites.production
+        ? runtime.contentApiUrls.production
+        : runtime.contentApiUrls.beta).replace(/\/$/, "");
+      const content = await fetchJson(`${apiBaseUrl}/api/editions/${apiEditionPath}`);
     if (!content.briefing || !Array.isArray(content.stories) || content.stories.length < 4 || content.stories.length > 5) {
       throw new Error("The content API returned an invalid edition.");
     }
@@ -73,7 +83,7 @@
       }
     }
 
-    writeCachedEdition(editionKey, content);
+    writeCachedEdition(apiEditionPath, content);
     return Object.freeze(content);
   }
 

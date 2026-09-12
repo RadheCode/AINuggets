@@ -2,7 +2,7 @@ export function createD1EditionRepository(db) {
   return {
     async hasEdition(date) {
       return Boolean(await db.prepare(
-        "SELECT id FROM editions WHERE edition_date = ? LIMIT 1"
+            "SELECT id FROM editions WHERE edition_date = ? AND is_latest = 1 LIMIT 1"
       ).bind(date).first());
     },
 
@@ -75,16 +75,22 @@ export function createD1EditionRepository(db) {
       ]);
     },
 
-    async saveEdition(edition, { status = "draft", replaceExisting = false } = {}) {
+    async saveEdition(edition, { status = "draft" } = {}) {
       if (!["draft", "published"].includes(status)) throw new Error(`Unsupported edition status: ${status}.`);
+      const nextRow = await db.prepare(`
+        SELECT COALESCE(MAX(edition_number), 0) + 1 AS next_number
+        FROM editions WHERE edition_date = ?
+      `).bind(edition.date).first();
+      const editionNumber = nextRow ? nextRow.next_number : 1;
       const statements = [
-        ...(replaceExisting ? [db.prepare("DELETE FROM editions WHERE edition_date = ?").bind(edition.date)] : []),
+        db.prepare("UPDATE editions SET is_latest = 0, updated_at = CURRENT_TIMESTAMP WHERE edition_date = ? AND is_latest = 1").bind(edition.date),
         db.prepare(`
           INSERT INTO editions (
-            edition_date, status, eyebrow, title, emphasis, summary, meta_json, published_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN CURRENT_TIMESTAMP ELSE NULL END)
+            edition_date, edition_number, is_latest, status, eyebrow, title, emphasis, summary, meta_json, published_at
+          ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'published' THEN CURRENT_TIMESTAMP ELSE NULL END)
         `).bind(
           edition.date,
+          editionNumber,
           status,
           edition.briefing.eyebrow,
           edition.briefing.title,
@@ -98,10 +104,11 @@ export function createD1EditionRepository(db) {
             edition_id, story_key, position, layout, category, title, summary_compact, summary, summary_detailed,
             destination_url, artwork_key, source_url, source_name, source_published_at
           ) VALUES (
-            (SELECT id FROM editions WHERE edition_date = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            (SELECT id FROM editions WHERE edition_date = ? AND edition_number = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
           )
         `).bind(
           edition.date,
+          editionNumber,
           story.id,
           index + 1,
           story.type || null,

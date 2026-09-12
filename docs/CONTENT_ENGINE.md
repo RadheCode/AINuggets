@@ -18,24 +18,20 @@ Themes only control presentation. They do not fetch or transform editorial data.
 ```mermaid
 flowchart TD
     A["⏰ Scheduler\nCloudflare Cron, GitHub Actions, or OS cron"] --> B["📅 Portable scheduled runner\nCalculates the UTC edition date"]
-    B --> C{"Edition already exists\nfor that date?"}
-
-        C -- "Yes, ordinary run" --> D["⏭️ Record skipped run\nNo duplicate is created"]
-        C -- "Yes, scheduled refresh" --> E
-        C -- "No" --> E["📰 Candidate collection\nApproved RSS/Atom feeds or custom JSON source"]
-    E --> F["🧹 Normalize URLs, deduplicate, and exclude prior-ten-day published stories"]
+        B --> E["📰 Candidate collection\nApproved RSS/Atom feeds or custom JSON source"]
+        E --> F["🧹 Normalize URLs, deduplicate, and exclude prior-ten-day published stories"]
     F --> G["📊 Apply configured candidate order\nPriority/freshness or random; diversify exactly five"]
     G --> H["🤖 Summary provider\nProduces 4–5 concise stories"]
     H --> I["✅ Domain validation\nRequired fields, safe URLs, IDs, layouts, artwork"]
 
     I -- "Invalid" --> J["❌ Record failed run\nPreviously published edition remains live"]
-    I -- "Valid" --> K["💾 D1 transaction\nSave edition and stories with configured status"]
+    I -- "Valid" --> K["💾 D1 transaction\nSave new numbered edition and stories (flip prior latest to is_latest=0)"]
     K --> L{"Automatic publication?"}
     L -- "Yes" --> M["📢 Publish validated edition"]
     L -- "No" --> Q["👤 Editorial review"] --> M
 
     M --> N["🌐 Content Worker API\nServes published editions only"]
-    N --> O["🖥️ Browser loader\nFetches latest or ?date=YYYY-MM-DD"]
+        N --> O["🖥️ Browser loader\nFetches latest or ?date + optional ?edition"]
     O --> P["🎨 Theme-independent renderer\nBuilds fixed tile slots and summary dialog"]
 ```
 
@@ -47,7 +43,7 @@ flowchart TD
 | Browser loader | `content-engine/loader.js` | Validates an optional preview date, requests an edition, and rejects malformed API payloads. |
 | Browser renderer | `content-engine/render.js` | Creates semantic tile buttons, stable slot classes, and the summary dialog behavior. |
 | Engine configuration | `content-engine/content-engine.config.mjs` | Human-editable UTC schedule and publication mode. |
-| Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, idempotency, and audit orchestration. |
+| Daily automation | `content-engine/automation/` | Portable source collection, summary generation, validation, and audit orchestration. |
 | Worker adapter | `infra/cloudflare/content-worker/src/` | Connects the portable automation to Cron, D1, secrets, and public HTTP routes. |
 | Content database | Cloudflare D1 `ai-nuggets-content` | Source of truth for editions, stories, and generation audit records. |
 | Theme | `themes/<theme-id>/` | Styles the stable markup; never fetches or changes content. |
@@ -60,7 +56,7 @@ The scheduler calls the portable runner. The central configuration supplies the 
 
 ### 2. Idempotency and auditing
 
-Before collection, the job asks the repository whether an edition already exists for the target date. If it does, an ordinary run records a `skipped` run and exits without overwriting editorial content. When the configured same-day refresh is enabled (`schedule.refreshExistingEdition`), the second scheduled run of the day instead proceeds and atomically replaces that date's edition with fresher stories. Each attempt is audited as `started`, `skipped`, `succeeded`, or `failed`.
+Every eligible run always proceeds to collection and creates a new numbered edition for that date; an existing edition never causes a skip and is never overwritten. Each attempt is audited as `started`, `skipped` (missing source/provider configuration), `succeeded`, or `failed`.
 
 ### 3. Candidate collection
 
@@ -68,7 +64,7 @@ By default, the built-in collector reads the editable product-approved feed list
 
 1. Fetch up to three recent posts from each RSS or Atom feed.
 2. Remove tracking parameters and normalize candidate URLs.
-3. Drop duplicate canonical links and exclude a canonical URL already used by a `published` edition in the prior ten editorial days. During a scheduled same-day refresh the same-day published edition participates in that window, so the evening replacement cannot reuse the morning stories. Draft and archived editions do not participate.
+3. Drop duplicate canonical links and exclude a canonical URL already used by a `published` edition in the ten editorial days before the target date (`D - 10 <= edition_date < D`). Same-day editions are not excluded from the lookback (documented tradeoff: an evening edition could reuse a morning URL). Draft and archived editions do not participate.
 4. Apply the configured candidate-selection mode: rank by source priority and recency in `priority` mode, or shuffle in `random` mode.
 5. Prefer category diversity, then fill the remaining positions until exactly five candidates are selected. If fewer than five survive, fail before calling the summary provider.
 
@@ -99,7 +95,7 @@ Validation happens before persistence. A malformed provider response cannot repl
 
 ### 6. Persistence and publication
 
-A valid edition and all of its stories are written together in one D1 transaction. By default, `publication.automaticallyPublish` is `true`, so validated editions are published immediately. Set it to `false` when an editor must review and publish each edition.
+A valid edition and all of its stories are written together in one D1 transaction as a new numbered edition for the target date (the prior `is_latest` edition for that date is flipped to `is_latest=0` and the new numbered edition is inserted with `is_latest=1`). Nothing is ever overwritten or replaced. By default, `publication.automaticallyPublish` is `true`, so validated editions are published immediately. Set it to `false` when an editor must review and publish each edition.
 
 If any step fails, the run is marked `failed`; the last valid published edition remains available to readers.
 
@@ -107,7 +103,7 @@ If any step fails, the run is marked `failed`; the last valid published edition 
 
 | Table | Key fields | Purpose |
 |---|---|---|
-| `editions` | `edition_date`, `status`, briefing fields, `published_at` | One daily briefing. Status is `draft`, `published`, or `archived`. |
+| `editions` | `edition_date`, `edition_number`, `status`, `is_latest`, briefing fields, `published_at` | One numbered briefing (unique per `edition_date` + `edition_number`) per run. Status is `draft`, `published`, or `archived`. |
 | `stories` | `edition_id`, `position`, `layout`, title, configured summary variants, source metadata | Four or five ordered stories for an edition. |
 | `generation_runs` | `target_date`, `status`, timestamps, details | Immutable operational history for each automation attempt. |
 
@@ -120,9 +116,10 @@ The Worker exposes only published content:
 | Route | Behavior |
 |---|---|
 | `GET /health` | Returns Worker availability. |
-| `GET /api/editions/latest` | Returns the newest published edition on or before today's editorial date. |
-| `GET /api/editions/YYYY-MM-DD` | Returns the newest published edition on or before the requested date. |
-| `POST /internal/generate` | Authenticated operational endpoint that runs generation for a supplied or current target date. It is not a public browser endpoint. |
+| `GET /api/editions/latest` | Returns the latest published edition on or before today's editorial date. |
+| `GET /api/editions/YYYY-MM-DD` | Returns the latest published edition on or before the requested date. |
+| `GET /api/editions/YYYY-MM-DD?edition=N` | Returns the specific numbered edition for that date. |
+| `POST /internal/generate` | Authenticated operational endpoint that runs generation for a supplied or current target date, creating a new numbered edition. It is not a public browser endpoint. Requests containing `forceReplace` are rejected with 400 (`Edition overwrites are no longer supported. Each generation creates a new edition.`). |
 
 The API returns a single edition object with briefing metadata and ordered stories. Responses are edge-cacheable and browser access is restricted to configured allowed origins. Draft and archived editions never appear in public API responses.
 
@@ -134,8 +131,8 @@ The beta Worker accepts browser requests only from `https://beta-ai-nuggets.page
 
 ## Browser rendering path
 
-1. `content-engine/loader.js` reads `?date=YYYY-MM-DD`, when provided, and validates the date.
-2. It requests `/api/editions/latest` or the date-specific route from the Worker URL in `product/config.js`.
+1. `content-engine/loader.js` reads `?date=YYYY-MM-DD` and `?edition=N`, when provided, validates both, and builds the API path (`latest` or `{date}?edition=N`, also used as the cache key).
+2. It requests `/api/editions/latest` or the date/edition-specific route from the Worker URL in `product/config.js`.
 3. It verifies the returned briefing and four-to-five-story payload before exposing it as `window.ProductContentReady`.
 4. `content-engine/render.js` creates one accessible button per story and assigns deterministic slot classes such as `story-card--slot-1` through `story-card--slot-5`.
 5. The active theme uses those stable classes to place the cards. Selecting a tile opens a compact dialog on the configured default summary. Its footer keeps previous/next buttons available and shows the keyboard shortcuts in clear words: Tab switches the summary level, Up and Down arrows scroll the content, and Left and Right arrows browse stories. The renderer derives accessible controls from the product-level `summaryFeatures.ui` configuration and omits any enabled UI context unavailable in that edition, so it never shows an empty control. Switching between available persisted layers does not make another request.
@@ -158,8 +155,7 @@ Edit `content-engine/content-engine.config.mjs` to control the following non-sec
 
 | Setting | Purpose | Change effect |
 |---|---|---|
-| `schedule.cron` | Twice-daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 1,13 * * *` runs at 6:30 AM and 6:30 PM IST (01:00 and 13:00 UTC). | Worker deployment applies the new trigger. |
-| `schedule.refreshExistingEdition` | When `true`, a scheduled run replaces the target date's existing edition with fresh content (used by the evening run) instead of recording a skipped run. The manual endpoints never set this flag. | Worker deployment applies the new behavior. |
+| `schedule.cron` | Twice-daily Cron expression in UTC, using Cloudflare's five-field syntax. The default `0 1,13 * * *` runs at 6:30 AM and 6:30 PM IST (01:00 and 13:00 UTC), creating edition #1 (morning) and edition #2 (evening). | Worker deployment applies the new trigger. |
 | `publication.automaticallyPublish` | `true` publishes validated editions immediately; `false` saves them as drafts. | Worker deployment changes future generation only. |
 | `feeds` | Approved RSS/Atom sources with `name`, HTTPS `feedUrl`, `category`, and numeric `priority`. | Worker deployment applies additions, removals, and edits. |
 
