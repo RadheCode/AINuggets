@@ -140,26 +140,20 @@
     </main>
 
     <footer class="site-footer">
-          <span data-product-copy="footer"></span>
-          <button class="support-tab" id="supportTab" type="button" aria-haspopup="dialog" aria-controls="supportDialog">
-            <span aria-hidden="true">&#9829;</span><span data-product-copy="supportLabel"></span>
-                  <span class="support-heart" aria-hidden="true"></span>
-                  <span class="support-heart" aria-hidden="true"></span>
-                </button>
-        </footer>
+      <span data-product-copy="footer"></span>
+      <button class="support-tab" id="supportTab" type="button" aria-haspopup="dialog" aria-controls="supportDialog">
+        <span aria-hidden="true">&#9829;</span><span data-product-copy="supportLabel"></span>
+              <span class="support-heart" aria-hidden="true"></span>
+              <span class="support-heart" aria-hidden="true"></span>
+            </button>
+    </footer>
 
-              <div class="edge-tabs" id="edgeTabs">
-                <button class="subscribe-edge-tab" id="subscribeTab" type="button" aria-haspopup="dialog" aria-controls="subscribeDialog">
-                  <span aria-hidden="true">&#9993;</span><span data-product-copy="subscribeButtonLabel"></span>
-                </button>
-                <button class="feedback-tab" id="feedbackTab" type="button" aria-haspopup="dialog" aria-controls="feedbackDialog">
-                  <span aria-hidden="true">★</span><span>Feedback</span>
-                </button>
-                              <a class="rss-edge-link" id="rssLink" href="/feed.xml" target="_blank" rel="noopener noreferrer">
-                                <span data-product-copy="rssSubscribeLabel"></span>
-                              </a>
-                            </div>
+          <div class="edge-tabs" id="edgeTabs">
+            <button class="feedback-tab" id="feedbackTab" type="button" aria-haspopup="dialog" aria-controls="feedbackDialog">
+              <span aria-hidden="true">★</span><span>Feedback</span>
+            </button>
           </div>
+      </div>
 
   <dialog class="feedback-dialog" id="feedbackDialog" aria-labelledby="feedbackTitle" aria-describedby="feedbackDescription">
     <button class="dialog-close" id="feedbackDialogClose" type="button" aria-label="Close feedback form">&times;</button>
@@ -205,22 +199,7 @@
     <div class="support-body" id="supportBody" aria-live="polite"></div>
       </dialog>
 
-      <dialog class="feedback-dialog subscribe-dialog" id="subscribeDialog" aria-labelledby="subscribeTitle" aria-describedby="subscribeDescription">
-        <button class="dialog-close" id="subscribeDialogClose" type="button" aria-label="Close subscribe form">&times;</button>
-        <span class="dialog-mark" aria-hidden="true">&#9993;</span>
-        <h2 id="subscribeTitle" data-product-copy="subscribeTitle"></h2>
-        <p id="subscribeDescription" data-product-copy="subscribeDescription"></p>
-        <form id="subscribeForm">
-          <label for="subscribeEmail" data-product-copy="subscribeEmailLabel"></label>
-          <div class="feedback-email-control">
-            <input id="subscribeEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-          </div>
-          <button class="feedback-submit" id="subscribeSubmit" type="submit" data-product-copy="subscribeButtonLabel"></button>
-          <output class="feedback-message" id="subscribeMessageStatus" aria-live="polite"></output>
-        </form>
-      </dialog>
-
-      <dialog class="story-dialog" id="storyDialog" aria-labelledby="storyDialogTitle">
+  <dialog class="story-dialog" id="storyDialog" aria-labelledby="storyDialogTitle">
     <button class="dialog-close" id="storyDialogClose" type="button" aria-label="Close story summary">&times;</button>
     <p class="story-dialog-category" id="storyDialogCategory"></p>
     <h2 id="storyDialogTitle"></h2>
@@ -232,7 +211,6 @@
         <div class="story-dialog-navigation" aria-label="Story navigation" role="group">
           <button class="story-dialog-navigation-button" id="storyDialogPrevious" type="button" aria-label="Previous story" disabled><span aria-hidden="true">&larr;</span><span>Previous</span></button>
           <button class="story-dialog-navigation-button" id="storyDialogNext" type="button" aria-label="Next story"><span>Next</span><span aria-hidden="true">&rarr;</span></button>
-                    <button class="story-dialog-navigation-button" id="storyDialogShare" type="button"><span aria-hidden="true">&#128279;</span><span data-product-copy="shareStoryLabel"></span></button>
         </div>
         <p class="story-dialog-navigation-hint" aria-label="Keyboard shortcuts. Tab switches summary level, up and down arrows scroll, left and right arrows browse stories.">
           <span class="story-dialog-navigation-hint-item"><span class="story-dialog-kbd" aria-hidden="true">Tab</span> switch summary</span>

@@ -26,14 +26,6 @@ const feedbackRating = document.querySelector("#feedbackRating");
 const feedbackRatingDisplay = document.querySelector("#feedbackRatingDisplay");
 const feedbackSubmit = document.querySelector("#feedbackSubmit");
 const feedbackMessageStatus = document.querySelector("#feedbackMessageStatus");
-const subscribeTab = document.querySelector("#subscribeTab");
-const subscribeDialog = document.querySelector("#subscribeDialog");
-const subscribeDialogClose = document.querySelector("#subscribeDialogClose");
-const subscribeForm = document.querySelector("#subscribeForm");
-const subscribeEmail = document.querySelector("#subscribeEmail");
-const subscribeSubmit = document.querySelector("#subscribeSubmit");
-const subscribeMessageStatus = document.querySelector("#subscribeMessageStatus");
-const rssLink = document.querySelector("#rssLink");
 const productConfig = window.ProductConfig;
 const authConfig = productConfig?.authentication;
 const contentRuntime = productConfig?.runtime;
@@ -587,61 +579,6 @@ feedbackForm.addEventListener("submit", async (event) => {
     feedbackSubmit.textContent = "Send feedback";
   }
 });
-
-  // --- Subscribe (newsletter capture) dialog ---
-  try {
-    rssLink.href = authApiUrl("/feed.xml");
-  } catch {
-    // Keep the product-configured placeholder if the runtime is unavailable.
-  }
-
-  subscribeTab.addEventListener("click", () => {
-    subscribeMessageStatus.textContent = "";
-    subscribeForm.reset();
-    subscribeDialog.showModal();
-    subscribeEmail.focus();
-  });
-
-  subscribeDialogClose.addEventListener("click", () => {
-    subscribeDialog.close();
-  });
-
-  subscribeDialog.addEventListener("click", (event) => {
-    if (event.target === subscribeDialog) subscribeDialog.close();
-  });
-
-  subscribeDialog.addEventListener("close", () => {
-    subscribeTab.focus();
-  });
-
-  subscribeForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    subscribeMessageStatus.textContent = "";
-    if (!subscribeForm.reportValidity()) return;
-
-      const copy = productConfig?.copy ?? {};
-      subscribeSubmit.disabled = true;
-      try {
-        const data = new FormData(subscribeForm);
-        const response = await authRequest("/api/subscribe", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ email: data.get("email") })
-        });
-        const result = await responseData(response);
-        subscribeMessageStatus.textContent = response.ok
-          ? (result.created === false ? copy.subscribeDuplicateMessage : copy.subscribeSuccessMessage)
-          : (result.message || copy.subscribeErrorGeneral);
-        if (response.ok) {
-          subscribeForm.reset();
-          setTimeout(() => subscribeDialog.close(), 900);
-        }
-      } catch (error) {
-        subscribeMessageStatus.textContent = error.message || copy.subscribeErrorGeneral;
-      } finally {
-        subscribeSubmit.disabled = false;
-      }
-    });
 
   // --- Support (donation) dialog ---
   const supportTab = document.querySelector("#supportTab");

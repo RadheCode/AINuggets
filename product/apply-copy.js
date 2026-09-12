@@ -28,14 +28,8 @@
         aboutPromise: copy.about.promise,
         supportLabel: support?.copy?.label ?? "",
                 supportTitle: support?.copy?.title ?? "",
-                        supportDescription: support?.copy?.description ?? "",
-                        rssSubscribeLabel: copy.rssSubscribeLabel ?? "",
-                        subscribeButtonLabel: copy.subscribeButtonLabel ?? "",
-                        subscribeTitle: copy.subscribeTitle ?? "",
-                        subscribeDescription: copy.subscribeDescription ?? "",
-                        subscribeEmailLabel: copy.subscribeEmailLabel ?? "",
-                        shareStoryLabel: copy.shareStoryLabel ?? ""
-                      };
+                supportDescription: support?.copy?.description ?? ""
+              };
 
   for (const [id, text] of Object.entries(textTargets)) {
     document.querySelectorAll(`[data-product-copy="${id}"]`).forEach((target) => {

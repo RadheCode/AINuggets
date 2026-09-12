@@ -32,10 +32,6 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 `ProductConfig.readerEngagement.streak.maximumDaysBetweenQualifyingActivities` is the maximum inclusive UTC calendar-day gap that continues a signed-in reader's streak. It must be an integer from `1` through `365`. The current value is `4`, allowing up to three missed UTC dates; in general, a value of `N` permits up to `N - 1` missed UTC dates. Set it to `1` to require consecutive UTC dates. The Worker validates and applies the value; the browser reads the public setting only to render guidance and cannot alter the server-authoritative streak.
 
-## Distribution copy
-
-Distribution (distribution, share, and newsletter) copy lives in `ProductConfig.copy`: `shareStoryLabel` (story share action), the Edge-tab controls `subscribeButtonLabel` and `rssSubscribeLabel`, the subscribe dialog's `subscribeTitle`, `subscribeDescription`, `subscribeEmailLabel` and its `subscribeSubmit` button, plus the inline feedback messages `subscribeSuccessMessage`, `subscribeDuplicateMessage`, and `subscribeErrorGeneral`. These product-owned strings are read by `product/apply-copy.js` and `script.js` so the shared shell ships no hard-coded distribution copy; the Worker persists only durable provider data and returns a stable success/duplicate contract for the client to map to this copy.
-
 ## About-page copy
 
 `ProductConfig.copy.about.title` stores its emphasized phrase separately from the remaining headline so the shared product-copy renderer can preserve the active theme's two-tone heading treatment without embedding product wording in `about.html`.
