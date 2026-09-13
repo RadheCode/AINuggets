@@ -1,11 +1,11 @@
 ---
 name: fetch-analytics
-description: Fetch AI Nuggets analytics from beta or production covering visitors, content-generation automation runs, model/provider analytics, reader feedback, and published-content summary, and present them as neat Markdown tables with IST timestamps. This is the single comprehensive analytics skill for the product.
+description: Fetch AI Nuggets analytics from beta or production covering visitors, content-generation automation runs, model/provider analytics, reader feedback, and published-content summary, and present them as neat Markdown tables with IST timestamps. This is the single comprehensive analytics skill for the product. WHEN: "overall analysis", "full analysis", "product analysis", "site analytics", "site health", "health check", "performance overview", "status report", "how is the product doing", "how is the site doing", "show me the numbers", "analytics", "metrics", "stats", "reports", "visitor analytics", "generation runs", "model analytics", "reader feedback", "content summary".
 ---
 
 # Fetch Analytics (uber skill)
 
-Use this skill when the user asks for analytics, metrics, stats, reports, or health checks on the AI Nuggets product — covering site visitors, the twice-daily content-generation automation, model/provider performance, reader feedback, and published content. This is the umbrella entry point that combines all previously separate analytics skills into one.
+Use this skill when the user asks for analytics, metrics, stats, reports, health checks, or an overall/full analysis of the AI Nuggets product — covering site visitors, the twice-daily content-generation automation, model/provider performance, reader feedback, and published content. This is the umbrella entry point that combines all previously separate analytics skills into one. Ambiguous umbrella requests such as "overall analysis", "full analysis", "product analysis", "site health", "status report", or "how is the product doing" should trigger this skill rather than a repository code review.
 
 ## Required input
 

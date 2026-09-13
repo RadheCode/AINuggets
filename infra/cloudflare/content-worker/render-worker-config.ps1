@@ -43,11 +43,17 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $allowedOrigins = "$($deployment.pagesUrl),http://localhost:8080,http://127.0.0.1:8080"
+# Select environment-specific cron (production runs first, beta 10 minutes later)
+$cronExpr = if ($schedule.cron -is [string]) { $schedule.cron } else { $schedule.cron.$environmentKey }
+if (-not $cronExpr) {
+  throw "No cron expression found for environment '$environmentKey' in content-engine/content-engine.config.mjs"
+}
+
 $replacements = @{
   "__CONTENT_WORKER_NAME__" = $deployment.contentWorkerName
   "__CONTENT_DATABASE_NAME__" = $deployment.contentDatabaseName
   "__CONTENT_DATABASE_ID__" = $deployment.contentDatabaseId
-  "__CONTENT_ENGINE_CRON__" = $schedule.cron
+  "__CONTENT_ENGINE_CRON__" = $cronExpr
   "__ALLOWED_ORIGINS__" = $allowedOrigins
   "__GOOGLE_CLIENT_ID__" = $googleClientId.Trim()
   "__DEPLOYMENT_ENVIRONMENT__" = $environmentKey

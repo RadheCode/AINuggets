@@ -2,6 +2,16 @@
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   const editionCacheTtlMs = 5 * 60 * 1000;
 
+  // Only the production host is public. Beta previews and local development
+  // must stay out of search indexes so users are never sent to a replica.
+  const productionHost = window.ProductConfig?.runtime?.sites?.production;
+  if (productionHost && window.location.hostname !== productionHost) {
+    const robotsMeta = document.createElement("meta");
+    robotsMeta.name = "robots";
+    robotsMeta.content = "noindex, nofollow";
+    document.head.appendChild(robotsMeta);
+  }
+
   function isValidDate(value) {
     if (!datePattern.test(value)) return false;
     const [year, month, day] = value.split("-").map(Number);

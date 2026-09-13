@@ -24,7 +24,11 @@ export const GENERATION_PROVIDER_CONFIGURATION = Object.freeze({
 });
 
 const PROVIDER_KIND = Object.freeze({ openai: "openai", workersAi: "workers-ai", openrouter: "openrouter", gemini: "gemini" });
-export const SUMMARY_PROVIDER_FALLBACK_ORDER = Object.freeze(SUMMARY_PROVIDERS_CONFIG.fallbackOrder);
+// fallbackOrder can be an array (legacy) or an object with environment-specific arrays
+const FALLBACK_ORDER_CONFIG = SUMMARY_PROVIDERS_CONFIG.fallbackOrder;
+export const SUMMARY_PROVIDER_FALLBACK_ORDER = Object.freeze(
+  Array.isArray(FALLBACK_ORDER_CONFIG) ? FALLBACK_ORDER_CONFIG : FALLBACK_ORDER_CONFIG[globalThis.DEPLOYMENT_ENVIRONMENT || "production"]
+);
 export const OPENROUTER_DEFAULT_BASE_URL = SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl;
 
 function configuredValue(values, name) {

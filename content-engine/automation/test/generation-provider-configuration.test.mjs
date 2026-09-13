@@ -346,7 +346,11 @@ test("workers-ai model without a binding is a partial configuration", () => {
 test("uses the centralized product editorial configuration", () => {
   assert.equal(PRODUCT_EDITORIAL_CONFIG.feeds.length, 35);
   assert.equal(PRODUCT_EDITORIAL_CONFIG.candidateSelection.mode, "random");
-  assert.equal(CONTENT_ENGINE_CONFIG.schedule.cron, "0 1,13 * * *");
+  // schedule.cron is now an object with environment-specific expressions
+  assert.deepEqual(CONTENT_ENGINE_CONFIG.schedule.cron, {
+    production: "0 1,13 * * *",
+    beta: "10 1,13 * * *"
+  });
   assert.equal("timezone" in CONTENT_ENGINE_CONFIG.schedule, false);
     assert.equal("refreshExistingEdition" in CONTENT_ENGINE_CONFIG.schedule, false);
   assert.ok(SUMMARY_FEATURE_CONFIG.ui.length > 0);
@@ -357,13 +361,18 @@ test("uses the centralized product editorial configuration", () => {
   assert.doesNotThrow(() => validateStreakFeatureConfig(STREAK_FEATURE_CONFIG));
   assert.doesNotThrow(() => validateContentEngineConfig(CONTENT_ENGINE_CONFIG));
   assert.doesNotThrow(() => validateSummaryProvidersConfig(SUMMARY_PROVIDERS_CONFIG));
-  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.fallbackOrder, ["openai", "gemini", "openrouter", "workers-ai"]);
+    // fallbackOrder is now environment-specific
+    assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.fallbackOrder, {
+      production: ["openai", "gemini", "openrouter", "workers-ai"],
+          beta: ["gemini", "openai", "openrouter", "workers-ai"]
+    });
+    // SUMMARY_PROVIDER_FALLBACK_ORDER resolves to production order in test (no DEPLOYMENT_ENVIRONMENT set)
     assert.deepEqual(SUMMARY_PROVIDER_FALLBACK_ORDER, ["openai", "gemini", "openrouter", "workers-ai"]);
-  assert.equal(SUMMARY_PROVIDERS_CONFIG.requestTimeoutMs, 300000);
-  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.openaiCompatible.retryableStatuses, [404, 500, 502, 503, 504]);
-  assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.workersAi.retryableStatuses, [429]);
-  assert.equal(SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl, "https://openrouter.ai/api/v1");
-    assert.equal(SUMMARY_PROVIDERS_CONFIG.gemini.defaultBaseUrl, "https://generativelanguage.googleapis.com/v1beta/openai");
+    assert.equal(SUMMARY_PROVIDERS_CONFIG.requestTimeoutMs, 300000);
+    assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.openaiCompatible.retryableStatuses, [404, 500, 502, 503, 504]);
+    assert.deepEqual(SUMMARY_PROVIDERS_CONFIG.workersAi.retryableStatuses, [429]);
+    assert.equal(SUMMARY_PROVIDERS_CONFIG.openrouter.defaultBaseUrl, "https://openrouter.ai/api/v1");
+      assert.equal(SUMMARY_PROVIDERS_CONFIG.gemini.defaultBaseUrl, "https://generativelanguage.googleapis.com/v1beta/openai");
 });
 
 test("composite provider falls through to the next provider on first-provider failure", async () => {

@@ -12,6 +12,9 @@ import { createD1EditionRepository } from "./d1-edition-repository.js";
 import { createSessionToken, hashToken, verifyGoogleCredential } from "./google-auth.js";
 import { earliestContinuationDate, utcActivityDate } from "./streak-policy.js";
 
+// Make DEPLOYMENT_ENVIRONMENT available to the provider factory for environment-specific fallback order
+globalThis.DEPLOYMENT_ENVIRONMENT = globalThis.DEPLOYMENT_ENVIRONMENT || "production";
+
 const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
 const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
 const validateSummaryFeatureConfig = globalThis.ProductConfig.validateSummaryFeatureConfig;

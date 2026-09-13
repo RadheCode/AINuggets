@@ -215,38 +215,43 @@
     }),
     // Summary provider selection and fallback behavior. These values are product-owned so
     // editorial and provider fallback order can be tuned without touching shared adapters.
-    summaryProviders: Object.freeze({
-        // Ordered list of summary provider kinds. The factory tries providers in this
-        // order, skipping any that lack configured credentials, and stops at the first
-        // success. This is the single source of truth for provider selection.
-        fallbackOrder: Object.freeze(["openai", "gemini", "openrouter", "workers-ai"]),
-        // Per-request timeout applied to provider model calls. Generous because
-                // free-tier OpenRouter models can take several minutes to emit a full
-                // edition with 4-5 stories.
-                requestTimeoutMs: 300000,
-        // OpenAI-compatible provider behavior (shared by the openai and openrouter kinds).
-        openaiCompatible: Object.freeze({
-            // HTTP statuses that trigger fallback to the next configured model.
-            retryableStatuses: Object.freeze([404, 500, 502, 503, 504])
+        // Fallback order is environment-specific: production uses openai first (priority on quality),
+        // beta uses gemini first (to preserve production OpenAI quota and use free tier first).
+        summaryProviders: Object.freeze({
+            // Ordered list of summary provider kinds. The factory tries providers in this
+            // order, skipping any that lack configured credentials, and stops at the first
+            // success. This is the single source of truth for provider selection.
+            fallbackOrder: Object.freeze({
+                production: ["openai", "gemini", "openrouter", "workers-ai"],
+                beta: ["gemini", "openai", "openrouter", "workers-ai"]
+            }),
+            // Per-request timeout applied to provider model calls. Generous because
+                    // free-tier OpenRouter models can take several minutes to emit a full
+                    // edition with 4-5 stories.
+                    requestTimeoutMs: 300000,
+            // OpenAI-compatible provider behavior (shared by the openai and openrouter kinds).
+            openaiCompatible: Object.freeze({
+                // HTTP statuses that trigger fallback to the next configured model.
+                retryableStatuses: Object.freeze([404, 500, 502, 503, 504])
+            }),
+            // Cloudflare Workers AI provider fallback behavior.
+            workersAi: Object.freeze({
+                // Exact HTTP statuses that trigger fallback to the next model.
+                retryableStatuses: Object.freeze([429]),
+                // Inclusive [min, max] status range that also triggers fallback (5xx server errors).
+                retryableStatusRange: Object.freeze([500, 599]),
+                // Error-message substrings (rate/capacity limits) that also trigger fallback.
+                retryableMessageTerms: Object.freeze(["rate limit", "capacity", "overloaded"])
+            }),
+            // OpenRouter.ai defaults (an OpenAI-compatible endpoint).
+            openrouter: Object.freeze({
+                defaultBaseUrl: "https://openrouter.ai/api/v1"
+                    }),
+                    // Google Gemini defaults (an OpenAI-compatible endpoint).
+                    gemini: Object.freeze({
+                        defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai"
+                    })
         }),
-        // Cloudflare Workers AI provider fallback behavior.
-        workersAi: Object.freeze({
-            // Exact HTTP statuses that trigger fallback to the next model.
-            retryableStatuses: Object.freeze([429]),
-            // Inclusive [min, max] status range that also triggers fallback (5xx server errors).
-            retryableStatusRange: Object.freeze([500, 599]),
-            // Error-message substrings (rate/capacity limits) that also trigger fallback.
-            retryableMessageTerms: Object.freeze(["rate limit", "capacity", "overloaded"])
-        }),
-        // OpenRouter.ai defaults (an OpenAI-compatible endpoint).
-        openrouter: Object.freeze({
-            defaultBaseUrl: "https://openrouter.ai/api/v1"
-                }),
-                // Google Gemini defaults (an OpenAI-compatible endpoint).
-                gemini: Object.freeze({
-                    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai"
-                })
-    }),
     monetization: Object.freeze({
     // Sponsorship configuration
     sponsorships: Object.freeze({
@@ -349,15 +354,25 @@
                 validateSummaryProvidersConfig(config = globalThis.ProductConfig.summaryProviders) {
                     if (!config || typeof config !== "object") throw new Error("Summary providers configuration must be an object.");
                     const { fallbackOrder, openaiCompatible, workersAi, openrouter, gemini, requestTimeoutMs } = config;
-                    if (!Array.isArray(fallbackOrder) || fallbackOrder.length === 0) throw new Error("Summary providers fallbackOrder must be a non-empty array.");
-                    if (fallbackOrder.some((kind) => typeof kind !== "string" || !kind.trim())) throw new Error("Summary provider fallbackOrder entries must be non-empty strings.");
-                    if (!Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1) throw new Error("Summary providers requestTimeoutMs must be a positive integer.");
-                    if (!openaiCompatible || !Array.isArray(openaiCompatible.retryableStatuses)) throw new Error("Summary providers openaiCompatible.retryableStatuses must be an array.");
-                    if (!workersAi || !Array.isArray(workersAi.retryableStatuses) || !Array.isArray(workersAi.retryableStatusRange) || !Array.isArray(workersAi.retryableMessageTerms)) throw new Error("Summary providers workersAi fallback criteria must be arrays.");
-                    if (!openrouter || typeof openrouter.defaultBaseUrl !== "string" || !openrouter.defaultBaseUrl.trim()) throw new Error("Summary providers openrouter.defaultBaseUrl must be a non-empty URL string.");
-                                        if (!gemini || typeof gemini.defaultBaseUrl !== "string" || !gemini.defaultBaseUrl.trim()) throw new Error("Summary providers gemini.defaultBaseUrl must be a non-empty URL string.");
-                                        return config;
-                }
+                                    // fallbackOrder can be an array (legacy) or an object with environment-specific arrays
+                                    if (Array.isArray(fallbackOrder)) {
+                                        if (fallbackOrder.length === 0) throw new Error("Summary providers fallbackOrder must be a non-empty array.");
+                                        if (fallbackOrder.some((kind) => typeof kind !== "string" || !kind.trim())) throw new Error("Summary provider fallbackOrder entries must be non-empty strings.");
+                                    } else if (fallbackOrder && typeof fallbackOrder === "object") {
+                                        for (const [env, order] of Object.entries(fallbackOrder)) {
+                                            if (!Array.isArray(order) || order.length === 0) throw new Error(`Summary providers fallbackOrder.${env} must be a non-empty array.`);
+                                            if (order.some((kind) => typeof kind !== "string" || !kind.trim())) throw new Error(`Summary provider fallbackOrder.${env} entries must be non-empty strings.`);
+                                        }
+                                    } else {
+                                        throw new Error("Summary providers fallbackOrder must be an array or an object with environment-specific arrays.");
+                                    }
+                                    if (!Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1) throw new Error("Summary providers requestTimeoutMs must be a positive integer.");
+                                    if (!openaiCompatible || !Array.isArray(openaiCompatible.retryableStatuses)) throw new Error("Summary providers openaiCompatible.retryableStatuses must be an array.");
+                                    if (!workersAi || !Array.isArray(workersAi.retryableStatuses) || !Array.isArray(workersAi.retryableStatusRange) || !Array.isArray(workersAi.retryableMessageTerms)) throw new Error("Summary providers workersAi fallback criteria must be arrays.");
+                                    if (!openrouter || typeof openrouter.defaultBaseUrl !== "string" || !openrouter.defaultBaseUrl.trim()) throw new Error("Summary providers openrouter.defaultBaseUrl must be a non-empty URL string.");
+                                                        if (!gemini || typeof gemini.defaultBaseUrl !== "string" || !gemini.defaultBaseUrl.trim()) throw new Error("Summary providers gemini.defaultBaseUrl must be a non-empty URL string.");
+                                                        return config;
+                                }
               });
 
               // NOTE: product/config.js is the single product configuration file. It is also

@@ -21,9 +21,23 @@ export function validateContentEngineConfig(config) {
   if (!config || typeof config !== "object") throw new Error("Content engine configuration must be an object.");
   const { schedule, publication, feeds } = config;
   if (!schedule || typeof schedule !== "object") throw new Error("schedule must be an object.");
-  requireString(schedule.cron, "schedule.cron");
-  if (schedule.cron.trim().split(/\s+/).length !== CRON_FIELD_COUNT) {
-    throw new Error("schedule.cron must use Cloudflare's five-field Cron syntax.");
+  const cron = schedule.cron;
+  if (typeof cron === "string") {
+    // Legacy single cron string (backward compatibility)
+    requireString(cron, "schedule.cron");
+    if (cron.trim().split(/\s+/).length !== CRON_FIELD_COUNT) {
+      throw new Error("schedule.cron must use Cloudflare's five-field Cron syntax.");
+    }
+  } else if (cron && typeof cron === "object") {
+    // Environment-specific cron object
+    for (const [env, cronExpr] of Object.entries(cron)) {
+      requireString(cronExpr, `schedule.cron.${env}`);
+      if (cronExpr.trim().split(/\s+/).length !== CRON_FIELD_COUNT) {
+        throw new Error(`schedule.cron.${env} must use Cloudflare's five-field Cron syntax.`);
+      }
+    }
+  } else {
+    throw new Error("schedule.cron must be a string or an object with environment-specific cron expressions.");
   }
     if (!publication || typeof publication !== "object" || typeof publication.automaticallyPublish !== "boolean") {
     throw new Error("publication.automaticallyPublish must be a boolean.");

@@ -84,6 +84,7 @@ AI Nuggets operates in the competitive AI news and information space, targeting 
 - [x] Create XML sitemap for editions
 - [x] Implement proper canonical tags for date-based URLs
 - [x] Add `robots.txt` and `sitemap.xml`
+- [x] De-index the beta preview (`beta-ai-nuggets.pages.dev`) so search engines only send users to production — the shared loader injects `noindex, nofollow` on every non-production host
 - [x] Add an Atom RSS feed endpoint at `GET /feed.xml`
 - [x] Add Open Graph share image and branded favicon
 
