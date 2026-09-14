@@ -218,8 +218,25 @@
           <span class="story-dialog-navigation-hint-item"><span class="story-dialog-kbd" aria-hidden="true">&larr;</span><span class="story-dialog-kbd" aria-hidden="true">&rarr;</span> browse stories</span>
         </p>
       </div>
-      <a class="story-dialog-source" id="storyDialogSource" target="_blank" rel="noopener noreferrer">Read the source <span aria-hidden="true">&nearr;</span></a>
+      <div class="story-dialog-actions-group">
+        <button class="story-dialog-share" id="storyDialogShare" type="button" data-product-copy="storyShareButtonLabel" aria-haspopup="dialog"></button>
+        <a class="story-dialog-source" id="storyDialogSource" target="_blank" rel="noopener noreferrer">Read the source <span aria-hidden="true">&nearr;</span></a>
+      </div>
     </div>
+  </dialog>
+
+  <dialog class="story-share-dialog" id="storyShareDialog" aria-labelledby="storyShareDialogTitle">
+    <button class="dialog-close" id="storyShareDialogClose" type="button" aria-label="Close share dialog">&times;</button>
+    <h2 id="storyShareDialogTitle" data-product-copy="storyShareDialogTitle"></h2>
+    <p class="story-share-dialog-description" id="storyShareDialogDescription" data-product-copy="storyShareDialogDescription"></p>
+    <div class="story-share-url">
+      <label class="story-share-url-label" id="storyShareUrlLabel" for="storyShareUrl" data-product-copy="storyShareUrlLabel"></label>
+      <div class="story-share-url-row">
+        <input class="story-share-url-input" id="storyShareUrl" type="text" readonly />
+        <button class="story-share-copy-btn" id="storyShareCopyButton" type="button" data-product-copy="storyShareCopyLabel" aria-live="polite"></button>
+      </div>
+    </div>
+    <div class="story-share-platforms" id="storySharePlatforms" role="group" aria-label="Share this story"></div>
   </dialog>
 
   <div class="celebration-toast" id="celebrationToast" role="alert" aria-live="assertive">
