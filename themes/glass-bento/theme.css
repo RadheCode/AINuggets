@@ -245,7 +245,7 @@ button, input { font: inherit; }
 :root[data-color-mode="dark"] .eyebrow, :root[data-color-mode="dark"] .briefing-meta span { border-color: rgba(215, 224, 255, 0.18); background: rgba(24, 30, 61, 0.5); box-shadow: 0 7px 0 rgba(2, 4, 18, 0.14), 0 14px 26px rgba(2, 5, 24, 0.24), inset 0 1px rgba(255, 255, 255, 0.1); }
 :root[data-color-mode="dark"] .briefing-copy { border-color: rgba(220, 228, 255, 0.2); background: rgba(15, 20, 46, 0.82); box-shadow: 0 14px 32px rgba(2, 5, 24, 0.34), inset 0 1px rgba(255, 255, 255, 0.08); }
 :root[data-color-mode="dark"] .briefing-copy > p { color: #f3f5ff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48); }
-:root[data-color-mode="dark"] .story-dialog { border-color: rgba(217, 225, 255, 0.2); background: rgba(22, 27, 57, 0.92); box-shadow: 0 32px 90px rgba(0, 0, 12, 0.62), inset 0 1px rgba(255, 255, 255, 0.12); }
+:root[data-color-mode="dark"] .story-dialog, :root[data-color-mode="dark"] .feedback-dialog, :root[data-color-mode="dark"] .newsletter-dialog { border-color: rgba(217, 225, 255, 0.2); background: #161b39; box-shadow: 0 32px 90px rgba(0, 0, 12, 0.62), inset 0 1px rgba(255, 255, 255, 0.12); }
 :root[data-color-mode="dark"] .dialog-close { color: var(--ink); background: rgba(38, 45, 82, 0.8); }
 
 main { position: relative; display: grid; min-height: 0; grid-template-rows: auto minmax(0, 1fr); padding: clamp(22px, 3.2vh, 38px) clamp(28px, 4.5vw, 58px); overflow: hidden; }
@@ -296,7 +296,7 @@ h1 em { color: #5570df; font-style: normal; }
 .story-dialog { display: grid; width: min(600px, calc(100% - 32px)); height: min(620px, calc(100dvh - 32px)); box-sizing: border-box; padding: 34px; grid-template-rows: auto auto auto minmax(0, 1fr) auto; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 24px; color: var(--ink); background: rgba(248, 249, 255, 0.94); box-shadow: 0 32px 90px rgba(40, 44, 112, 0.32), inset 0 1px #fff; }
 dialog:not([open]) { display: none; }
 .story-dialog::backdrop { background: rgba(31, 35, 76, 0.25); }
-.story-dialog[open], .feedback-dialog[open], .about-dialog[open], .support-dialog[open] { animation: dialog-in 0.28s cubic-bezier(0.2, 0.85, 0.25, 1.15); }
+.story-dialog[open], .feedback-dialog[open], .newsletter-dialog[open], .about-dialog[open], .support-dialog[open] { animation: dialog-in 0.28s cubic-bezier(0.2, 0.85, 0.25, 1.15); }
 .dialog-close { position: absolute; top: 14px; right: 14px; width: 34px; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: rgba(255, 255, 255, 0.65); cursor: pointer; }
 .dialog-mark { width: 45px; aspect-ratio: 1; border-radius: 13px; }
 .story-dialog-category { margin: 0 0 10px; color: var(--blue-deep); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -579,14 +579,17 @@ main::before { display: none; }
 .story-share-dialog,
 .story-dialog::backdrop,
 .feedback-dialog::backdrop,
+.newsletter-dialog::backdrop,
 .support-dialog::backdrop,
 .story-share-dialog::backdrop,
 :root[data-color-mode="dark"] .story-dialog,
 :root[data-color-mode="dark"] .feedback-dialog,
+:root[data-color-mode="dark"] .newsletter-dialog,
 :root[data-color-mode="dark"] .support-dialog,
 :root[data-color-mode="dark"] .story-share-dialog,
 :root[data-color-mode="dark"] .story-dialog::backdrop,
 :root[data-color-mode="dark"] .feedback-dialog::backdrop,
+:root[data-color-mode="dark"] .newsletter-dialog::backdrop,
 :root[data-color-mode="dark"] .support-dialog::backdrop,
 :root[data-color-mode="dark"] .story-share-dialog::backdrop {
   backdrop-filter: none;
@@ -595,10 +598,12 @@ main::before { display: none; }
 
 .story-dialog,
 .feedback-dialog,
+.newsletter-dialog,
 .support-dialog,
 .story-share-dialog,
 :root[data-color-mode="dark"] .story-dialog,
 :root[data-color-mode="dark"] .feedback-dialog,
+:root[data-color-mode="dark"] .newsletter-dialog,
 :root[data-color-mode="dark"] .support-dialog,
 :root[data-color-mode="dark"] .story-share-dialog {
   box-shadow: none;
@@ -747,14 +752,17 @@ main::before { display: none; }
   right: 0;
   z-index: 31;
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
   margin: 0;
   padding: 0;
   pointer-events: none;
 }
 
 .feedback-tab,
+.newsletter-tab,
 .support-tab {
   display: inline-flex;
   gap: 7px;
@@ -812,13 +820,55 @@ main::before { display: none; }
 .feedback-tab:focus-visible { outline: 3px solid #101326; outline-offset: -5px; }
 .feedback-tab > span:first-child { color: #e4b638; font-size: 0.98rem; line-height: 1; text-shadow: 0 1px rgba(255, 255, 255, 0.54); }
 
+.newsletter-tab {
+  pointer-events: auto;
+  color: #eef4ff;
+  background: #4355bd;
+  box-shadow: -5px 5px 10px rgba(40, 44, 112, 0.38), -3px -4px 8px rgba(190, 205, 255, 0.48), inset 1px 1px rgba(255, 255, 255, 0.42);
+  font-size: 0.7rem;
+  padding: 12px 9px 12px 11px;
+  border-radius: 13px 0 0 13px;
+  writing-mode: vertical-rl;
+}
+
+.newsletter-tab:hover {
+  color: #eef4ff;
+  background: #33429f;
+  box-shadow: -7px 7px 13px rgba(40, 44, 112, 0.46), -4px -5px 10px rgba(190, 205, 255, 0.56), inset 1px 1px rgba(255, 255, 255, 0.42);
+  transform: translateX(-2px);
+}
+
+.newsletter-tab:focus-visible { outline: 3px solid #101326; outline-offset: -5px; }
+.newsletter-tab > span:first-child { color: #fff; font-size: 0.98rem; line-height: 1; text-shadow: 0 1px rgba(255, 255, 255, 0.54); }
+.newsletter-tab[hidden] { display: none; }
+
 .feedback-dialog {
-  width: min(720px, calc(100% - 32px));
-  height: min(744px, calc(100dvh - 32px));
+  width: min(600px, calc(100% - 32px));
+  height: min(620px, calc(100dvh - 32px));
   box-sizing: border-box;
   padding: 34px;
   overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  color: var(--ink);
+  background: #f8f9ff;
+  box-shadow: 0 32px 90px rgba(40, 44, 112, 0.32), inset 0 1px #fff;
 }
+
+.newsletter-dialog {
+  width: min(600px, calc(100% - 32px));
+  height: min(620px, calc(100dvh - 32px));
+  box-sizing: border-box;
+  padding: 34px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  color: var(--ink);
+  background: #f8f9ff;
+  box-shadow: 0 32px 90px rgba(40, 44, 112, 0.32), inset 0 1px #fff;
+}
+
+.newsletter-dialog-mark { color: #4355bd; }
 
 .feedback-dialog-mark { color: #dfae2d; }
 .feedback-dialog h2 { margin: 20px 0 7px; font-size: 1.65rem; letter-spacing: -0.045em; }
@@ -856,8 +906,11 @@ main::before { display: none; }
 .feedback-submit:not(:disabled):hover { transform: translateY(-2px); }
 .feedback-submit:disabled { cursor: wait; opacity: 0.7; }
 .feedback-message { display: block; min-height: 1.2em; margin-top: 10px; color: var(--blue-deep); font-size: 0.75rem; line-height: 1.35; }
-:root[data-color-mode="dark"] .feedback-tab:focus-visible, :root[data-color-mode="dark"] .feedback-rating__choices input:focus-visible + label, :root[data-color-mode="dark"] .support-tab:focus-visible, :root[data-color-mode="dark"] .support-provider:focus-visible, :root[data-color-mode="dark"] .support-cta:focus-visible { outline-color: #fff; }
+:root[data-color-mode="dark"] .feedback-tab:focus-visible, :root[data-color-mode="dark"] .feedback-rating__choices input:focus-visible + label, :root[data-color-mode="dark"] .newsletter-tab:focus-visible, :root[data-color-mode="dark"] .support-tab:focus-visible, :root[data-color-mode="dark"] .support-provider:focus-visible, :root[data-color-mode="dark"] .support-cta:focus-visible { outline-color: #fff; }
 :root[data-color-mode="dark"] .feedback-rating__star::after { text-shadow: none; }
+:root[data-color-mode="dark"] .newsletter-tab { color: #eef4ff; background: #4355bd; }
+:root[data-color-mode="dark"] .newsletter-tab:hover { background: #5163d0; }
+:root[data-color-mode="dark"] .newsletter-dialog-mark { color: #8b9bff; }
 
 .support-tab {
   position: relative;
@@ -1211,7 +1264,9 @@ main::before { display: none; }
   .story-number { top: 8px; left: 9px; font-size: 0.46rem; }
   .feedback-tab { padding: 10px 7px 10px 8px; font-size: 0.6rem; }
     .feedback-tab > span:first-child { font-size: 0.78rem; }
-    .site-footer { height: auto; padding: 0 9px; font-size: 0.48rem; }
+      .newsletter-tab { padding: 10px 7px 10px 8px; font-size: 0.6rem; }
+      .newsletter-tab > span:first-child { font-size: 0.78rem; }
+      .site-footer { height: auto; padding: 0 9px; font-size: 0.48rem; }
           .support-tab { font-size: 0.56rem; padding: 14px 10px; }
     .feedback-dialog h2 { font-size: 1.45rem; }
   .about-page { padding: 18px 16px; }

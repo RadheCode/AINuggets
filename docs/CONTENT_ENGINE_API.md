@@ -100,6 +100,18 @@ Persist reader feedback submitted from the site feedback dialog. This endpoint a
 
 `ratingHalves` is an even integer from `2` through `10`, representing whole-star ratings from 1 to 5. The trimmed message must contain 20 through 4,000 characters and the email must be valid. A successful `201 Created` response is `{ "message": "Thank you for sharing your feedback." }`; malformed JSON or invalid fields return `400`.
 
+### `POST /api/newsletter/subscribe`
+
+Persist a newsletter subscription from the site newsletter dialog. This endpoint accepts anonymous and signed-in readers. For a signed-in reader, the Worker stores the verified profile email and associates the subscription with that profile rather than trusting the submitted email. The endpoint is gated by the product-owned `ProductConfig.newsletter.enabled` toggle: when disabled it returns `404`.
+
+```json
+{
+  "email": "reader@example.com"
+}
+```
+
+The email must be valid. The Worker normalizes it and inserts into `newsletter_subscribers` with `ON CONFLICT(email) DO NOTHING`, so each distinct address is stored at most once. A new subscription returns `201 Created` with `{ "created": true, "message": "You're subscribed! Watch for the first edition in your inbox." }`; an already-subscribed address returns `200 OK` with `{ "created": false, "message": "You're already on the list." }`. Malformed JSON or an invalid email returns `400`. No emails are sent yet — this endpoint captures interest for a future email service integration.
+
 ### `GET /feed.xml`
 
 Serve an Atom feed of up to ten published editions for RSS/Atom readers, aggregators, and AI-news discovery. Each entry links back to the site's edition URL: `/?date=YYYY-MM-DD&edition=N` when the edition number is greater than 1, otherwise `/?date=YYYY-MM-DD`. The feed is public and cacheable, and returns `Cache-Control: public, max-age=600, s-maxage=1800`. The response `Content-Type` is `application/atom+xml; charset=utf-8`.

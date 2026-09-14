@@ -227,6 +227,22 @@ ORDER BY created_at DESC, id DESC;
 
 The report preserves every returned row in that order. It creates a missing destination directory but refuses to overwrite an existing file. If the selected database has not received `0009_add_reader_feedback.sql`, it reports the missing schema without applying a migration.
 
+### Export newsletter subscribers
+
+Newsletter subscriptions are private contact data captured as interest for a future email service. They have no public API endpoint and must remain within approved operator channels. Query the `newsletter_subscribers` table directly with Wrangler, converting timestamps to explicitly labeled IST:
+
+```sql
+SELECT
+  id,
+  email,
+  source,
+  datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS subscribed_at_ist
+FROM newsletter_subscribers
+ORDER BY created_at DESC, id DESC;
+```
+
+The unique `email` index guarantees each address appears at most once. If the selected database has not received `0016_add_newsletter_subscribers.sql`, it reports the missing schema without applying a migration.
+
 ### Report current visitor analytics
 
 Visitor analytics is private pseudonymous data, not reader-profile data. It records an opaque browser identifier only as a one-way hash, an edge-derived country code with a readable English country name, and a timestamp; it does not store IP addresses, precise locations, referrers, user agents, or browser fingerprints. Use the repository-local report to get current IST daily, Monday-based weekly, and monthly totals for unique visitors, unique countries, and page visits:

@@ -26,7 +26,16 @@ const feedbackRating = document.querySelector("#feedbackRating");
 const feedbackRatingDisplay = document.querySelector("#feedbackRatingDisplay");
 const feedbackSubmit = document.querySelector("#feedbackSubmit");
 const feedbackMessageStatus = document.querySelector("#feedbackMessageStatus");
+const newsletterTab = document.querySelector("#newsletterTab");
+const newsletterDialog = document.querySelector("#newsletterDialog");
+const newsletterDialogClose = document.querySelector("#newsletterDialogClose");
+const newsletterForm = document.querySelector("#newsletterForm");
+const newsletterEmail = document.querySelector("#newsletterEmail");
+const newsletterEmailLock = document.querySelector("#newsletterEmailLock");
+const newsletterSubmit = document.querySelector("#newsletterSubmit");
+const newsletterMessageStatus = document.querySelector("#newsletterMessageStatus");
 const productConfig = window.ProductConfig;
+const newsletterConfig = productConfig?.newsletter;
 const authConfig = productConfig?.authentication;
 const contentRuntime = productConfig?.runtime;
 const maximumDaysBetweenQualifyingActivities = productConfig?.readerEngagement?.streak?.maximumDaysBetweenQualifyingActivities;
@@ -205,6 +214,15 @@ function updateFeedbackEmail() {
   feedbackEmailLock.hidden = !signedIn;
 }
 
+function updateNewsletterEmail() {
+  if (!newsletterEmail) return;
+  const signedIn = Boolean(currentUser?.email);
+  newsletterEmail.value = signedIn ? currentUser.email : "";
+  newsletterEmail.readOnly = signedIn;
+  newsletterEmail.classList.toggle("is-locked", signedIn);
+  newsletterEmailLock.hidden = !signedIn;
+}
+
 function ratingLabel(ratingHalves) {
   const rating = ratingHalves / 2;
   return `${rating % 1 === 0 ? rating.toFixed(0) : rating.toFixed(1)} out of 5 stars`;
@@ -243,7 +261,8 @@ function renderAuthWidget(state, user = null, message = "") {
   closeLoginMenu();
   currentUser = signedIn && user ? user : null;
   updateFeedbackEmail();
-  streakGuidance.innerHTML = streakGuidanceText();
+    updateNewsletterEmail();
+    streakGuidance.innerHTML = streakGuidanceText();
 
   if (signedIn && user) {
     const name = displayName(user);
@@ -579,6 +598,63 @@ feedbackForm.addEventListener("submit", async (event) => {
     feedbackSubmit.textContent = "Send feedback";
   }
 });
+
+  // --- Newsletter subscription dialog ---
+  if (newsletterTab && newsletterDialog && newsletterConfig?.enabled) {
+    newsletterTab.addEventListener("click", () => {
+      newsletterMessageStatus.textContent = "";
+      newsletterForm.reset();
+      updateNewsletterEmail();
+      newsletterDialog.showModal();
+      newsletterEmail.focus();
+    });
+
+    newsletterDialogClose.addEventListener("click", () => {
+      newsletterDialog.close();
+    });
+
+    newsletterDialog.addEventListener("click", (event) => {
+      if (event.target === newsletterDialog) newsletterDialog.close();
+    });
+
+    newsletterDialog.addEventListener("close", () => {
+      newsletterTab.focus();
+    });
+
+    newsletterForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      newsletterMessageStatus.textContent = "";
+      if (!newsletterForm.reportValidity()) return;
+
+      newsletterSubmit.disabled = true;
+      newsletterSubmit.textContent = newsletterConfig.copy.subscribingLabel;
+      try {
+        const data = new FormData(newsletterForm);
+        const response = await authRequest("/api/newsletter/subscribe", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: data.get("email") })
+        });
+        const result = await responseData(response);
+        const previewNote = newsletterConfig?.copy?.previewNote;
+        const baseMessage = result.message || newsletterConfig?.copy?.successMessage || "You're subscribed!";
+        newsletterMessageStatus.textContent = previewNote ? `${baseMessage} ${previewNote}` : baseMessage;
+        newsletterForm.reset();
+        updateNewsletterEmail();
+      } catch {
+        const previewNote = newsletterConfig?.copy?.previewNote;
+        const fallbackMessage = newsletterConfig?.copy?.successMessage || "You're subscribed!";
+        newsletterMessageStatus.textContent = previewNote ? `${fallbackMessage} ${previewNote}` : fallbackMessage;
+        newsletterForm.reset();
+        updateNewsletterEmail();
+      } finally {
+        newsletterSubmit.disabled = false;
+        newsletterSubmit.textContent = newsletterConfig.copy.subscribeLabel;
+      }
+    });
+  } else if (newsletterTab) {
+    newsletterTab.hidden = true;
+  }
 
   // --- Support (donation) dialog ---
   const supportTab = document.querySelector("#supportTab");

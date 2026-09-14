@@ -8,7 +8,7 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 | File | Responsibility |
 |---|---|
-| `product/config.js` | The single product configuration file. Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, story-share panel copy (button label, dialog copy, copy-link labels, and the platform set with icons and share-URL builders), browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, summary feature capabilities, summarization prompts, summary provider selection and fallback behavior, editorial sources and candidate-selection policy, and company-image (feed-source and entity) artwork mappings. Also attaches the product feature-contract validators (`ProductConfig.validateSummaryFeatureConfig`, `ProductConfig.validateStreakFeatureConfig`, `ProductConfig.validateSummaryProvidersConfig`). |
+| `product/config.js` | The single product configuration file. Product identity, user-facing framing, authentication-menu, guest-streak CTA, and streak-guidance copy, About-page copy, story-share panel copy (button label, dialog copy, copy-link labels, and the platform set with icons and share-URL builders), browser storage namespace, public beta/production content API endpoints, public OAuth client ID, reader-engagement policies, newsletter feature toggle and copy, summary feature capabilities, summarization prompts, summary provider selection and fallback behavior, editorial sources and candidate-selection policy, and company-image (feed-source and entity) artwork mappings. Also attaches the product feature-contract validators (`ProductConfig.validateSummaryFeatureConfig`, `ProductConfig.validateStreakFeatureConfig`, `ProductConfig.validateNewsletterFeatureConfig`, `ProductConfig.validateSummaryProvidersConfig`). |
 | `product/apply-copy.js` | Applies configured product copy and document metadata to the stable semantic shell. |
 | `product/company-images.js` | Product-specific source and entity artwork **matching logic** used by the shared story renderer. It reads `ProductConfig.companyImages` (`sourceArtwork` and `companies`) from `product/config.js`; it owns no configuration data itself. Every configured feed must have a source mapping and a matching asset under `product/company-images/`; title-based entity matching is the fallback for stories without a configured source. |
 
@@ -31,6 +31,12 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 ## Reader engagement policies
 
 `ProductConfig.readerEngagement.streak.maximumDaysBetweenQualifyingActivities` is the maximum inclusive UTC calendar-day gap that continues a signed-in reader's streak. It must be an integer from `1` through `365`. The current value is `4`, allowing up to three missed UTC dates; in general, a value of `N` permits up to `N - 1` missed UTC dates. Set it to `1` to require consecutive UTC dates. The Worker validates and applies the value; the browser reads the public setting only to render guidance and cannot alter the server-authoritative streak.
+
+## Newsletter feature
+
+`ProductConfig.newsletter` controls the newsletter interest-capture feature. It is a feature toggle with product-owned copy for the edge tab, dialog heading, description, email label, submit label, and preview-note text. When `enabled` is `true`, the newsletter edge-tab widget is visible and the `POST /api/newsletter/subscribe` Worker endpoint accepts subscriptions. When `false`, the widget is hidden and the endpoint returns 404. The `copy.subscribingLabel` text is shown on the submit button while the request is in flight.
+
+The feature is currently in preview mode: no emails are sent. The purpose is to capture reader interest and measure demand before integrating with an email delivery service. The `newsletter_previewNote` copy communicates this to the reader. `ProductConfig.validateNewsletterFeatureConfig` enforces the configuration contract at runtime.
 
 ## About-page copy
 

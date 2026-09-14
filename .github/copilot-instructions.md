@@ -115,6 +115,8 @@ Do not rename IDs referenced by `script.js` without updating and validating the 
 - Update the corresponding documentation whenever a feature, behavior, workflow, data contract, configuration option, or operational procedure changes. Every new or materially changed user-facing feature must also update `docs/AI_NUGGETS_FEATURE_SUMMARY.md`. Create the relevant documentation when none exists, and keep root documentation links current.
 - Update `docs/THEME_RULEBOOK.md` and this instruction file when the theme contract changes.
 - Before completing changes, verify JavaScript syntax, theme asset paths, keyboard interactions, reduced-motion behavior, and no-scroll viewport fit at representative breakpoints. For UI changes, also verify that every affected visible element remains anchored, present, and usable during window resizing and every state that changes its surrounding content.
+- For any UI, layout, interaction, or theming change, stand up a local dev server and visually verify the affected views in the browser before considering the change complete. Do not rely on syntax checks, static analysis, or diff review alone — the browser is the source of truth for layout, responsive fit, color modes, dialog sizing, and interaction behavior.
+- When creating or modifying a dialog, popup, overlay, or modal, always compare it against the canonical story dialog (`.story-dialog`) in the active theme and ensure every shared visual property — `border-radius`, `border`, `background`, `box-shadow`, `color`, `padding`, `backdrop`, animation, dark-mode treatment, and reduced-motion behavior — is identical. Do not assume inheriting a class is sufficient; verify each property in the browser in both color modes.
 
 ## Progress reporting
 

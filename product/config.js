@@ -69,7 +69,27 @@
         maximumDaysBetweenQualifyingActivities: 4
     })
         }),
-    // Editorial configuration
+        // Newsletter interest capture. When enabled, the edge-tab newsletter widget and the
+        // POST /api/newsletter/subscribe endpoint are active. No emails are sent yet — this
+        // captures reader interest until an email service is integrated.
+        newsletter: Object.freeze({
+            enabled: true,
+            copy: Object.freeze({
+                tabLabel: "Newsletter",
+                title: "The daily briefing, in your inbox",
+                description: "Get each day's five AI updates delivered to your email. No noise, no spam — just the briefing.",
+                emailLabel: "Email address",
+                emailLockedHint: "You're signed in — we'll use your account email.",
+                subscribeLabel: "Subscribe to Newsletter",
+                subscribingLabel: "Subscribing…",
+                successMessage: "You're subscribed! Watch for the first edition in your inbox.",
+                duplicateMessage: "You're already on the list.",
+                errorGeneral: "Something went wrong. Please try again.",
+                errorInvalidEmail: "Enter a valid email address.",
+                previewNote: "This is a preview — we're measuring interest before email delivery goes live."
+            })
+        }),
+        // Editorial configuration
     editorial: Object.freeze({
     generationInstruction: "Create a factual daily AI-news edition only from the supplied candidate metadata.",
     candidateSelection: Object.freeze({
@@ -366,6 +386,16 @@
                     }
                     return config;
                 },
+                                validateNewsletterFeatureConfig(config = globalThis.ProductConfig.newsletter) {
+                                    if (!config || typeof config !== "object") throw new Error("Newsletter feature configuration must be an object.");
+                                    if (typeof config.enabled !== "boolean") throw new Error("Newsletter feature configuration enabled must be a boolean.");
+                                    const copy = config.copy;
+                                    if (!copy || typeof copy !== "object") throw new Error("Newsletter feature configuration copy must be an object.");
+                                    for (const key of ["tabLabel", "title", "description", "emailLabel", "subscribeLabel", "successMessage", "duplicateMessage", "errorGeneral", "errorInvalidEmail"]) {
+                                        if (typeof copy[key] !== "string" || !copy[key].trim()) throw new Error(`Newsletter feature configuration copy.${key} must be a non-empty string.`);
+                                    }
+                                    return config;
+                                },
                 validateSummaryProvidersConfig(config = globalThis.ProductConfig.summaryProviders) {
                     if (!config || typeof config !== "object") throw new Error("Summary providers configuration must be an object.");
                     const { fallbackOrder, openaiCompatible, workersAi, openrouter, gemini, requestTimeoutMs } = config;

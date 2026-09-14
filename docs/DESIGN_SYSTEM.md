@@ -131,11 +131,11 @@ The header is a three-part grid: product identity on the left, navigation in the
 
 ### 4.5 Footer and edge tabs
 
-`.site-footer` is quiet, structural product context. Feedback is an edge tab in `.edge-tabs`, vertically centered and fixed to the shared frame's right border so it stays anchored to the frame during resize. `.edge-tabs` lives outside the frame shell (which clips overflow) and is pinned with `position: fixed` so the tab may protrude beyond the frame border; Feedback slides inside the frame (`translateX(-100%)`), its right edge touching the frame's right border. Support is a compact horizontal pill hosted in the footer's right side.
+`.site-footer` is quiet, structural product context. Feedback and Newsletter are edge tabs stacked in `.edge-tabs`, vertically centered and fixed to the shared frame's right border so they stay anchored to the frame during resize. `.edge-tabs` lives outside the frame shell (which clips overflow) and is pinned with `position: fixed` so the tabs may protrude beyond the frame border; each tab slides inside the frame (`translateX(-100%)`), its right edge touching the frame's right border. Support is a compact horizontal pill hosted in the footer's right side.
 
-- Keep the footer free of competing calls to action; the Feedback edge tab is the discoverable reader-engagement action, and Support sits quietly at the footer's right edge.
-- Feedback uses the docked edge-tab treatment (vertical label, rounded left corners, distinctive elevation and hover/focus behavior) so it reads as the attached reader-engagement control.
-- The Feedback edge tab must remain visible and usable at every supported breakpoint; do not hide it to resolve responsive constraints. Its fixed-left anchor follows the frame's right-border geometry (`calc(50% + min(590px, calc(50% - 20px)))` base, `calc(100% - 12px)` at ≤1050px, `calc(100% - 6px)` at ≤760px).
+- Keep the footer free of competing calls to action; the Feedback and Newsletter edge tabs are the discoverable reader-engagement actions, and Support sits quietly at the footer's right edge.
+- Feedback and Newsletter use the docked edge-tab treatment (vertical label, rounded left corners, distinctive elevation and hover/focus behavior) so they read as attached reader-engagement controls. Newsletter uses a distinct indigo accent so the two tabs remain visually distinguishable.
+- The edge tabs must remain visible and usable at every supported breakpoint; do not hide them to resolve responsive constraints. Their fixed-left anchor follows the frame's right-border geometry (`calc(50% + min(590px, calc(50% - 20px)))` base, `calc(100% - 12px)` at ≤1050px, `calc(100% - 6px)` at ≤760px).
 
 ## 5. Components and interaction states
 
@@ -156,7 +156,7 @@ The header is a three-part grid: product identity on the left, navigation in the
 | Dialog | `.story-dialog`, `.feedback-dialog`, `.dialog-close`, `.dialog-mark` | Canonical overlay shell; all new dialogs, panels, and overlays must inherit its surface, elevation, backdrop, close treatment, responsive size, spacing, motion, and internal scroll behavior. The story dialog's footer groups its actions (previous/next navigation, share, and source link) as deliberate flex groups that wrap together at constrained widths. The share action opens the `.story-share-dialog` share panel, which inherits the canonical dialog shell and offers a copyable deep link plus social share actions. |
 | Menu | `.account-menu` | Anchored to its trigger, visually related to account control, with a clear boundary and keyboard-safe open/close behavior. |
 | Feedback controls | `.feedback-*` | Use normal labels, grouped rating semantics, clear validation and submit states. |
-| Edge tab | `.edge-tabs`, `.feedback-tab` | Feedback tab vertically centered at the frame's right border; `.edge-tabs` is `position: fixed` outside the clipping frame so Feedback reads inside the border. Vertical-label treatment, rounded left corners, distinctive elevation and hover/focus behavior. Must stay anchored and visible at every breakpoint. |
+| Edge tab | `.edge-tabs`, `.feedback-tab`, `.newsletter-tab` | Feedback and Newsletter tabs stacked vertically at the frame's right border; `.edge-tabs` is `position: fixed` outside the clipping frame so both tabs sit inside the border. Each tab uses a vertical-label treatment, rounded left corners, distinctive elevation and hover/focus behavior, and a unique accent (orange for Feedback, indigo for Newsletter) to keep them visually distinct. Must stay anchored and visible at every breakpoint. |
 | Support pill | `.support-tab` | Compact horizontal pill hosted in the site footer's right side; opens the support dialog. Reuses the warm accent treatment while staying visually lighter than the Feedback edge tab. |
 
 ### 5.2 Required states
@@ -212,7 +212,9 @@ Before implementing a design change:
 2. Reuse an existing token, selector, component, icon, dialog shell, and responsive pattern whenever the meaning already exists.
 3. If a new primitive is necessary, define its semantic role, states, color-mode behavior, responsive placement, and accessibility contract here before or alongside its implementation.
 4. Keep theme files presentation-only. Do not encode data fetching, application state, product copy, or event handling in a theme.
-5. Update this document and [Theme Rulebook](THEME_RULEBOOK.md) whenever the shared visual contract, component inventory, token semantics, or theme workflow changes. Update the feature summary for materially changed reader-facing behavior.
+5. Stand up a local dev server and visually verify every affected view before considering a change complete. Check responsive breakpoints, color modes, dialog sizing, keyboard interaction, and no-scroll viewport fit. Do not rely on syntax checks or static review alone — the browser is the source of truth for layout and interaction.
+6. When creating or modifying a dialog, popup, overlay, or modal, always compare it against the canonical story dialog (`.story-dialog`) in the active theme. Every shared visual property — `border-radius`, `border`, `background`, `box-shadow`, `color`, `padding`, `backdrop`, animation, dark-mode treatment, and reduced-motion behavior — must be identical. Verify each property in the browser in both color modes before marking the work complete.
+7. Update this document and [Theme Rulebook](THEME_RULEBOOK.md) whenever the shared visual contract, component inventory, token semantics, or theme workflow changes. Update the feature summary for materially changed reader-facing behavior.
 
 ## 9. Design-review checklist
 
@@ -228,6 +230,7 @@ Complete this checklist for every design change:
 - [ ] Desktop, laptop, tablet, mobile portrait, mobile landscape, 320px width, and 600px height have been checked, including authenticated, loading, error, and expanded-control states affected by the work.
 - [ ] No essential element overlaps, drifts, detaches, clips, becomes unreachable, or relies on hover alone.
 - [ ] Theme asset paths and JavaScript syntax remain valid when the change affects them.
+- [ ] A local dev server was stood up and every affected view was visually verified in the browser at desktop, laptop, tablet, mobile portrait, mobile landscape, and constrained breakpoints.
 
 ## 10. Related documentation
 
