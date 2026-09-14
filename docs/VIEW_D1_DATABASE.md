@@ -229,12 +229,19 @@ The report preserves every returned row in that order. It creates a missing dest
 
 ### Export newsletter subscribers
 
-Newsletter subscriptions are private contact data captured as interest for a future email service. They have no public API endpoint and must remain within approved operator channels. Query the `newsletter_subscribers` table directly with Wrangler, converting timestamps to explicitly labeled IST:
+Newsletter subscriptions are private contact data captured as interest for a future email service. They have no public API endpoint and must remain within approved operator channels. Use the repository-local exporter to list every subscriber (newsletter requestor) with `id`, `email`, `user_id`, `source`, and `subscribed_at_ist`, ordered newest first:
+
+```powershell
+.\infra\cloudflare\content-worker\export-newsletter-subscribers.ps1 -Environment Beta
+```
+
+Replace `Beta` with `Production` only when the user explicitly requested production. The exporter prints the same report and creates a missing destination directory but refuses to overwrite an existing file. It queries the `newsletter_subscribers` table directly with Wrangler, converting timestamps to explicitly labeled IST:
 
 ```sql
 SELECT
   id,
   email,
+  user_id,
   source,
   datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS subscribed_at_ist
 FROM newsletter_subscribers

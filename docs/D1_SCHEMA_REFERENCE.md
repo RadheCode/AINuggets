@@ -144,7 +144,7 @@ erDiagram
 
 **Why:** It captures newsletter interest for a future email service integration. No emails are sent yet — the feature is an interest preview. The unique constraint keeps the list distinct and makes repeated subscriptions idempotent.
 
-**Where:** `POST /api/newsletter/subscribe` validates and inserts the row when the product-owned newsletter feature is enabled. There is intentionally no public newsletter-read endpoint; authorized operators query D1 directly.
+**Where:** `POST /api/newsletter/subscribe` validates and inserts the row when the product-owned newsletter feature is enabled. There is intentionally no public newsletter-read endpoint; authorized operators query D1 directly. `export-newsletter-subscribers.ps1` is the private operator reporting path.
 
 **How:** The Worker normalizes and validates email, uses the signed-in reader's verified profile email when available, and inserts with `ON CONFLICT(email) DO NOTHING` so a duplicate address returns an already-subscribed acknowledgement without changing the row. The unique `email` index and the `created_at` index support list review. Profile deletion sets `user_id` to `NULL` while retaining the subscription.
 
