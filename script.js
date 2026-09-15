@@ -34,6 +34,8 @@ const newsletterEmail = document.querySelector("#newsletterEmail");
 const newsletterEmailLock = document.querySelector("#newsletterEmailLock");
 const newsletterSubmit = document.querySelector("#newsletterSubmit");
 const newsletterMessageStatus = document.querySelector("#newsletterMessageStatus");
+const brandHomeLink = document.querySelector("[data-product-home]");
+const todayNavLink = document.querySelector(".nav-tabs a[href='#today']");
 const productConfig = window.ProductConfig;
 const newsletterConfig = productConfig?.newsletter;
 const authConfig = productConfig?.authentication;
@@ -422,6 +424,20 @@ colorModeToggle.addEventListener("click", () => {
   localStorage.setItem(`${storageNamespace}-color-mode`, nextMode);
   updateColorModeToggle();
 });
+
+if (brandHomeLink) {
+  brandHomeLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.location.href = window.location.origin + "/#today";
+  });
+}
+
+if (todayNavLink) {
+  todayNavLink.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.location.href = window.location.origin + "/#today";
+  });
+}
 
 updateColorModeToggle();
 
