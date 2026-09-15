@@ -12,6 +12,29 @@
     document.head.appendChild(robotsMeta);
   }
 
+    // Every edition is a distinct URL (?date=YYYY-MM-DD[&edition=N]) served from
+      // the same document. Set the canonical to the exact requested edition so
+      // search engines index each briefing separately instead of collapsing them
+      // all to the homepage.
+      function setEditionCanonical() {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams();
+        const date = url.searchParams.get("date");
+        const edition = url.searchParams.get("edition");
+        if (date) params.set("date", date);
+        if (edition) params.set("edition", edition);
+        const query = params.toString();
+        const canonicalUrl = query ? `${url.origin}${url.pathname}?${query}` : `${url.origin}${url.pathname}`;
+        let link = document.querySelector('link[rel="canonical"]');
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "canonical";
+          document.head.appendChild(link);
+        }
+        link.href = canonicalUrl;
+      }
+      setEditionCanonical();
+
   function isValidDate(value) {
     if (!datePattern.test(value)) return false;
     const [year, month, day] = value.split("-").map(Number);

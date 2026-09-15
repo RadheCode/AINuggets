@@ -54,6 +54,8 @@ Cloudflare opens a browser authorization page and stores the resulting credentia
 
 The command publishes only to `https://beta-ai-nuggets.pages.dev`. The login and deployment scripts read the expected email and account ID from `config.json` and stop if Wrangler is authenticated to a different account. The OAuth token itself remains in Wrangler's machine-local credential store. `.assetsignore` prevents repository-only files such as infrastructure scripts and documentation from being published as site assets.
 
+The `functions/` directory contains Cloudflare Pages Functions (`sitemap.xml.js` and `feed.xml.js`) that proxy the content Worker's dynamic sitemap and Atom feed on the main Pages domain. These keep internal Worker URLs out of `robots.txt`, feed readers, and crawlers. Pages Functions are automatically deployed by `wrangler pages deploy` when the directory exists in the output root.
+
 Production is intentionally opt-in and must be named twice:
 
 ```powershell

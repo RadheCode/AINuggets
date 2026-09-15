@@ -48,7 +48,9 @@
         eyebrow: "The daily AI briefing",
         title: Object.freeze({ emphasis: "Stay current.", lead: " Without the catch-up." }),
         description: "AI Nuggets is for busy professionals, students, and curious minds who want to keep up with AI without spending hours in an endless feed.",
-        promise: "Each daily edition has just five essential updates: clear, concise summaries of what matters and why it matters. No crowded feed. No extra pages. Just enough to read in under two minutes and move forward informed."
+        promise: "Each daily edition has just five essential updates: clear, concise summaries of what matters and why it matters. No crowded feed. No extra pages. Just enough to read in under two minutes and move forward informed.",
+        documentTitle: "About AI Nuggets - AI news, less noise",
+        metaDescription: "AI Nuggets distills the five AI updates worth knowing into a quick daily briefing for busy professionals and curious minds."
     })
     }),
     runtime: Object.freeze({

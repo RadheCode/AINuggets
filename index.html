@@ -8,11 +8,12 @@
   <title>AI Nuggets - AI news, less noise</title>
   <link rel="icon" type="image/svg+xml" href="product/brand-mark.svg">
   <link rel="apple-touch-icon" href="product/og-image.png">
-  <link rel="alternate" type="application/atom+xml" title="AI Nuggets" href="https://ai-nuggets-content.ainuggets123.workers.dev/feed.xml">
+  <link rel="alternate" type="application/atom+xml" title="AI Nuggets" href="https://ai-nuggets.pages.dev/feed.xml">
 
   <!-- Technical SEO Improvements -->
-  <link rel="canonical" href="https://ai-nuggets.pages.dev/">
-  <script type="application/ld+json">
+    <!-- The canonical is set per edition by content-engine/loader.js so each
+         ?date=YYYY-MM-DD[&edition=N] briefing is indexed as its own page. -->
+    <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -48,15 +49,8 @@
   <script src="theme.config.js"></script>
   <script src="theme-loader.js"></script>
   
-  <!-- Analytics & Tracking Setup -->
-  <!-- Google Analytics 4 (replace with actual ID when available) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX');
-  </script>
+  <!-- Analytics: privacy-minimal first-party analytics are handled by the content Worker -->
+  <!-- To add Google Analytics or Cloudflare Web Analytics, place the snippet here -->
 </head>
 <body>
   <div class="site-frame">

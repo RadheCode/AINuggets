@@ -25,7 +25,8 @@ The boundary provides these guarantees:
 | Path | Owns | Change when retargeting? |
 |---|---|---|
 | `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, story-share panel copy (button label, dialog copy, copy-link labels, and the platform set with icons and share-URL builders), accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, newsletter feature toggle and copy, and summary-context minimums plus advisory concision targets, the approved feeds, candidate-selection mode, and generation instruction, summary provider kinds and their fallback order, per-request timeout, retryable-model fallback criteria, and the default OpenRouter.ai base URL, and the company-image (feed-source and entity) artwork mappings | Yes |
-| `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell | Only when the shared copy contract changes |
+| `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell, including page-specific document titles and meta descriptions (the about page uses `copy.about.documentTitle` and `copy.about.metaDescription`) | Only when the shared copy contract changes |
+| `content-engine/loader.js` | Edition-aware canonical URL construction from the current URL's `date`/`edition` parameters (using `ProductConfig.runtime.sites.production` to gate the noindex meta) so search engines index each edition as a distinct page | Only when the canonical contract changes |
 | `product/company-images.js` | Feed-source and entity matching for story artwork | Yes, if sources or entity matching changes |
 | `product/company-images/` | Product-owned artwork assets | Yes, if feed or entity artwork changes |
 

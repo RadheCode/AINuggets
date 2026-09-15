@@ -42,6 +42,8 @@ The feature is currently in preview mode: no emails are sent. The purpose is to 
 
 `ProductConfig.copy.about.title` stores its emphasized phrase separately from the remaining headline so the shared product-copy renderer can preserve the active theme's two-tone heading treatment without embedding product wording in `about.html`.
 
+`ProductConfig.copy.about.documentTitle` and `ProductConfig.copy.about.metaDescription` provide page-specific SEO metadata for the about page. The shared copy renderer (`apply-copy.js`) detects the about page and sets these values at runtime; `about.html` contains matching static fallback values so crawlers see meaningful metadata before JavaScript executes.
+
 `ProductConfig.summaryFeatures` is the common product-level feature switch for story summary variants. It intentionally belongs in `product/config.js`, rather than editorial configuration, because it controls product behavior rather than the content of an individual edition.
 
 | Setting | Purpose |

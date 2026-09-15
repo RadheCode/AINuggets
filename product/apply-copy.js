@@ -8,6 +8,14 @@
   document.title = copy.documentTitle;
   document.querySelector('meta[name="description"]')?.setAttribute("content", copy.metaDescription);
 
+  const isAboutPage = Boolean(document.querySelector("[data-product-about-headline]"));
+  if (isAboutPage && copy.about?.documentTitle) {
+    document.title = copy.about.documentTitle;
+  }
+  if (isAboutPage && copy.about?.metaDescription) {
+    document.querySelector('meta[name="description"]')?.setAttribute("content", copy.about.metaDescription);
+  }
+
   const textTargets = {
     brandMark: identity.mark,
     brandName: identity.name,

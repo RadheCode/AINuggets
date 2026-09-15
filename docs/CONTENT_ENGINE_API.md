@@ -116,4 +116,10 @@ The email must be valid. The Worker normalizes it and inserts into `newsletter_s
 
 Serve an Atom feed of up to ten published editions for RSS/Atom readers, aggregators, and AI-news discovery. Each entry links back to the site's edition URL: `/?date=YYYY-MM-DD&edition=N` when the edition number is greater than 1, otherwise `/?date=YYYY-MM-DD`. The feed is public and cacheable, and returns `Cache-Control: public, max-age=600, s-maxage=1800`. The response `Content-Type` is `application/atom+xml; charset=utf-8`.
 
-Each entry includes the edition title (or a date default), the edition summary, and an unordered list of its story titles linked to their destination URLs with source attribution. Entries are ordered newest-first. A successful request returns `200 OK`.
+Each entry includes the edition title (or a date default), the edition summary, and an unordered list of its story titles linked to their destination URLs with source attribution. Entries are ordered newest-first. A successful request returns `200 OK`. The Pages Function at `functions/feed.xml.js` proxies this Worker endpoint on the main Pages domain so feed readers and the site's `<link rel="alternate">` reference `https://ai-nuggets.pages.dev/feed.xml` instead of the internal Worker URL.
+
+### `GET /sitemap.xml`
+
+Serve an XML sitemap of the site's homepage and every published edition for search-engine crawling. The homepage entry uses the site's base URL with `changefreq` of `daily` and `priority` of `1.0`. Each edition entry links back to the site's edition URL (`/?date=YYYY-MM-DD&edition=N` when the edition number is greater than 1, otherwise `/?date=YYYY-MM-DD`), uses the edition's `published_at` date as `lastmod`, and has `changefreq` of `monthly` and `priority` of `0.8`. The sitemap is environment-aware: production lists `ai-nuggets.pages.dev` URLs and beta lists `beta-ai-nuggets.pages.dev` URLs. It is public and cacheable (`Cache-Control: public, max-age=600, s-maxage=1800`). The response `Content-Type` is `application/xml; charset=utf-8`. A successful request returns `200 OK`.
+
+The Pages Function at `functions/sitemap.xml.js` proxies this Worker endpoint on the main Pages domain, so `robots.txt` references `https://ai-nuggets.pages.dev/sitemap.xml` and crawlers never see the internal Worker URL.

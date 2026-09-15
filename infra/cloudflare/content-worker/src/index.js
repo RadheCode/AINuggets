@@ -492,7 +492,43 @@ ${entries}
 </feed>`;
 }
 
-async function getEdition(db, requestedDate, requestedEditionNumber) {
+  async function getPublishedEditions(db) {
+    const { results: editions } = await db.prepare(`
+      SELECT edition_date, edition_number, published_at
+      FROM editions
+      WHERE status = 'published'
+      ORDER BY edition_date DESC, edition_number DESC
+    `).all();
+    return editions;
+  }
+
+  function renderSitemap(editions, env) {
+    const baseUrl = siteUrl(env);
+    const lastmod = editions.length
+      ? new Date(`${editions[0].edition_date}T00:00:00Z`).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+
+    const urls = [
+      `<url><loc>${escapeXml(baseUrl)}/</loc><lastmod>${lastmod}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>`
+    ];
+
+    for (const edition of editions) {
+      const editionUrl = edition.edition_number > 1
+        ? `${baseUrl}/?date=${edition.edition_date}&edition=${edition.edition_number}`
+        : `${baseUrl}/?date=${edition.edition_date}`;
+      const editionLastmod = edition.published_at
+        ? new Date(`${edition.published_at}`).toISOString().slice(0, 10)
+        : edition.edition_date;
+      urls.push(`<url><loc>${escapeXml(editionUrl)}</loc><lastmod>${editionLastmod}</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>`);
+    }
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls.join("\n")}
+  </urlset>`;
+  }
+
+  async function getEdition(db, requestedDate, requestedEditionNumber) {
   const params = [];
   let sql = `
     SELECT id, edition_date, edition_number, status, eyebrow, title, emphasis, summary, meta_json, published_at
@@ -587,6 +623,18 @@ async function handleRequest(request, env) {
         status: 200,
         headers: {
           "content-type": "application/atom+xml; charset=utf-8",
+          "cache-control": "public, max-age=600, s-maxage=1800",
+          ...cors
+        }
+      });
+    }
+
+    if (url.pathname === "/sitemap.xml") {
+      const editions = await getPublishedEditions(env.CONTENT_DB);
+      return new Response(renderSitemap(editions, env), {
+        status: 200,
+        headers: {
+          "content-type": "application/xml; charset=utf-8",
           "cache-control": "public, max-age=600, s-maxage=1800",
           ...cors
         }
