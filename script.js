@@ -679,25 +679,46 @@ feedbackForm.addEventListener("submit", async (event) => {
   const supportBody = document.querySelector("#supportBody");
   const supportCopy = productConfig?.support?.copy ?? {};
 
-  function supportActionButton({ className, href, label, emoji, svg }) {
-    const button = document.createElement("a");
-    button.className = className;
-    button.href = href;
-    button.target = "_blank";
-    button.rel = "noopener noreferrer";
-    const icon = document.createElement("span");
-    icon.className = "support-action-icon";
-    icon.setAttribute("aria-hidden", "true");
-      if (svg) {
-        icon.innerHTML = svg;
-      } else {
-        icon.textContent = emoji;
+    function trackSupportEvent(eventType, providerId) {
+      try {
+        fetch(authApiUrl("/api/support/events"), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            eventId: createOpaqueId(),
+            visitorId: visitorId(),
+            eventType,
+            ...(providerId ? { providerId } : {})
+          }),
+          keepalive: true
+        }).catch(() => undefined);
+      } catch {
+        // Tracking failure is non-critical
       }
-      const text = document.createElement("span");
-      text.textContent = label;
-      button.append(icon, text);
-      return button;
     }
+
+    function supportActionButton({ className, href, label, emoji, svg, providerId }) {
+      const button = document.createElement("a");
+      button.className = className;
+      button.href = href;
+      button.target = "_blank";
+      button.rel = "noopener noreferrer";
+      const icon = document.createElement("span");
+      icon.className = "support-action-icon";
+      icon.setAttribute("aria-hidden", "true");
+        if (svg) {
+          icon.innerHTML = svg;
+        } else {
+          icon.textContent = emoji;
+        }
+        const text = document.createElement("span");
+        text.textContent = label;
+        button.append(icon, text);
+        if (providerId) {
+          button.addEventListener("click", () => trackSupportEvent("support_option_click", providerId));
+        }
+        return button;
+      }
 
   function renderSupportComingSoon() {
       if (!supportBody) return;
@@ -707,6 +728,134 @@ feedbackForm.addEventListener("submit", async (event) => {
       message.textContent = supportCopy.comingSoon ?? "Support coming soon.";
       supportBody.append(message);
     }
+
+        function renderDonationForm(activeProviderId) {
+          const recording = productConfig?.support?.donationRecording;
+          if (!recording?.enabled) return null;
+
+          const section = document.createElement("section");
+          section.className = "support-donation";
+          section.setAttribute("aria-labelledby", "supportDonationTitle");
+
+          const title = document.createElement("h3");
+          title.id = "supportDonationTitle";
+          title.className = "support-donation-title";
+          title.textContent = supportCopy.donationFormTitle ?? "Record your donation";
+          section.append(title);
+
+          const description = document.createElement("p");
+          description.className = "support-donation-description";
+          description.textContent = supportCopy.donationFormDescription ?? "";
+          section.append(description);
+
+          const form = document.createElement("form");
+          form.className = "support-donation-form";
+          form.setAttribute("novalidate", "");
+
+          const emailLabel = document.createElement("label");
+          emailLabel.htmlFor = "supportDonationEmail";
+          emailLabel.textContent = supportCopy.donationEmailLabel ?? "Email address";
+          const email = document.createElement("input");
+          email.id = "supportDonationEmail";
+          email.name = "email";
+          email.type = "email";
+          email.autocomplete = "email";
+          email.placeholder = supportCopy.donationEmailPlaceholder ?? "you@example.com";
+          email.required = true;
+          if (currentUser?.email) {
+            email.value = currentUser.email;
+            email.readOnly = true;
+          }
+          form.append(emailLabel, email);
+
+          const amountLabel = document.createElement("label");
+          amountLabel.htmlFor = "supportDonationAmount";
+          amountLabel.textContent = supportCopy.donationAmountLabel ?? "Donation amount";
+          const amount = document.createElement("input");
+          amount.id = "supportDonationAmount";
+          amount.name = "amount";
+          amount.type = "number";
+          amount.min = "1";
+          amount.step = "0.01";
+          amount.placeholder = supportCopy.donationAmountPlaceholder ?? "e.g. 5";
+          amount.required = true;
+          form.append(amountLabel, amount);
+
+          const typeFieldset = document.createElement("fieldset");
+          const typeLegend = document.createElement("legend");
+          typeLegend.textContent = supportCopy.donationTypeLabel ?? "Contribution type";
+          typeFieldset.append(typeLegend);
+          const typeRow = document.createElement("div");
+          typeRow.className = "support-donation-type";
+          for (const [value, labelText] of [
+            ["one_time", supportCopy.donationTypeOneTime ?? "One-time"],
+            ["subscription", supportCopy.donationTypeSubscription ?? "Subscription"]
+          ]) {
+            const id = `supportDonationType${value === "one_time" ? "OneTime" : "Subscription"}`;
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.id = id;
+            radio.name = "donationType";
+            radio.value = value;
+            radio.required = true;
+            const label = document.createElement("label");
+            label.htmlFor = id;
+            label.textContent = labelText;
+            typeRow.append(radio, label);
+          }
+          typeFieldset.append(typeRow);
+          form.append(typeFieldset);
+
+          const providerInput = document.createElement("input");
+          providerInput.type = "hidden";
+          providerInput.name = "providerId";
+          providerInput.value = activeProviderId;
+          form.append(providerInput);
+
+          const submit = document.createElement("button");
+          submit.type = "submit";
+          submit.className = "support-donation-submit";
+          submit.textContent = supportCopy.donationSubmitLabel ?? "Record donation";
+          form.append(submit);
+
+          const status = document.createElement("output");
+          status.className = "support-donation-status";
+          status.setAttribute("aria-live", "polite");
+          form.append(status);
+
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            status.textContent = "";
+            if (!form.reportValidity()) return;
+            submit.disabled = true;
+            try {
+              const data = new FormData(form);
+              const response = await authRequest("/api/support/donations", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                  eventId: createOpaqueId(),
+                  visitorId: visitorId(),
+                  email: data.get("email"),
+                  amount: Number(data.get("amount")),
+                  providerId: data.get("providerId"),
+                  donationType: data.get("donationType")
+                })
+              });
+              await responseData(response);
+              status.textContent = supportCopy.donationSuccessMessage ?? "Thank you! Your contribution is recorded.";
+              form.reset();
+              if (currentUser?.email) email.value = currentUser.email;
+            } catch {
+              status.textContent = supportCopy.donationErrorMessage ?? "We couldn't record your donation. Please try again.";
+            } finally {
+              submit.disabled = false;
+            }
+          });
+
+          section.append(form);
+          return section;
+        }
 
       function renderSupportBody() {
       if (!supportBody) return;
@@ -762,8 +911,9 @@ feedbackForm.addEventListener("submit", async (event) => {
               href: provider.href,
               label: provider.cta || `Donate via ${provider.name}`,
               emoji: (provider.icon || "\uD83D\uDCB3"),
-              svg: provider.iconSvg
-            }));
+                          svg: provider.iconSvg,
+                          providerId: provider.id
+                        }));
 
             const openHint = document.createElement("p");
             openHint.className = "support-open-hint";
@@ -809,22 +959,27 @@ feedbackForm.addEventListener("submit", async (event) => {
               option.setAttribute("aria-selected", "true");
               option.tabIndex = 0;
               renderDetail(provider);
-            });
+                          const providerInput = supportBody.querySelector('input[name="providerId"]');
+                          if (providerInput) providerInput.value = provider.id;
+                        });
 
-            picker.append(option);
-          }
+                        picker.append(option);
+                      }
 
-          layout.append(picker, detail);
-          supportBody.append(layout);
-          renderDetail(providers.find((p) => p.id === activeId) ?? providers[0]);
-        }
+                      layout.append(picker, detail);
+                      supportBody.append(layout);
+                      renderDetail(providers.find((p) => p.id === activeId) ?? providers[0]);
+                      const donationForm = renderDonationForm(activeId);
+                      if (donationForm) supportBody.append(donationForm);
+                    }
 
-  function openSupportDialog() {
-    if (!supportDialog) return;
-    renderSupportBody();
-    supportTab?.setAttribute("aria-expanded", "true");
-    supportDialog.showModal();
-  }
+              function openSupportDialog() {
+                if (!supportDialog) return;
+                renderSupportBody();
+                trackSupportEvent("support_open");
+                supportTab?.setAttribute("aria-expanded", "true");
+                supportDialog.showModal();
+              }
 
   function closeSupportDialog() {
     if (!supportDialog) return;

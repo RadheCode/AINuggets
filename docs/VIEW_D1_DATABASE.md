@@ -353,9 +353,49 @@ Use the repository-local report to see editions totals by status, stories broken
 
 Replace `Beta` with `Production` only when production inspection is explicitly intended.
 
+### Report support donations
+
+Support engagement and donations are private operator data. `support_events` records privacy-minimal engagement (dialog opens and provider checkout clicks with unique visitors) and `donations` records self-reported contributions with email, amount, provider, one-time/subscription type, and country. Neither has a public API endpoint and both must remain within approved operator channels. Use the repository-local [Support Donations Details skill](../.github/skills/support-donations-details/SKILL.md) to retrieve the report as neat Markdown tables with explicitly labeled IST timestamps:
+
+```powershell
+.\infra\cloudflare\content-worker\report-support-donations.ps1 `
+  -Environment Beta `
+  -OutputPath "$HOME\Downloads\ai-nuggets-beta-support-donations.md"
+```
+
+Replace `Beta` with `Production` only when production inspection is explicitly intended. The report requires migration `0017_add_support_donations.sql` in the selected environment. It executes only aggregate `SELECT` queries, converts timestamps to explicitly labeled IST, and never displays hashes or individual support events. Raw support events expire after 90 days; donations are retained until deliberately removed.
+
+The report's support-engagement query groups events by type and provider:
+
+```sql
+SELECT
+  event_type,
+  provider_id,
+  COUNT(*) AS event_count,
+  COUNT(DISTINCT visitor_hash) AS unique_visitors
+FROM support_events
+GROUP BY event_type, provider_id
+ORDER BY event_type ASC, provider_id ASC;
+```
+
+The report's donations query lists every recorded donation newest first:
+
+```sql
+SELECT
+  id,
+  email,
+  amount,
+  provider_id,
+  donation_type,
+  country_name || ' (' || country_code || ')' AS country,
+  datetime(created_at, '+5 hours', '+30 minutes') || ' IST' AS recorded_at_ist
+FROM donations
+ORDER BY created_at DESC, id DESC;
+```
+
 ### Fetch all analytics in one go
 
-Use the repository-local [Fetch Analytics (uber) skill](../.github/skills/fetch-analytics/SKILL.md) when you want visitor analytics, generation-run analytics, reader feedback, and the content summary all in one call for **Beta**, **Production**, or **both**. It runs each requested report per environment independently and keeps their totals separate.
+Use the repository-local [Fetch Analytics (uber) skill](../.github/skills/fetch-analytics/SKILL.md) when you want visitor analytics, generation-run analytics, reader feedback, newsletter subscribers, support donations, and the content summary all in one call for **Beta**, **Production**, or **both**. It runs each requested report per environment independently and keeps their totals separate.
 
 View user login and refresh activity:
 

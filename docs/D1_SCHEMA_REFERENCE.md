@@ -22,6 +22,8 @@ D1 is the system of record for published editorial data, authenticated-reader da
 | `reader_feedback` | Reader email, rating, optional linked profile, and message | Preserves feedback for editorial and product review | Feedback endpoint writes; authorized operators query | Private contact data and free text |
 | `newsletter_subscribers` | Distinct reader email, optional linked profile, and source | Captures newsletter interest for a future email service; unique email prevents duplicates | Newsletter endpoint writes; authorized operators query | Private contact data |
 | `visitor_visits` | One anonymous page-visit event with an edge-derived country code and name | Supplies privacy-minimal visitor, country, and visit counts | Analytics endpoint writes; authorized operators run aggregate reports | Private pseudonymous analytics; raw events retained for 90 days |
+| `support_events` | One privacy-minimal support-dialog engagement event (dialog open or provider checkout click) with an edge-derived country code and name | Measures support interest without storing contact data | Support endpoints write; authorized operators run aggregate reports | Private pseudonymous analytics; raw events retained for 90 days |
+| `donations` | One self-reported reader donation with email, amount, provider, one-time/subscription type, and edge-derived country | Records confirmed contributions for operator review | Donation endpoint writes; authorized operators query | Private contact data (email) and financial amounts; retained until deliberately removed |
 
 ## Relationships
 
@@ -34,9 +36,12 @@ erDiagram
     user_profiles o|--o{ newsletter_subscribers : optionally_subscribes
     generation_runs ||--o{ generation_run_events : correlates_by_run_id
   visitor_visits }o--|| visitor_hash : groups_by_hash
-```
+      support_events }o--|| visitor_hash : groups_by_hash
+      donations }o--|| visitor_hash : groups_by_hash
+      support_events ||--o| donations : optionally_confirms
+    ```
 
-`stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `reader_feedback.user_id` and `newsletter_subscribers.user_id` are optional: anonymous readers may submit feedback or subscribe without an account, and deleting a profile retains those rows while setting their links to `NULL`. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier.
+`stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `reader_feedback.user_id` and `newsletter_subscribers.user_id` are optional: anonymous readers may submit feedback or subscribe without an account, and deleting a profile retains those rows while setting their links to `NULL`. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier. `support_events` and `donations` group by the same one-way `visitor_hash` used by `visitor_visits`; a donation optionally confirms a prior support event through the unique `event_id`, but neither table links to `user_profiles`.
 
 ## Editorial tables
 
@@ -163,3 +168,31 @@ erDiagram
 **How:** The browser sends a distinct random event ID per page load, and the primary key makes retried events idempotent. The Worker accepts requests only from an allowed configured origin. Three indexes support time-period, unique-visitor, and country aggregation. The reporting script converts current day, week, and month boundaries to explicitly labeled IST, excludes `unknown` from the unique-country metric while retaining those visits in visitor and page-view totals, and lists resolved country names with their codes in an aggregate breakdown.
 
 **Retention and privacy:** On every accepted analytics request, the Worker deletes raw events older than 90 days. `visitor_hash` is pseudonymous private analytics data, not an account identifier: it is never joined to `user_profiles`, returned by a public endpoint, copied by editorial synchronization, or exposed by the aggregate report.
+
+## Support engagement table
+
+### `support_events`
+
+**What:** One privacy-minimal support-dialog engagement event with a unique random `event_id`, an `event_type` of `support_open` (the reader opened the support dialog) or `support_option_click` (the reader clicked a provider's checkout option), a SHA-256 `visitor_hash` derived from the same browser-local random identifier used by `visitor_visits`, an optional `provider_id` (only for `support_option_click`), an ISO 3166-1 alpha-2 `country_code`, its English `country_name`, and `occurred_at`. Unavailable country metadata is represented as `unknown` / `Unknown`.
+
+**Why:** It measures support interest — how often readers open the support dialog and which provider checkout options they click — without storing any contact or financial data. It answers "someone clicked support but did not donate" by separating engagement events from confirmed donations.
+
+**Where:** `script.js` sends one best-effort event when the support dialog opens and another when a provider checkout option is clicked. `POST /api/support/events` in `infra/cloudflare/content-worker/src/index.js` validates both random IDs, validates the event type, requires a supported provider ID for `support_option_click`, hashes the visitor ID, obtains the country only from Cloudflare edge request metadata, and stores the row. `report-support-donations.ps1` is the private operator reporting path.
+
+**How:** The browser sends a distinct random event ID per engagement, and the primary key makes retried events idempotent. The Worker accepts requests only from an allowed configured origin. `provider_id` is validated against the product-owned provider list in `product/config.js` when present. Three indexes support time-period, unique-visitor, and event-type aggregation. The reporting script groups events by `event_type` and `provider_id` with event counts and unique visitors.
+
+**Retention and privacy:** On every accepted support event, the Worker deletes raw events older than 90 days. `visitor_hash` is pseudonymous private analytics data, not an account identifier: it is never joined to `user_profiles`, returned by a public endpoint, copied by editorial synchronization, or exposed by the aggregate report. No email, amount, or profile link is stored here.
+
+## Donation table
+
+### `donations`
+
+**What:** One self-reported reader donation with a unique random `event_id`, a SHA-256 `visitor_hash`, the reader's normalized `email`, a positive `amount`, the selected `provider_id`, a `donation_type` of `one_time` or `subscription`, an ISO 3166-1 alpha-2 `country_code`, its English `country_name`, and `created_at`.
+
+**Why:** Because the checkout itself is hosted by the provider (Ko-fi, Razorpay, etc.), the provider cannot return donation data to the Worker without webhooks. The reader self-reports the completed contribution through the support dialog so operators can review donations (email, amount, provider, one-time/subscription, country) without a processor SDK.
+
+**Where:** `script.js` renders a donation form inside the support dialog and submits it after the reader completes a provider checkout. `POST /api/support/donations` in `infra/cloudflare/content-worker/src/index.js` validates both random IDs, normalizes and validates the email, validates the amount (finite, > 0, ≤ 1,000,000), requires a supported provider ID, validates the donation type, hashes the visitor ID, obtains the country from Cloudflare edge request metadata, and inserts the row. `report-support-donations.ps1` is the private operator reporting path.
+
+**How:** The unique `event_id` makes retried submissions idempotent (`ON CONFLICT(event_id) DO NOTHING`). The Worker accepts requests only from an allowed configured origin. Indexes support time-period, email, provider, and country aggregation. The reporting script lists every donation with `id`, `email`, `amount`, `provider_id`, `donation_type`, `country`, and `recorded_at_ist` (converted from UTC).
+
+**Privacy:** The table contains private contact data (email) and financial amounts. Never expose it publicly, add it to generation logs, or include it in beta editorial syncs. It is never returned by a public endpoint.

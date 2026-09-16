@@ -18,6 +18,7 @@ globalThis.DEPLOYMENT_ENVIRONMENT = globalThis.DEPLOYMENT_ENVIRONMENT || "produc
 const SUMMARY_FEATURE_CONFIG = globalThis.ProductConfig.summaryFeatures;
 const STREAK_FEATURE_CONFIG = globalThis.ProductConfig.readerEngagement?.streak;
 const NEWSLETTER_FEATURE_CONFIG = globalThis.ProductConfig.newsletter;
+const SUPPORT_FEATURE_CONFIG = globalThis.ProductConfig.support;
 const validateSummaryFeatureConfig = globalThis.ProductConfig.validateSummaryFeatureConfig;
 const validateStreakFeatureConfig = globalThis.ProductConfig.validateStreakFeatureConfig;
 const validateNewsletterFeatureConfig = globalThis.ProductConfig.validateNewsletterFeatureConfig;
@@ -283,7 +284,104 @@ async function recordVisit(request, env, cors) {
   return new Response(null, { status: 204, headers: cors });
 }
 
-async function submitFeedback(request, env, cors) {
+  function isSupportedProviderId(providerId) {
+    const providers = globalThis.ProductConfig?.support?.providers;
+    if (!Array.isArray(providers) || !providers.length) {
+      return typeof providerId === "string" && providerId.length > 0 && providerId.length <= 100;
+    }
+    return providers.some((provider) => provider?.id === providerId);
+  }
+
+  async function recordSupportEvent(request, env, cors) {
+    if (!cors["access-control-allow-origin"]) return json({ error: "Origin is not allowed." }, 403);
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Request body must be valid JSON." }, 400, cors);
+    }
+
+    if (!isOpaqueId(body.eventId) || !isOpaqueId(body.visitorId)) {
+      return json({ error: "Support event is invalid." }, 400, cors);
+    }
+    if (!["support_open", "support_option_click"].includes(body.eventType)) {
+      return json({ error: "Support event type is invalid." }, 400, cors);
+    }
+    if (body.eventType === "support_option_click" && !isSupportedProviderId(body.providerId)) {
+      return json({ error: "Support provider is invalid." }, 400, cors);
+    }
+
+    const visitorHash = await hashToken(body.visitorId);
+    const country = analyticsCountry(request);
+    await env.CONTENT_DB.prepare(`
+      DELETE FROM support_events
+      WHERE occurred_at < datetime('now', '-90 days')
+    `).run();
+    await env.CONTENT_DB.prepare(`
+      INSERT INTO support_events (event_id, event_type, visitor_hash, provider_id, country_code, country_name)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(event_id) DO NOTHING
+    `).bind(
+      body.eventId,
+      body.eventType,
+      visitorHash,
+      body.eventType === "support_option_click" ? body.providerId : null,
+      country.code,
+      country.name
+    ).run();
+    return new Response(null, { status: 204, headers: cors });
+  }
+
+  async function recordDonation(request, env, cors) {
+      if (!SUPPORT_FEATURE_CONFIG?.donationRecording?.enabled) {
+        return json({ error: "Donation recording is not available right now." }, 404, cors);
+      }
+      if (!cors["access-control-allow-origin"]) return json({ error: "Origin is not allowed." }, 403);
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Request body must be valid JSON." }, 400, cors);
+    }
+
+    if (!isOpaqueId(body.eventId) || !isOpaqueId(body.visitorId)) {
+      return json({ error: "Donation record is invalid." }, 400, cors);
+    }
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    if (!validFeedbackEmail(email)) return json({ error: "Enter a valid email address." }, 400, cors);
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000) {
+      return json({ error: "Enter a valid donation amount." }, 400, cors);
+    }
+    if (!isSupportedProviderId(body.providerId)) {
+      return json({ error: "Support provider is invalid." }, 400, cors);
+    }
+    if (!["one_time", "subscription"].includes(body.donationType)) {
+      return json({ error: "Donation type is invalid." }, 400, cors);
+    }
+
+    const visitorHash = await hashToken(body.visitorId);
+    const country = analyticsCountry(request);
+    await env.CONTENT_DB.prepare(`
+      INSERT INTO donations (event_id, visitor_hash, email, amount, provider_id, donation_type, country_code, country_name)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(event_id) DO NOTHING
+    `).bind(
+      body.eventId,
+      visitorHash,
+      email,
+      amount,
+      body.providerId,
+      body.donationType,
+      country.code,
+      country.name
+    ).run();
+    return json({ message: "Thank you for your contribution." }, 201, cors);
+  }
+
+  async function submitFeedback(request, env, cors) {
   let body;
   try {
     body = await request.json();
@@ -609,6 +707,8 @@ async function handleRequest(request, env) {
   if (request.method === "POST" && url.pathname === "/api/feedback") return submitFeedback(request, env, cors);
     if (request.method === "POST" && url.pathname === "/api/newsletter/subscribe") return subscribeNewsletter(request, env, cors);
     if (request.method === "POST" && url.pathname === "/api/analytics/visits") return recordVisit(request, env, cors);
+    if (request.method === "POST" && url.pathname === "/api/support/events") return recordSupportEvent(request, env, cors);
+    if (request.method === "POST" && url.pathname === "/api/support/donations") return recordDonation(request, env, cors);
   if (request.method === "GET" && url.pathname === "/auth/session") {
     const user = await sessionUser(request, env);
     return user ? json(userResponse(user), 200, cors) : json({ error: "Unauthenticated." }, 401, cors);

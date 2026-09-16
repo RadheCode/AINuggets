@@ -343,14 +343,32 @@
             ]),
             // Provider pre-selected when the dialog opens.
             defaultProvider: "kofi",
-            copy: Object.freeze({
-              label: "Support",
-              title: "Support AI Nuggets",
-              description: "Every day, AI Nuggets is your quick, quiet read on what's changing in AI. Reader contributions support the maintenance behind each edition — the research, tools, and care that keep it dependable.",
-                                          providerPrompt: "Choose a payment method",
-                                                        opensInNewTab: "Opens in a new tab",
-                                                        comingSoon: "Contribution and subscription support is coming soon. Thank you for being here."
-            })
+                        // Self-reported donation recording. When enabled, the support dialog
+                        // shows a "Record your donation" form so readers can log a completed
+                        // contribution (email, amount, provider, one-time or subscription).
+                        donationRecording: Object.freeze({
+                          enabled: true
+                        }),
+                        copy: Object.freeze({
+                          label: "Support",
+                          title: "Support AI Nuggets",
+                          description: "Every day, AI Nuggets is your quick, quiet read on what's changing in AI. Reader contributions support the maintenance behind each edition — the research, tools, and care that keep it dependable.",
+                                                      providerPrompt: "Choose a payment method",
+                                                                    opensInNewTab: "Opens in a new tab",
+                                                                    comingSoon: "Contribution and subscription support is coming soon. Thank you for being here.",
+                                                                    donationFormTitle: "Record your donation",
+                                                                    donationFormDescription: "Completed a contribution? Log it here so we can thank you and keep the briefing running.",
+                                                                    donationEmailLabel: "Email address",
+                                                                    donationEmailPlaceholder: "you@example.com",
+                                                                    donationAmountLabel: "Donation amount",
+                                                                    donationAmountPlaceholder: "e.g. 5",
+                                                                    donationTypeLabel: "Contribution type",
+                                                                    donationTypeOneTime: "One-time",
+                                                                    donationTypeSubscription: "Subscription",
+                                                                    donationSubmitLabel: "Record donation",
+                                                                    donationSuccessMessage: "Thank you! Your contribution is recorded.",
+                                                                    donationErrorMessage: "We couldn't record your donation. Please try again."
+                        })
                     }),
                 // Feature-contract validation. These helpers enforce the product configuration
                 // contract so the browser and every runtime fail fast on invalid values. They

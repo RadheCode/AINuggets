@@ -1,21 +1,21 @@
 ---
 name: fetch-analytics
-description: Fetch AI Nuggets analytics from beta or production covering visitors, content-generation automation runs, model/provider analytics, reader feedback, newsletter subscribers, and published-content summary, and present them as neat Markdown tables with IST timestamps. This is the single comprehensive analytics skill for the product. WHEN: "overall analysis", "full analysis", "product analysis", "site analytics", "site health", "health check", "performance overview", "status report", "how is the product doing", "how is the site doing", "show me the numbers", "analytics", "metrics", "stats", "reports", "visitor analytics", "generation runs", "model analytics", "reader feedback", "newsletter subscribers", "newsletter signups", "content summary".
+description: Fetch AI Nuggets analytics from beta or production covering visitors, content-generation automation runs, model/provider analytics, reader feedback, newsletter subscribers, support donations, and published-content summary, and present them as neat Markdown tables with IST timestamps. This is the single comprehensive analytics skill for the product. WHEN: "overall analysis", "full analysis", "product analysis", "site analytics", "site health", "health check", "performance overview", "status report", "how is the product doing", "how is the site doing", "show me the numbers", "analytics", "metrics", "stats", "reports", "visitor analytics", "generation runs", "model analytics", "reader feedback", "newsletter subscribers", "newsletter signups", "support donations", "donations", "content summary".
 ---
 
 # Fetch Analytics (uber skill)
 
-Use this skill when the user asks for analytics, metrics, stats, reports, health checks, or an overall/full analysis of the AI Nuggets product — covering site visitors, the twice-daily content-generation automation, model/provider performance, reader feedback, newsletter subscribers, and published content. This is the umbrella entry point that combines all previously separate analytics skills into one. Ambiguous umbrella requests such as "overall analysis", "full analysis", "product analysis", "site health", "status report", or "how is the product doing" should trigger this skill rather than a repository code review.
+Use this skill when the user asks for analytics, metrics, stats, reports, health checks, or an overall/full analysis of the AI Nuggets product — covering site visitors, the twice-daily content-generation automation, model/provider performance, reader feedback, newsletter subscribers, support donations, and published content. This is the umbrella entry point that combines all previously separate analytics skills into one. Ambiguous umbrella requests such as "overall analysis", "full analysis", "product analysis", "site health", "status report", or "how is the product doing" should trigger this skill rather than a repository code review.
 
 ## Required input
 
 Ask the user whether to inspect **Beta** or **Production** (or **Both**) when they have not specified an environment. Do not infer production from context. All reports are read-only in every environment.
 
-If the user wants only one report (e.g., "just generation runs" or "just model analytics"), run only that report. By default the skill runs all six reports for the requested environment(s).
+If the user wants only one report (e.g., "just generation runs" or "just model analytics"), run only that report. By default the skill runs all seven reports for the requested environment(s).
 
 ## Execution procedure
 
-Run the six reporter/exporter scripts from the repository root. All scripts print their report in the response; supply a new `.md` `OutputPath` when the user needs offline copies. Each script creates a missing destination folder but refuses to overwrite an existing report.
+Run the seven reporter/exporter scripts from the repository root. All scripts print their report in the response; supply a new `.md` `OutputPath` when the user needs offline copies. Each script creates a missing destination folder but refuses to overwrite an existing report.
 
 ### 1. Visitor analytics
 ```powershell
@@ -53,9 +53,15 @@ Presents every newsletter subscriber (newsletter requestor) with `id`, `email`, 
 ```
 Presents an editions overview, stories by category, total published stories, and recent editions (last 7 days).
 
+### 7. Support donations
+```powershell
+.\infra\cloudflare\content-worker\report-support-donations.ps1 -Environment Beta
+```
+Presents support engagement (dialog opens and provider checkout clicks with unique visitors) and every recorded donation with `id`, `email`, `amount`, `provider_id`, `donation_type`, `country`, and `recorded_at_ist`. **This output is private operator data** — treat emails and amounts as sensitive, never share outside approved channels.
+
 ### When the user selects "Both" or "Production"
 
-- For **Both**: run all six reports for `Beta`, then all six again for `Production`, each under its own `## Beta` / `## Production` heading in the response.
+- For **Both**: run all seven reports for `Beta`, then all seven again for `Production`, each under its own `## Beta` / `## Production` heading in the response.
 - For **Production**: replace every `Beta` with `Production` above. Only do this when the user explicitly requested production.
 
 ## Presentation
@@ -75,9 +81,9 @@ Presents an editions overview, stories by category, total published stories, and
 - Reader feedback and newsletter subscribers include reader email addresses — treat output as private operator data; do not expose it through public APIs, generation logs, issue comments, or unapproved external systems.
 - The scripts create a missing output directory but refuse to overwrite an existing report. Store offline reports only in an approved private location.
 - Do not use the protected internal Worker endpoint for any of these read-only reports.
-- If the selected database is missing a required schema (e.g., `reader_feedback` migration `0009`, `newsletter_subscribers` migration `0016`, `generation_run_events` migration `0011`, `visitor_visits` migration `0012`), report that the relevant section is unavailable and identify the required migration. Do not apply it; beta-first schema deployment requires explicit approval, and production must never be changed implicitly.
+- If the selected database is missing a required schema (e.g., `reader_feedback` migration `0009`, `newsletter_subscribers` migration `0016`, `generation_run_events` migration `0011`, `visitor_visits` migration `0012`, `support_events`/`donations` migration `0017`), report that the relevant section is unavailable and identify the required migration. Do not apply it; beta-first schema deployment requires explicit approval, and production must never be changed implicitly.
 - Completed generation-run timelines are eligible for lazy cleanup after three days; the run analytics count only retained runs.
 
 ## Maintenance
 
-Update this skill, plus `docs/VIEW_D1_DATABASE.md` and `docs/AI_NUGGETS_FEATURE_SUMMARY.md`, whenever any of the visitor, generation-run, model-analytics, reader-feedback, newsletter-subscriber, or content-summary queries, table columns, environment handoff, retention behavior, or privacy boundary changes.
+Update this skill, plus `docs/VIEW_D1_DATABASE.md` and `docs/AI_NUGGETS_FEATURE_SUMMARY.md`, whenever any of the visitor, generation-run, model-analytics, reader-feedback, newsletter-subscriber, support-donation, or content-summary queries, table columns, environment handoff, retention behavior, or privacy boundary changes.

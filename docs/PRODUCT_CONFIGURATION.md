@@ -38,6 +38,12 @@ See [Product Externalization Architecture](PRODUCT_EXTERNALIZATION_ARCHITECTURE.
 
 The feature is currently in preview mode: no emails are sent. The purpose is to capture reader interest and measure demand before integrating with an email delivery service. The `newsletter_previewNote` copy communicates this to the reader. `ProductConfig.validateNewsletterFeatureConfig` enforces the configuration contract at runtime.
 
+## Support and donation recording
+
+`ProductConfig.support` owns the reader support (donation) feature. Its `providers` array defines the hosted checkout providers (id, name, tagline, details, checkout URL, artwork key, and default selection) rendered in the support dialog; its `copy` block owns all reader-facing support copy, including the donation form labels, placeholders, type options, submit label, and success/error messages.
+
+`ProductConfig.support.donationRecording.enabled` gates donation recording. When `true`, the support dialog renders the donation form (email, amount, one-time/subscription type) after a provider checkout, and the `POST /api/support/donations` Worker endpoint accepts self-reported donations. When `false`, the form is hidden and the endpoint returns 404. Support engagement events (`support_open`, `support_option_click`) are recorded whenever the dialog is used, independent of this toggle.
+
 ## About-page copy
 
 `ProductConfig.copy.about.title` stores its emphasized phrase separately from the remaining headline so the shared product-copy renderer can preserve the active theme's two-tone heading treatment without embedding product wording in `about.html`.
