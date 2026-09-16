@@ -355,7 +355,7 @@ Replace `Beta` with `Production` only when production inspection is explicitly i
 
 ### Report support donations
 
-Support engagement and donations are private operator data. `support_events` records privacy-minimal engagement (dialog opens and provider checkout clicks with unique visitors) and `donations` records self-reported contributions with email, amount, provider, one-time/subscription type, and country. Neither has a public API endpoint and both must remain within approved operator channels. Use the repository-local [Support Donations Details skill](../.github/skills/support-donations-details/SKILL.md) to retrieve the report as neat Markdown tables with explicitly labeled IST timestamps:
+Support engagement and donations are private operator data. `support_events` records privacy-minimal engagement (dialog opens and provider checkout clicks with unique visitors) and `donations` records internal donation telemetry with email, amount, provider, one-time/subscription type, and country. Neither has a public API endpoint and both must remain within approved operator channels. Use the repository-local [Support Donations Details skill](../.github/skills/support-donations-details/SKILL.md) to retrieve the report as neat Markdown tables with explicitly labeled IST timestamps:
 
 ```powershell
 .\infra\cloudflare\content-worker\report-support-donations.ps1 `

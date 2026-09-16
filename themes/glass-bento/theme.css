@@ -1112,78 +1112,10 @@ main::before { display: none; }
 .support-action-icon { display: inline-grid; width: 24px; aspect-ratio: 1; place-items: center; border-radius: 8px; color: #fff; background: rgba(255, 255, 255, 0.18); font-size: 0.72rem; font-weight: 900; line-height: 1; box-shadow: inset 0 1px rgba(255, 255, 255, 0.3); }
 .support-open-hint { margin: 9px 0 0; color: var(--muted); font-size: 0.62rem; text-align: center; }
 .support-coming-soon { margin: 8px 0 0; padding: 16px 18px; border-radius: 12px; color: var(--muted); background: var(--surface); box-shadow: inset 3px 3px 7px var(--tile-shadow), inset -3px -3px 7px var(--tile-highlight); font-size: 0.78rem; line-height: 1.5; }
-.support-donation {
-  margin-top: 18px;
-  padding: 18px 20px;
-  border-radius: 18px;
-  background: var(--surface);
-  box-shadow: inset 3px 3px 7px var(--tile-shadow), inset -3px -3px 7px var(--tile-highlight);
-}
-.support-donation-title { margin: 0 0 4px; font-size: 0.95rem; font-weight: 900; letter-spacing: -0.02em; }
-.support-donation-description { margin: 0 0 14px; color: var(--muted); font-size: 0.72rem; line-height: 1.5; }
-.support-donation-form { display: grid; gap: 10px; }
-.support-donation-form label { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; color: var(--muted); }
-.support-donation-form input[type="email"],
-.support-donation-form input[type="number"] {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 42px;
-  padding: 9px 12px;
-  border: 0;
-  border-radius: 11px;
-  color: var(--ink);
-  background: var(--surface);
-  box-shadow: inset 3px 3px 7px var(--tile-shadow), inset -3px -3px 7px var(--tile-highlight);
-  font-size: 0.8rem;
-}
-.support-donation-form input:focus-visible { outline: 3px solid #101326; outline-offset: 2px; }
-.support-donation-type { display: flex; gap: 10px; flex-wrap: wrap; }
-.support-donation-type input { position: absolute; opacity: 0; pointer-events: none; }
-.support-donation-type label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  padding: 7px 14px;
-  border-radius: 10px;
-  color: var(--muted);
-  background: var(--surface);
-  box-shadow: inset 3px 3px 7px var(--tile-shadow), inset -3px -3px 7px var(--tile-highlight);
-  cursor: pointer;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-}
-.support-donation-type input:checked + label {
-  color: #fff;
-  background: #e77b2f;
-  box-shadow: 0 0 0 2px rgba(231, 123, 47, 0.28), 4px 4px 9px rgba(141, 65, 24, 0.32), inset 1px 1px rgba(255, 255, 255, 0.42);
-}
-.support-donation-type input:focus-visible + label { outline: 3px solid #101326; outline-offset: 2px; }
-.support-donation-submit {
-  min-height: 44px;
-  border: 0;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(120deg, #e77b2f, #c05d1b);
-  box-shadow: 5px 5px 10px var(--tile-shadow), -4px -4px 9px var(--tile-highlight), inset 1px 1px rgba(255, 255, 255, 0.28);
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-}
-.support-donation-submit:hover { transform: translateY(-2px); }
-.support-donation-submit:focus-visible { outline: 3px solid #101326; outline-offset: 2px; }
-.support-donation-submit:disabled { opacity: 0.6; cursor: default; transform: none; }
-.support-donation-status { min-height: 1.2em; color: var(--muted); font-size: 0.72rem; line-height: 1.4; }
 .support-provider-icon svg { width: 22px; height: 22px; display: block; }
 .support-action-icon svg { width: 15px; height: 15px; display: block; }
 :root[data-color-mode="dark"] .support-tab, :root[data-color-mode="dark"] .support-dialog-mark { color: #fff7e8; background: #d96921; }
 :root[data-color-mode="dark"] .support-tab:hover { background: #c05d1b; }
-:root[data-color-mode="dark"] .support-donation-type input:checked + label { background: #d96921; box-shadow: 0 0 0 2px rgba(217, 105, 33, 0.3), 4px 4px 9px rgba(0, 0, 12, 0.4), inset 1px 1px rgba(255, 255, 255, 0.2); }
-:root[data-color-mode="dark"] .support-donation-submit { background: linear-gradient(120deg, #d96921, #a84e16); }
 
 .about-page {
   display: block;

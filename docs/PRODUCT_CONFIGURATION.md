@@ -40,9 +40,9 @@ The feature is currently in preview mode: no emails are sent. The purpose is to 
 
 ## Support and donation recording
 
-`ProductConfig.support` owns the reader support (donation) feature. Its `providers` array defines the hosted checkout providers (id, name, tagline, details, checkout URL, artwork key, and default selection) rendered in the support dialog; its `copy` block owns all reader-facing support copy, including the donation form labels, placeholders, type options, submit label, and success/error messages.
+`ProductConfig.support` owns the reader support (donation) feature. Its `providers` array defines the hosted checkout providers (id, name, tagline, details, checkout URL, artwork key, and default selection) rendered in the support dialog; its `copy` block owns all reader-facing support copy (label, title, description, provider prompt, new-tab hint, and coming-soon text).
 
-`ProductConfig.support.donationRecording.enabled` gates donation recording. When `true`, the support dialog renders the donation form (email, amount, one-time/subscription type) after a provider checkout, and the `POST /api/support/donations` Worker endpoint accepts self-reported donations. When `false`, the form is hidden and the endpoint returns 404. Support engagement events (`support_open`, `support_option_click`) are recorded whenever the dialog is used, independent of this toggle.
+`ProductConfig.support.donationRecording.enabled` gates internal donation recording. When `true`, the `POST /api/support/donations` Worker endpoint accepts donation records (email, amount, provider, one-time/subscription type) as private operator telemetry. When `false`, the endpoint returns 404. Recording is internal only — no reader-facing donation form is rendered. Support engagement events (`support_open`, `support_option_click`) are recorded whenever the dialog is used, independent of this toggle.
 
 ## About-page copy
 
