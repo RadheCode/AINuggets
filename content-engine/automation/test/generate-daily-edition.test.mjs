@@ -309,6 +309,56 @@ test("publishes a validated edition when automatic publication is enabled", asyn
   assert.match(repository.runs.at(-1).details, /published edition/i);
 });
 
+test("calls the injected social publisher only after an automatically published edition is saved", async () => {
+  const repository = createMemoryEditionRepository();
+  const published = [];
+  await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [candidateSource()],
+    summaryProvider: { async generateEdition() { return edition(); } },
+    automaticallyPublish: true,
+    socialPublisher: async ({ edition: savedEdition }) => published.push(savedEdition.date),
+    logger: {}
+  });
+
+  assert.deepEqual(published, [targetDate]);
+  assert.equal(repository.latestForDate(targetDate).status, "published");
+});
+
+test("keeps a published edition when social publication fails", async () => {
+  const repository = createMemoryEditionRepository();
+  const result = await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [candidateSource()],
+    summaryProvider: { async generateEdition() { return edition(); } },
+    automaticallyPublish: true,
+    socialPublisher: async () => { throw new Error("X unavailable"); },
+    logger: { error() {} }
+  });
+
+  assert.equal(result.status, "succeeded");
+  assert.equal(repository.latestForDate(targetDate).status, "published");
+  assert.ok(repository.events.some((event) => event.event === "social-publisher-failed" && event.outcome === "failed"));
+});
+
+test("does not call the social publisher for draft editions", async () => {
+  const repository = createMemoryEditionRepository();
+  let calls = 0;
+  await generateDailyEdition({
+    targetDate,
+    editionRepository: repository,
+    contentSources: [candidateSource()],
+    summaryProvider: { async generateEdition() { return edition(); } },
+    socialPublisher: async () => { calls += 1; },
+    logger: {}
+  });
+
+  assert.equal(calls, 0);
+  assert.equal(repository.latestForDate(targetDate).status, "draft");
+});
+
 test("records a failed run when validation rejects an edition", async () => {
   const repository = createMemoryEditionRepository();
   const source = candidateSource();

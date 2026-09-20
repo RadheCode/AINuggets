@@ -9,6 +9,7 @@ import { createGenerationProviderDependencies } from "../../../../content-engine
 import { CONTENT_ENGINE_CONFIG } from "../../../../content-engine/content-engine.config.mjs";
 import "../../../../product/config.js";
 import { createD1EditionRepository } from "./d1-edition-repository.js";
+import { beginXAuthorization, completeXAuthorization, createXSocialPublisher } from "./x-social-publisher.js";
 import { createSessionToken, hashToken, verifyGoogleCredential } from "./google-auth.js";
 import { earliestContinuationDate, utcActivityDate } from "./streak-policy.js";
 
@@ -458,8 +459,86 @@ function createAutomationDependencies(env) {
     editionRepository: createD1EditionRepository(env.CONTENT_DB),
     ...createGenerationProviderDependencies(values),
     automaticallyPublish: CONTENT_ENGINE_CONFIG.publication.automaticallyPublish,
+    socialPublisher: createXSocialPublisher({
+      env,
+      socialPostConfig: globalThis.ProductConfig.monetization?.automatedSocialPost,
+      siteUrl: siteUrl(env)
+    }),
     logger: console
   };
+}
+
+async function handleXAuthorizationStart(request, env) {
+  if (!isAutomationRequestAuthorized(request, env)) return json({ error: "Unauthorized." }, 401);
+  try {
+    return json({ authorizationUrl: await beginXAuthorization(env) });
+  } catch (error) {
+    console.error("Unable to start X authorization.", error);
+    return json({ error: "X authorization is not configured." }, 503);
+  }
+}
+
+async function handleXAuthorizationCallback(request, env) {
+  try {
+    await completeXAuthorization(request, env);
+    return new Response("X authorization completed. You can close this window.", { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+  } catch (error) {
+    console.error("Unable to complete X authorization.", error);
+    return new Response("X authorization could not be completed. Start the authorization again.", { status: 400, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+  }
+}
+
+async function handleManualXPublication(request, env) {
+  if (!isAutomationRequestAuthorized(request, env)) return json({ error: "Unauthorized." }, 401);
+  if (env.DEPLOYMENT_ENVIRONMENT !== "production") return json({ error: "X publication is available only in production." }, 403);
+  if (!globalThis.ProductConfig.monetization?.automatedSocialPost?.enabled) {
+    return json({ error: "Automated X publication is disabled." }, 503);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Request body must be valid JSON." }, 400);
+  }
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return json({ error: "Request body must be a JSON object." }, 400);
+  }
+
+  const targetDate = body.targetDate;
+  if (targetDate !== undefined && !isValidEditorialDate(targetDate)) return json({ error: "Invalid target date." }, 400);
+  if (body.editionNumber !== undefined && (!Number.isInteger(body.editionNumber) || body.editionNumber < 1)) {
+    return json({ error: "editionNumber must be a positive integer when provided." }, 400);
+  }
+
+  const edition = await getEdition(env.CONTENT_DB, targetDate || "9999-12-31", body.editionNumber);
+  if (!edition) return json({ error: "No published edition is available to post." }, 404);
+  const stored = await env.CONTENT_DB.prepare(`
+    SELECT id FROM editions WHERE edition_date = ? AND edition_number = ? AND status = 'published'
+  `).bind(edition.date, edition.editionNumber).first();
+  const reservation = await env.CONTENT_DB.prepare(`
+    INSERT INTO social_publications (edition_id, platform, status)
+    VALUES (?, 'x', 'posting')
+    ON CONFLICT(edition_id, platform) DO NOTHING
+  `).bind(stored.id).run();
+  if (reservation.meta.changes === 0) return json({ error: "This edition has already had an X publication attempt." }, 409);
+
+  const socialPublisher = createXSocialPublisher({
+    env,
+    socialPostConfig: globalThis.ProductConfig.monetization?.automatedSocialPost,
+    siteUrl: siteUrl(env)
+  });
+  const result = await socialPublisher({ edition, eventLogger: { record: async () => {} } });
+  await env.CONTENT_DB.prepare(`
+    UPDATE social_publications
+    SET status = ?, post_id = ?, failure_reason = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE edition_id = ? AND platform = 'x'
+  `).bind(result.outcome, result.postId ?? null, result.reason ?? null, stored.id).run();
+
+  return result.outcome === "succeeded"
+    ? json({ posted: true, postId: result.postId }, 201)
+    : json({ posted: false, error: "X did not accept the publication request." }, 502);
 }
 
 async function handleAutomationRequest(request, env) {
@@ -688,6 +767,15 @@ async function handleRequest(request, env) {
 
   if (request.method === "POST" && url.pathname === "/internal/generate") {
     return handleAutomationRequest(request, env);
+  }
+  if (request.method === "POST" && url.pathname === "/internal/social/x/authorize") {
+    return handleXAuthorizationStart(request, env);
+  }
+  if (request.method === "POST" && url.pathname === "/internal/social/x/publish") {
+    return handleManualXPublication(request, env);
+  }
+  if (request.method === "GET" && url.pathname === "/internal/social/x/callback") {
+    return handleXAuthorizationCallback(request, env);
   }
 
   const generationRunMatch = url.pathname.match(/^\/internal\/generation-runs\/([0-9a-f-]{36})$/i);

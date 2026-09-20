@@ -1,4 +1,4 @@
-export async function persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, logger, eventLogger }) {
+export async function persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, socialPublisher, logger, eventLogger }) {
   const publicationStatus = automaticallyPublish ? "published" : "draft";
   const startedAt = Date.now();
   await eventLogger.record("persistence", "edition-save-started", { publicationStatus, storyCount: edition.stories.length });
@@ -7,6 +7,18 @@ export async function persistEdition({ editionRepository, edition, targetDate, r
     outcome: "succeeded",
     durationMs: Date.now() - startedAt
   });
+
+  if (automaticallyPublish && socialPublisher) {
+    try {
+      await socialPublisher({ edition, eventLogger });
+    } catch (error) {
+      await eventLogger.record("social-publication", "social-publisher-failed", {
+        reason: error instanceof Error ? error.message : "Unknown social publishing error."
+      }, { outcome: "failed" });
+      logger.error?.("Social publication failed after the edition was published.", error);
+    }
+  }
+
   await editionRepository.finishGenerationRun({
     runId,
     status: "succeeded",

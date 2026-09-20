@@ -290,31 +290,25 @@
                     })
         }),
     monetization: Object.freeze({
-    // Sponsorship configuration
-    sponsorships: Object.freeze({
-        // Maximum sponsored stories per edition (0 = disabled, 1 = enabled with limit)
-        maxStoriesPerEdition: 0,
-        // Whether to show sponsor recognition in newsletter/email
-        newsletterRecognitionEnabled: false,
-        // Whether to show sponsor recognition on website
-        websiteRecognitionEnabled: false
-    }),
-    // Affiliate program configuration
-    affiliate: Object.freeze({
-        // Whether affiliate links are enabled
-        enabled: false,
-        // Disclosure text for affiliate links
-        disclosureText: "We may earn a commission if you purchase through this link, at no extra cost to you. We only recommend products we've tested and believe genuinely benefit our audience."
-    }),
-    // Premium features configuration
-    premium: Object.freeze({
-        // Whether premium tier is enabled
-        enabled: false,
-        // Monthly price in USD
-        priceMonthly: 5,
-        // Annual price in USD
-        priceAnnual: 50
-    })
+        sponsorships: Object.freeze({
+            maxStoriesPerEdition: 0,
+            newsletterRecognitionEnabled: false,
+            websiteRecognitionEnabled: false
+        }),
+        affiliate: Object.freeze({
+            enabled: false,
+            disclosureText: "We may earn a commission if you purchase through this link, at no extra cost to you. We only recommend products we've tested and believe genuinely benefit our audience."
+        }),
+        premium: Object.freeze({
+            enabled: false,
+            priceMonthly: 5,
+            priceAnnual: 50
+        }),
+        automatedSocialPost: Object.freeze({
+            enabled: true,
+            platform: "x",
+            messageTemplate: "AI Nuggets — {date}\n\nToday’s AI briefing:\n{stories}\n\nRead: {url}"
+        })
     }),
     support: Object.freeze({
             // Hosted donation providers — rendered as a picker (left rail) + detail

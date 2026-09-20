@@ -40,6 +40,12 @@ The feature is currently in preview mode: no emails are sent. The purpose is to 
 
 ## Support and donation recording
 
+## Automated social-post template
+
+`ProductConfig.monetization.automatedSocialPost` owns the public, product-specific X announcement wording: the enabled flag and the message template with `{date}`, `{stories}`, and `{url}` placeholders. The portable formatter in `content-engine/automation/pipeline/social-post.mjs` uses it after a published edition is saved, truncating story titles when necessary to respect X's weighted length limit. It contains no credential, account, callback, or provider API setting.
+
+The Cloudflare X adapter owns OAuth, encrypted credential persistence, and posting. It posts only when `DEPLOYMENT_ENVIRONMENT` is `production`; beta never attempts a post and needs no X OAuth configuration. Production receives `X_CLIENT_ID`, `X_CLIENT_SECRET`, `X_OAUTH_REDIRECT_URI`, and `X_OAUTH_ENCRYPTION_KEY` solely through Worker secrets. Do not add these values to `product/`, browser scripts, checked-in manifests, or chat.
+
 `ProductConfig.support` owns the reader support (donation) feature. Its `providers` array defines the hosted checkout providers (id, name, tagline, details, checkout URL, artwork key, and default selection) rendered in the support dialog; its `copy` block owns all reader-facing support copy (label, title, description, provider prompt, new-tab hint, and coming-soon text).
 
 `ProductConfig.support.donationRecording.enabled` gates internal donation recording. When `true`, the `POST /api/support/donations` Worker endpoint accepts donation records (email, amount, provider, one-time/subscription type) as private operator telemetry. When `false`, the endpoint returns 404. Recording is internal only — no reader-facing donation form is rendered. Support engagement events (`support_open`, `support_option_click`) are recorded whenever the dialog is used, independent of this toggle.

@@ -16,6 +16,9 @@ D1 is the system of record for published editorial data, authenticated-reader da
 | `stories` | Four or five ordered stories for an edition | Separates reader-ready stories and attribution from shared briefing copy | Generation repository writes; public Worker API reads through `editions`; generation history lookup reads destination URLs from published parents | Editorial; public only with a published parent |
 | `generation_runs` | One parent record per generation attempt | Provides lifecycle status, target date, and a stable investigation `runId` | Automation writes; protected internal API and operators read | Completed rows purged after three days |
 | `generation_run_events` | Ordered safe decision events within one run | Gives a detailed stage-by-stage investigation timeline | Automation writes; protected internal API and operators read | Purged with its completed parent after three days |
+| `social_oauth_states` | One-time encrypted PKCE verifiers with expiry | Protects the X OAuth authorization-code callback from replay and CSRF | Protected authorization start writes; public callback consumes and deletes | Security-sensitive encrypted transient data; expired rows are removed when authorization starts |
+| `social_oauth_credentials` | One encrypted renewable X refresh token | Lets the Worker obtain a short-lived user access token immediately before posting | Public callback writes; Worker social publisher reads and rotates it; no public read endpoint | Security-sensitive encrypted credential; retained until replaced or deliberately removed |
+| `social_publications` | One irreversible X publication attempt per edition | Safely records the manual re-publication of an existing published edition and prevents duplicate posts | Protected production-only `POST /internal/social/x/publish` writes; no public read endpoint | Operational delivery audit; retained with its edition and cascades on deletion |
 | `user_profiles` | Verified Google identity and reader activity/streak state | Provides durable identity and server-authoritative streaks | Authentication and authenticated edition requests write | Private personal data |
 | `user_sessions` | Hashes of opaque session tokens and expiry times | Restores and revokes sign-in without storing usable tokens | Authentication creates; authorization reads; sign-out deletes | Security-sensitive hash; expires after 30 days |
 | `user_daily_activity` | One qualifying UTC activity day per reader | Makes streak calculation idempotent and auditable | Authentication and authenticated edition requests write | Private activity history |
@@ -35,13 +38,16 @@ erDiagram
   user_profiles o|--o{ reader_feedback : optionally_submits
     user_profiles o|--o{ newsletter_subscribers : optionally_subscribes
     generation_runs ||--o{ generation_run_events : correlates_by_run_id
+    social_oauth_states }o--|| x_oauth_callback : consumed_by
+    social_oauth_credentials }o--|| x_social_publisher : read_and_rotated_by
+    editions ||--o{ social_publications : publication_attempts
   visitor_visits }o--|| visitor_hash : groups_by_hash
       support_events }o--|| visitor_hash : groups_by_hash
       donations }o--|| visitor_hash : groups_by_hash
       support_events ||--o| donations : optionally_confirms
     ```
 
-`stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `reader_feedback.user_id` and `newsletter_subscribers.user_id` are optional: anonymous readers may submit feedback or subscribe without an account, and deleting a profile retains those rows while setting their links to `NULL`. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier. `support_events` and `donations` group by the same one-way `visitor_hash` used by `visitor_visits`; a donation optionally confirms a prior support event through the unique `event_id`, but neither table links to `user_profiles`.
+`stories`, `user_sessions`, and `user_daily_activity` use database foreign keys to their parent tables. `social_oauth_states` and `social_oauth_credentials` are deliberately standalone security tables: their state and credential values are AES-GCM ciphertext, never returned from a Worker response or generation event, and have no reader-facing API. `social_oauth_states` is consumed once by the X callback; `social_oauth_credentials` has one `x` row and is updated whenever X rotates its refresh token.  `reader_feedback.user_id` and `newsletter_subscribers.user_id` are optional: anonymous readers may submit feedback or subscribe without an account, and deleting a profile retains those rows while setting their links to `NULL`. `generation_run_events` correlates to `generation_runs` by the unique UUID `run_id`, rather than a foreign key to an internal numeric ID, so the portable automation contract does not depend on a provider-specific identifier. `support_events` and `donations` group by the same one-way `visitor_hash` used by `visitor_visits`; a donation optionally confirms a prior support event through the unique `event_id`, but neither table links to `user_profiles`.
 
 ## Editorial tables
 
@@ -92,6 +98,40 @@ erDiagram
 **How:** The logger serializes concurrent writes. D1 assigns a per-run sequence and enforces unique `(run_id, sequence)`; the `(run_id, sequence ASC)` index supports ordered timelines. Retention cleanup deletes event rows before their parent runs.
 
 **Privacy:** Metadata excludes credentials, authorization headers, raw feeds/articles, complete prompts, and raw model responses. Error messages are capped. This is an operational timeline, not a content archive.
+
+### `social_oauth_states`
+
+**What:** One pending X OAuth authorization attempt keyed by random `state`, with an AES-GCM-encrypted PKCE `code_verifier` and UTC `expires_at`.
+
+**Why:** The public X callback must accept a redirect from X without exposing a bearer credential. The one-time state binds that callback to a protected operator-initiated authorization attempt and prevents replay.
+
+**Where:** `POST /internal/social/x/authorize` creates a row only after existing automation authorization succeeds. `GET /internal/social/x/callback` reads a non-expired matching row and deletes it before exchanging the authorization code.
+
+**How:** Migration `0018` adds the primary key and expiry index. Starting authorization removes expired rows and inserts a row expiring in ten minutes. The callback deletes its state whether it succeeds or fails, so it cannot be reused.
+
+**Privacy:** This is encrypted authentication material. No public endpoint, logs, or generation events disclose its value.
+
+### `social_oauth_credentials`
+
+**What:** A single row for platform `x`, containing an AES-GCM-encrypted renewable X refresh token and UTC `updated_at`.
+
+**Why:** X automated posting requires an OAuth user context; a static app-only bearer token cannot publish posts. The encrypted refresh token allows a short-lived access token to be requested only at posting time.
+
+**Where:** The X callback inserts or replaces the row after a successful authorization-code exchange. The Cloudflare-specific publisher reads it after a new edition is saved as `published`, refreshes it, persists any rotated refresh token, and calls X's post API.
+
+**How:** Migration `0018` restricts `platform` to `x`. There is no token column for browser code and no operator read endpoint. A failed social post is recorded as a safe generation-run event and does not reverse the already-published edition.
+
+### `social_publications`
+
+**What:** One protected X-delivery attempt for a published edition, with its `posting`, `succeeded`, or `failed` state, optional X post ID, safe failure reason, and UTC lifecycle timestamps.
+
+**Why:** A briefing published before X authorization must be publishable without regenerating editorial content. The unique `(edition_id, platform)` constraint prevents the operator endpoint from issuing a duplicate post, including after an ambiguous delivery failure.
+
+**Where:** `POST /internal/social/x/publish` is production-only, requires the existing automation bearer authorization, and defaults to the latest published edition. Operators can select a specific published `targetDate` and positive `editionNumber`; browser readers have no access path.
+
+**How:** Migration `0019` adds the edition foreign key and the unique constraint. The route reserves the attempt before calling X, then records the outcome. A reservation is never automatically retried: that conservative behavior avoids duplicate posts when a network failure leaves X's delivery outcome uncertain. Deleting an edition cascades to its delivery audit.
+
+**Privacy:** The token is encrypted with the Worker secret `X_OAUTH_ENCRYPTION_KEY`; secrets and plaintext tokens are never committed, returned, or logged.
 
 ## Reader identity and activity tables
 

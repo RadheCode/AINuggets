@@ -15,7 +15,7 @@ The boundary provides these guarantees:
 - **Safe retargeting:** product copy and editorial choices are changed in a known location.
 - **Reusable application core:** shared loading, rendering, validation, scheduling, and interaction logic remain topic-neutral.
 - **Clear provider separation:** cloud deployment details are kept inside their provider adapter instead of leaking into application code.
-- **Single ownership:** a public OAuth client ID is owned by `product/config.js`; the Worker deployment renders that value rather than maintaining a second copy.
+- **Single ownership:** public identity and announcement wording, including the automated social-post template, are owned by `product/config.js`; provider-specific OAuth client secrets, callback handling, credential storage, and posting remain in the Cloudflare adapter.
 - **Auditable change scope:** a rebrand can be reviewed as product configuration plus a short, explicit infrastructure and data checklist.
 
 ## What is externalized
@@ -24,7 +24,7 @@ The boundary provides these guarantees:
 
 | Path | Owns | Change when retargeting? |
 |---|---|---|
-| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, story-share panel copy (button label, dialog copy, copy-link labels, and the platform set with icons and share-URL builders), accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, newsletter feature toggle and copy, and summary-context minimums plus advisory concision targets, the approved feeds, candidate-selection mode, and generation instruction, summary provider kinds and their fallback order, per-request timeout, retryable-model fallback criteria, and the default OpenRouter.ai base URL, and the company-image (feed-source and entity) artwork mappings | Yes |
+| `product/config.js` | Product name, document metadata, visible framing, authentication-menu, guest-streak CTA, and streak-guidance copy, story-share panel copy, automated social-post template, accessibility labels, browser storage namespace, public site/API hosts, public OAuth client ID, reader-engagement policies, newsletter feature toggle and copy, summary-context minimums plus advisory concision targets, approved feeds, candidate-selection mode, generation instruction, summary provider behavior, and company-image artwork mappings | Yes |
 | `product/apply-copy.js` | The generic bridge that applies configured copy to the shared semantic shell, including page-specific document titles and meta descriptions (the about page uses `copy.about.documentTitle` and `copy.about.metaDescription`) | Only when the shared copy contract changes |
 | `content-engine/loader.js` | Edition-aware canonical URL construction from the current URL's `date`/`edition` parameters (using `ProductConfig.runtime.sites.production` to gate the noindex meta) so search engines index each edition as a distinct page | Only when the canonical contract changes |
 | `product/company-images.js` | Feed-source and entity matching for story artwork | Yes, if sources or entity matching changes |
@@ -52,7 +52,7 @@ For the current provider, `infra/cloudflare/` owns:
 - account and environment resource configuration in `infra/cloudflare/config.json`;
 - Pages, Worker, and D1 resource names and IDs, with `infra/cloudflare/config.json` as the authoritative source;
 - Wrangler manifest templates and deployment scripts, which render a temporary manifest from that authoritative configuration;
-- provider-specific persistence, scheduled trigger, and authentication verification adapters.
+- provider-specific persistence, scheduled trigger, authentication verification, and X OAuth/social-post adapters. The X adapter consumes the product-owned social message template but owns its callback URL, Worker secrets, encrypted D1 credentials, token refresh, and X API calls.
 
 This is deliberate: the portable product and application layers must not import Cloudflare configuration. The Cloudflare Worker renderer is the explicit handoff point: it reads the public OAuth client ID from `product/config.js`, derives allowed browser origins and Worker/D1 resource values from the selected Cloudflare environment, renders a temporary Wrangler manifest, and is used by deployment and secret synchronization. Generated manifests are removed after those operations.
 

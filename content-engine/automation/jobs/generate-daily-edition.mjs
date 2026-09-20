@@ -16,9 +16,10 @@ export async function generateDailyEdition({
   summaryContexts = Object.fromEntries(SUMMARY_FEATURE_CONFIG.generation.map((key) => [key, SUMMARY_FEATURE_CONFIG.contexts[key]])),
   candidateSelection = { mode: "priority" },
   automaticallyPublish = false,
-    logger = console,
-    dryRun = false,
-    generationAttempts
+  socialPublisher,
+  logger = console,
+  dryRun = false,
+  generationAttempts
   }) {
     if (!isValidEditorialDate(targetDate)) throw new Error(`Invalid target date: ${targetDate}.`);
     if (!editionRepository) throw new Error("An edition repository is required.");
@@ -39,7 +40,7 @@ export async function generateDailyEdition({
       const candidates = await collectCandidates(contentSources, targetDate, editionRepository, candidateSelection, eventLogger);
       const edition = await prepareEdition({ targetDate, candidates, summaryProvider, summaryContexts, eventLogger, generationAttempts });
       if (dryRun) return completeDryRun({ editionRepository, edition, targetDate, runId, logger, eventLogger });
-      return persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, logger, eventLogger });
+      return persistEdition({ editionRepository, edition, targetDate, runId, automaticallyPublish, socialPublisher, logger, eventLogger });
     } catch (error) {
       await recordFailedRun({ editionRepository, targetDate, runId, error, logger, eventLogger });
       throw error;
