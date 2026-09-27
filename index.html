@@ -9,10 +9,11 @@
   <link rel="icon" type="image/svg+xml" href="product/brand-mark.svg">
   <link rel="apple-touch-icon" href="product/og-image.png">
   <link rel="alternate" type="application/atom+xml" title="AI Nuggets" href="https://ai-nuggets.pages.dev/feed.xml">
+  <link rel="canonical" href="/">
 
   <!-- Technical SEO Improvements -->
-    <!-- The canonical is set per edition by content-engine/loader.js so each
-         ?date=YYYY-MM-DD[&edition=N] briefing is indexed as its own page. -->
+  <!-- The static canonical provides an initial-document signal. The loader
+       replaces it for each ?date=YYYY-MM-DD[&edition=N] briefing. -->
     <script type="application/ld+json">
   {
     "@context": "https://schema.org",
